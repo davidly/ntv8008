@@ -1,0 +1,55 @@
+Amsterdam Compiler Kit integration for ntv8008
+
+Upstream ACK: https://github.com/davidgiven/ack
+Pinned revision: 7afa32a0a0f13e865fa2e8104e442689005cd627
+Source archive:
+https://codeload.github.com/davidgiven/ack/tar.gz/7afa32a0a0f13e865fa2e8104e442689005cd627
+SHA-256: 142ad8834ed5409dda0fed8e3ddb1e50f72c772858ef1e2cc9570f13e9cc6ad3
+
+Copyright (c) 1987, 1990, 1993, 2005 Vrije Universiteit, Amsterdam,
+The Netherlands. All rights reserved. Upstream's BSD-style redistribution
+notice is preserved verbatim in ACK-COPYRIGHT. The downloaded tree retains
+its copyright notices. Build changes select PLATS=em22 only, to avoid building
+unneeded machine backends. The original C frontend/optimizer are not retargeted
+or rewritten; new codegen.py and runtime.asm implement the 8008 target.
+ACK source archives and executables are downloaded/built locally, not bundled
+as opaque upstream binaries in this repository.
+
+Build-time dependency: Lua 5.4.7
+Source: https://www.lua.org/ftp/lua-5.4.7.tar.gz
+SHA-256: 9fbf5e28ef86c69858f6d3d34eccc32e911c1a28b4120ff3e84aaa70cfbf1e30
+Copyright (c) 1994-2024 Lua.org, PUC-Rio; MIT license, retained in src/lua.h
+of the downloaded archive. Lua is not linked into the compiler or target apps.
+
+The repository-authored 8008 code generator, runtime, console support,
+headers, build wrappers and tests are separate project contributions, not
+an upstream ACK release. Project contributions are licensed under BSD-3-Clause; see ../LICENSE.
+
+The new C benchmark examples implement the same established algorithms as
+this repository's other languages. No Intel compiler image, SCELBAL source,
+DX-FORTH source, or 8080 runtime is used to compile or run these C programs.
+
+Pascal integration (2026-10-29): bootstrap also builds ACK's em_pc frontend.
+A build-source patch makes negative constant MOD agree with Pascal's runtime
+(nonnegative remainder for positive divisors) and rejects nonpositive constant
+MOD divisors. The original pinned archive/checksum and upstream notices remain
+unchanged. ack/pascal.py, pascal/runtime.c, pascal/runtime.asm, examples and
+integration scripts/tests are new project contributions. The hosted upstream
+libpc sources, binaries and their historical runtime headers are not bundled.
+
+Modula-2 integration (2026-10-30): the existing pinned ACK source also supplies
+its Modula-2 frontend under ACK's existing licensing terms. The new InOut
+subset and console shim are original project code, sharing this project's
+Pascal array/static-link support. No historical libm2 runtime is linked or
+redistributed in the program images. No additional third-party source archive
+or license dependency is introduced.
+
+ACK BASIC integration (2026-10-30): the existing pinned ACK archive supplies
+its BASIC frontend under the ACK source distribution's existing terms. The
+new console/integer/GOSUB runtime and examples are project code; TTT adapts
+this project's existing SCELBAL example. Shared array support is this project's
+Pascal runtime. No historical BASIC runtime library is linked or redistributed
+in the generated images. Target-specific compiler changes and bug fixes are
+recorded in ack/basic/patch.py and applied to cached source by bootstrap.py;
+the verified original archive remains unchanged. No new third-party dependency
+or license is introduced.

@@ -1,0 +1,6 @@
+* text eol=lf
+*.bat text eol=crlf
+/smallc/upstream/** -text
+/robson/upstream/** -text
+/ack/ACK-COPYRIGHT -text
+/licenses/CC0-1.0.txt -text

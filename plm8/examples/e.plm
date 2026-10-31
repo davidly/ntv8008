@@ -1,0 +1,28 @@
+/* Decimal spigot: byte remainders, 16-bit intermediate arithmetic. */
+64:
+DECLARE DIGITS LITERALLY '200';
+DECLARE A(DIGITS) BYTE;
+DECLARE (HIGH,N) BYTE, (X,Q,T) ADDRESS;
+X=0;
+DO N=2 TO DIGITS-1;
+    A(N)=1;
+END;
+A(0)=0; A(1)=2;
+HIGH=DIGITS;
+DO WHILE HIGH>9;
+    HIGH=HIGH-1; N=HIGH;
+    DO WHILE N<>0;
+        /* Share the division; the remainder is less than N (<=199). */
+        Q=X/N; A(N)=X-Q*N;
+        /* Widen before multiplying so byte arithmetic cannot wrap. */
+        T=A(N-1); X=10*T+Q;
+        N=N-1;
+    END;
+    Q=X/10;
+    IF Q<>0 THEN OUTPUT(2)=Q+'0';
+    OUTPUT(2)=X-Q*10+'0';
+END;
+OUTPUT(2)=13;
+OUTPUT(2)='D'; OUTPUT(2)='O'; OUTPUT(2)='N'; OUTPUT(2)='E';
+OUTPUT(2)=13;
+HALT;

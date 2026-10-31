@@ -1,0 +1,8 @@
+/* PL/M OUTPUT port 2 is physical 8008 port 10 (octal 12). */
+64:
+DECLARE MESSAGE(15) BYTE INITIAL ('HELLO, PL/M-8',33,13);
+DECLARE I BYTE;
+DO I = 0 TO LAST(MESSAGE);
+    OUTPUT(2) = MESSAGE(I);
+END;
+HALT;

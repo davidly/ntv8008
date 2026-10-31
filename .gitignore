@@ -1,0 +1,37 @@
+# Local build products and fetched dependencies are never publication inputs.
+/ntv8008
+/ntv8008.exe
+*.obj
+*.o
+*.lst
+*.log
+__pycache__/
+/a08/a08
+/a08/a08.exe
+/a08/build/
+/ack/build/
+/smallc/build/
+# Historical components: local inputs and their derived outputs stay private.
+/scelbal/upstream/
+/forth/upstream/
+/plm8/upstream/*.sav
+/plm8/upstream/*.bz2
+/plm8/examples/*.hex
+/a08/scelbal.asm
+/a08/scelbal.hex
+/a08/forth.asm
+/a08/forth.hex
+# Optional historical fixtures are not part of this distribution.
+/a08/star.*
+/a08/mon8.*
+/a08/MONITOR8.ASM
+/ack/examples/*.asm
+/ack/examples/*.e
+/ack/pascal/examples/*.asm
+/ack/pascal/examples/*.e
+/ack/modula2/examples/*.asm
+/ack/modula2/examples/*.e
+/ack/basic/examples/*.asm
+/ack/basic/examples/*.e
+/smallc/examples/*.asm
+/smallc/examples/*.ir

@@ -1,0 +1,21 @@
+Paul Robson's 8008 Tiny BASIC
+============================
+
+Upstream: https://github.com/paulscottrobson/1k-coding-challenge
+Pinned commit: 996fd54bc665d1499838bf431e1540aa06c2177e
+Source path: basic/basic.asm
+Retrieved: 2026-10-27
+
+The original source is preserved unchanged in upstream/basic.asm.
+Copyright (c) 2016 paulscottrobson. Distributed under the MIT license;
+the complete original grant and disclaimer are in upstream/LICENSE.
+
+SHA-256:
+basic.asm  20b53d4ad4ea67011939cb6047ae091bddb6e1f5a3c33e5687cbc0da8120f4f2
+LICENSE    559eefa768dd23038cb43e5e348287137ddff64eac5bd71e0dca2136430acd95
+
+prepare.py translates the AS assembler dialect and adapts the console for
+ntv8008. It removes the author's development-only example autoloader and
+the run-loop keyboard poll. It relocates code around the fixed restart
+vectors and supplies the default 0x40 entry. No language features, numeric
+types, program storage formats, or expression rules have been added.

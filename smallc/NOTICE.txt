@@ -1,0 +1,23 @@
+SmallC-85 / Intel 8008 integration, 2026-10-29
+
+Upstream: https://github.com/ncb85/SmallC-85
+Revision: cfeb1bce46d6454a91ec0d819626a1c75358a030 (master)
+Source archive:
+https://codeload.github.com/ncb85/SmallC-85/tar.gz/cfeb1bce46d6454a91ec0d819626a1c75358a030
+SHA-256: a8b4ea14698599386176828f6beaddd9cb24282775a00509fd89670da0622a9e
+
+upstream/*.c and *.h are unmodified copies of the frontend files in smallC/.
+upstream/README and upstream/LICENSE are unmodified repository-root files.
+Upstream credits Ron Cain, James E. Hendrix, Chris Lewis, and subsequent
+contributors; source notices are retained. See upstream/LICENSE for the full
+public-domain dedication/Unlicense and disclaimer. The existing 8080 backend,
+CP/M runtime, archives, and executables are not bundled or used.
+
+build.py makes build-directory copies with standard C library includes,
+explicit int main, a return value on doAnsiArguments' success path, and
+a prototype for init (its fifth argument must be a pointer on Windows x64). It
+links these to the newly authored code8008.c, rather than code8080.c.
+The operation renderer, RAM-stack runtime, console support, examples, scripts,
+and tests are project contributions. The runtime is adapted from this
+project's ACK/8008 runtime; it does not incorporate the ACK upstream runtime.
+Project contributions are licensed under BSD-3-Clause; see ../LICENSE.

@@ -1,0 +1,33 @@
+8008-Forth by Scott Baker (https://www.smbaker.com/).
+Described by its author as a rewrite of Richard W. M. Jones's JonesForth.
+
+Source: https://github.com/sbelectronics/8008-forth
+Revision: 40f0b0c4947b82d69f5d553a5fbd142ebbfd9320
+Retrieved: 2026-10-25
+
+The three upstream files are NOT distributed in this repository. If supplied
+locally by a user, they are kept verbatim in the ignored upstream/ directory. prepare.py produces
+an adapted, macro-expanded source in ../a08/forth.asm; it is not upstream's
+original file. See README.md for the console adaptations and bug fixes.
+
+SHA-256 of upstream files:
+87177b045c1cff2018311e6b552baf1b909d175dd82a7ce0bd1ec470586e23bc  forth.asm
+2f6f99bc22e1ecf02620638054cb1288067c1816096538b78ec1caf88ca2e41e  forth-extra.inc
+2a30b5469ee614ef51288ac630298b81ad0c34969c73fe688580c2ac0834daed  bufio.inc
+
+No explicit license or redistribution grant was found in the inspected
+8008-Forth repository or these source headers. Public hosting does not by
+itself establish a license. No permission or public-domain status is asserted
+for Baker's rewrite by this project. Confirm upstream redistribution terms
+before publishing these sources, the adapted assembly or its HEX image.
+This is separate from the licensing of the original JonesForth implementation.
+
+Examples e.f and ttt.f adapt David Lee's E.F and TTT.F in
+cpm_compilers/DX-FORTH for CPM 4.56; sieve.f uses the same classic odd-number
+sieve with packed flags. cpm_compilers identifies the author's benchmark
+code as CC0-1.0, separately from the historical CP/M compiler/interpreter.
+No DX-FORTH executable, kernel source or runtime is incorporated here.
+
+The native.inc extension contains project additions for logical shifting and
+packed-bit access, inserted by prepare.py. It does not modify the pinned
+upstream files or change the provenance of the adapted kernel.

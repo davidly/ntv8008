@@ -1,0 +1,21 @@
+Intel PL/M-8 compiler, passes PLM1 and PLM2, version 3.3.
+Original software: Intel Corporation; PDP-10 Fortran/Tymshare runtime authors.
+These historical third-party executables are not newly authored project code.
+No new license or public-domain status is asserted for them.
+
+Source archive:
+https://vtda.org/bits/software/DEC/PDP-10/tymshare/169278.tape.bz2
+Catalog:
+https://vtda.org/bits/software/DEC/PDP-10/tymshare/169278.txt
+Directory: (UPL), files PLM1.SAV and PLM2.SAV, catalog dates February 1976.
+Runtime banners: PLM1 VERS 3.3; PLM2 VERS 3.3.
+
+Recovered with plm8/recover.py. Each original 36-bit word is represented
+as an unsigned eight-byte little-endian integer. No original word values
+were patched in these files. The host runner's separate, documented
+in-memory compatibility change omits discontinued Tymshare accounting.
+
+SHA-256:
+efc4e6661dc5033f3c95c399a491608bd3aace1ab665ecf9ab2922f620410315  169278.tape.bz2
+b25f17bbd43130de88a846a76fd439ed4558ad88fe2e19345b8fd1447209dcd4  plm1.sav
+ba3c4c66470e1331d4f27ce49d1488938678447647c444e3228bf292eadfc39d  plm2.sav
