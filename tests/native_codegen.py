@@ -109,6 +109,68 @@ RSP EQU 3F00H
             self.assertFalse(any('leaf register C' in s for s in after[2]))
 
 
+    def test_smallc_local_store_regions_and_branch_depths(self):
+        sys.path.insert(0,str(ROOT/'smallc'))
+        from smallc_bytes import local_stores, stack_depths
+        region='ADDRSP 3\nPUSH\nSTACK_LOAD 8,1\nJFALSE NO\nIMM 2\nJUMP DONE\nNO:\nIMM 9\nDONE:\nSTIND 1'
+        lowered=local_stores(region)
+        self.assertNotIn('ADDRSP',lowered)
+        self.assertIn('STACK_LOAD 6,1',lowered)
+        self.assertTrue(lowered.endswith('STACK_STORE 3,1'))
+        for unsafe in ('JUMP NO\n'+region,region.replace('JUMP DONE','JUMP OUT'),
+                       region.replace('IMM 2','CALL callback'),'ADDRSP 3\nPUSH\nSTIND 1',
+                       'ADDRSP 3\nPUSH\nARITH_CONST ADD,1\nSTIND 1'):
+            self.assertEqual(local_stores(unsafe),unsafe)
+        text='main:\nADJSP -4\nBYTE_CMP EQ,JFALSE,OTHER,0,0,l~4,i~0\nIMM 1\nRETURN\nOTHER:\nSTACK_LOAD 4,1\nRETURN'
+        depths=stack_depths(text,{'main'})
+        self.assertEqual(depths[text.splitlines().index('OTHER:')],4)
+
+    def test_wide_frame_offsets(self):
+        for pointer in (0x2000,0x20fe,0x20ff,0x2100,0x21ff):
+            for delta in (-255,-128,-17,-3,3,17,128,255):
+                self.differential(frame(0)+['LAM','OUT 12']+frame(delta)+['LAM','OUT 12','HLT'],pointer=pointer)
+
+    def test_register_frame_address_and_live_results(self):
+        from register8008 import cache_frame_registers
+        for pointer in (0x20ff,0x2100):
+            for offset in (0,-17,31):
+                code=frame(0)+['LAM','OUT 12','LHI 0D','LLI 0D']+frame(offset)+['LAE','OUT 12','OUT 12','LAD','OUT 12','LAC','OUT 12','HLT']
+                # Directly exercise this pass: the final reads deliberately keep
+                # the temporary address cache live, independently of dead code removal.
+                lines=['        ; function TEST','TEST:']+['        '+t for t in code]
+                native=cache_frame_registers(lines,[])
+                # C/D are observed here, so allocation must be refused.
+                self.assertFalse(any('cache frame address in CD' in t for t in native))
+                self.differential(code,pointer=pointer)
+                code=frame(0)+['LAM','OUT 12','LHI 0D','LLI 0D']+frame(offset)+['OUT 12','LAE','OUT 12','LAM','OUT 12','HLT']
+                before,after=self.differential(code,pointer=pointer)
+                self.assertTrue(any('register-held frame address' in t for t in after[2]))
+
+    def test_byte_cache_clobber_call_and_alias(self):
+        store=['; local byte store -1','LBA']+frame(-1)+['LAB','LMA','; end local byte']
+        load=['; local byte load -1']+frame(-1)+['LAM','LBI 0','; end local byte']
+        # D conflicts reject whole-function leaf allocation; C may still cache
+        # individual loads. A call invalidates it before the final RAM reload.
+        helpers=('CHANGE: LHI 32D',' LLI 255D',' LMI 66D',' LCI 99D',' LDI 98D',' RET')
+        code=['LAI 65D']+store+['LCI 70D']+load+['OUT 12']+load+['OUT 12','LCI 10D','LDI 20D','LEI 0D','LHI 0D','LLI 0D','CAL CHANGE']+load+['OUT 12','HLT']
+        before,after=self.differential(code,data=helpers)
+        self.assertEqual(after[0],b'AAB')
+        self.assertTrue(any('cached byte local' in t for t in after[2]))
+
+    def test_join_keeps_values_and_scratch_results(self):
+        helpers=('PUSH: LHI HIGH SAVE',' LLI LOW SAVE',' LMA',' INL',' LMB',' LEI 77D',' RET',
+                 'POP: LHI HIGH SAVE',' LLI LOW SAVE',' LAM',' INL',' LBM',' LEI 88D',' RET','SAVE: DB 0,0')
+        for condition in (0,1):
+            for live in (False,True):
+                suffix=['LAE','OUT 12'] if live else []
+                code=[f'LAI {condition}D','NDA','JTZ OTHER','LAI 65D','LBI 0D','CAL PUSH','JMP JOIN',
+                      'OTHER:','LAI 66D','LBI 0D','CAL PUSH','JOIN:','CAL POP','OUT 12']+suffix+['HLT']
+                before,after=self.differential(code,data=helpers)
+                pops=sum(t.strip()=='CAL POP' for t in after[2])
+                self.assertEqual(pops,int(live))
+
+
+
 SOURCE='''#include <stdio.h>
 unsigned char board[3];
 probe(move)
@@ -122,10 +184,11 @@ unsigned char move;
 recurse(n)
 int n;
 {
- unsigned char x;
+ unsigned char x,y;
  x=n+250;
- if(n) return x+recurse(n-1);
- return x;
+ y=(n&1)?n+17:n+33;
+ if(n) return x+y+recurse(n-1);
+ return x+y;
 }
 aliased(n)
 int n;
@@ -162,7 +225,7 @@ class Compilers(unittest.TestCase):
             result=run('-n:200000000',target)
             self.assertEqual(result.returncode,0,result.stderr)
             expected=''.join(str(i if i==255-i or i>255-i else 0)+',' for i in range(256))
-            expected+=str(sum((i+250)&255 for i in range(9)))+',255'
+            expected+=str(sum(((i+250)&255)+((i+17 if i&1 else i+33)&255) for i in range(9)))+',255'
             self.assertEqual(result.stdout,expected.encode())
 
     def test_ack(self):self.compiler('ack')

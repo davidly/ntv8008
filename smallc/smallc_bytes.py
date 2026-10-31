@@ -126,6 +126,9 @@ def stack_depths(text,function_names):
         successors=[i+1] if i+1<len(lines) else []
         if op=='JUMP':successors=[labels[arg]] if arg in labels else []
         elif op in ('JTRUE','JFALSE'):successors+=([labels[arg]] if arg in labels else [])
+        elif op=='BYTE_CMP':
+            fields=arg.split(',')
+            if fields[1] in ('JTRUE','JFALSE') and fields[2] in labels:successors.append(labels[fields[2]])
         elif op in ('RETURN','DATA'):successors=[]
         elif op in ('DENSE_SWITCH','SWITCH'):
             successors=[labels[t] for t in data_targets if t in labels]
@@ -139,3 +142,39 @@ def stack_depths(text,function_names):
     # An inconsistent join prevents register allocation, not ordinary lowering.
     if bad:return {}
     return depths
+
+
+def local_stores(text):
+    """Keep a local assignment address off the expression stack.
+
+    Only closed, call-free expression regions are accepted. Branches may join
+    inside the expression, but cannot enter or leave it through another edge.
+    """
+    lines=text.splitlines();output=[];i=0
+    references={}
+    for j,line in enumerate(lines):
+        f=line.split()
+        if f and f[0] in ('JUMP','JTRUE','JFALSE'):references.setdefault(f[1],set()).add(j)
+    allowed={'STACK_LOAD','IMM','ARITH_CONST','JUMP','JTRUE','JFALSE','OFFSET','BOOL','NOT','NEGATE','COMPLEMENT'}
+    while i<len(lines):
+        f=lines[i].split()
+        if len(f)!=2 or f[0]!='ADDRSP' or i+1>=len(lines) or lines[i+1]!='PUSH':
+            output.append(lines[i]);i+=1;continue
+        end=i+2
+        if end<len(lines) and lines[end].startswith('LOAD '):end+=1
+        while end<len(lines) and (lines[end].endswith(':') or lines[end].split()[0] in allowed):end+=1
+        body=lines[i+2:end];labels={s[:-1] for s in body if s.endswith(':')}
+        closed=bool(body) and body[0].split()[0] in ('LOAD','STACK_LOAD','IMM')
+        closed=closed and all(not(references.get(label,set())-set(range(i+2,end))) for label in labels)
+        closed=closed and all(s.split()[1] in labels for s in body if s.split()[0] in ('JUMP','JTRUE','JFALSE'))
+        if end>=len(lines) or lines[end] not in ('STIND 1','STIND 2') or not closed:
+            output.append(lines[i]);i+=1;continue
+        offset=int(f[1]);rewritten=[]
+        for j,s in enumerate(body):
+            if j==0 and s.startswith('LOAD '):s='STACK_LOAD '+str(offset)+','+s.split()[1]
+            elif s.startswith('STACK_LOAD '):
+                address,width=s.split()[1].split(',');s='STACK_LOAD '+str(int(address)-2)+','+width
+            rewritten.append(s)
+        output+=rewritten+['STACK_STORE '+str(offset)+','+lines[end].split()[1]]
+        i=end+1
+    return '\n'.join(output)

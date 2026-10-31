@@ -9,7 +9,7 @@ import re
 HERE = Path(__file__).resolve().parent
 import sys
 if str(HERE) not in sys.path: sys.path.insert(0,str(HERE))
-from smallc_bytes import thread_booleans, byte_comparisons, stack_depths
+from smallc_bytes import thread_booleans, byte_comparisons, stack_depths, local_stores
 if str(HERE.parent/'tools') not in sys.path: sys.path.insert(0,str(HERE.parent/'tools'))
 from native8008 import optimize_functions
 
@@ -617,7 +617,7 @@ class Generator:
             # Also catches loads exposed by indexed-address folding.
             text = re.sub(r'(?m)^ADDRSP (-?\d+)\nLOAD (-?\d+)$',
                           r'STACK_LOAD \1,\2', text)
-            text=byte_comparisons(text)
+            text=byte_comparisons(local_stores(text))
         depths=stack_depths(text,function_names) if self.optimize else {}
         for line_number,raw in enumerate(text.splitlines()):
             self.frame_depth=depths.get(line_number)

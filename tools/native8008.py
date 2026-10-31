@@ -229,7 +229,14 @@ def cache_frame_addresses(lines,data,aligned,serial):
         if i not in addresses or not state or state[0]!=addresses[i][0] or regs[i]&17 or flag_live[i]:
             result+=group or [text];continue
         delta=((addresses[i][1]-state[1]+32768)&65535)-32768
-        if abs(delta)>2:result+=group;continue
+        if abs(delta)>255:result+=group;continue
+        if abs(delta)>2:
+            serial[0]+=1;label='NATIVEFRAME'+str(serial[0])
+            native=['LAL',('ADI ' if delta>0 else 'SUI ')+str(abs(delta))+'D','LLA',
+                    'JFC '+label,'INH' if delta>0 else 'DCH',label+':']
+            result.append('        ; cached frame address '+addresses[i][0]+f'+{addresses[i][1]}')
+            result+=[s if s.endswith(':') else '        '+s for s in native]
+            continue
         native=[];offset=state[1]
         for step in range(abs(delta)):
             if delta>0:
@@ -253,7 +260,10 @@ def cache_frame_addresses(lines,data,aligned,serial):
 def optimize_functions(code,data,aligned=False):
     result=[];block=[];serial=[0]
     def finish(block):
-        return simplify_values(cache_frame_addresses(allocate_leaf(block,data),data,aligned,serial),data)
+        from register8008 import cache_bytes, cache_frame_registers, join_values
+        block=allocate_leaf(join_values(block,data),data)
+        block=cache_frame_registers(cache_bytes(block,data),data)
+        return simplify_values(cache_frame_addresses(block,data,aligned,serial),data)
     for line in code:
         if line.strip().startswith('; function '):
             if block:result+=finish(block)

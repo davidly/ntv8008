@@ -105,3 +105,30 @@ optional historical-component skips. Native Windows `setup.bat --smallc`,
 pass; the latter skips the unavailable native ACK frontend. Windows regenerated
 SmallC images match Linux byte-for-byte. MSVC emits no new warnings. Existing
 CPU/console tests and the Snake rules, polling and terminal tests pass.
+
+Further frame/register work (2026-10-31) keeps byte locals in free C/D registers
+with RAM copies at call boundaries. Eligible regions hold frame addresses in
+CD; HL-relative frame reuse also handles offsets up to 255 bytes in either
+direction. Expression joins can retain AB instead of a PUSH/POP pair. SmallC
+removes stacked addresses for closed local assignments and follows BYTE_CMP
+branch edges in stack-depth analysis. The recursive benchmark sources and
+search workload are unchanged.
+
+ACK C TTT: 1,093,895,626 -> 922,437,514 clocks (15.7% fewer).
+SmallC TTT: 1,045,360,912 -> 762,252,864 clocks (27.1% fewer).
+ACK BASIC TTT: 3,369,136,732 -> 2,481,289,378 clocks (26.4% fewer).
+All are ten-iteration totals. All 18 compiled benchmarks produce their expected
+results; the README table records their measured times. Snake's no-input run
+uses 3,130,426 clocks. The 13 native/codegen regressions cover wider offsets,
+register-held address results, live scratch registers, call invalidation,
+conditional local stores, byte-branch stack depths and stack-join values, as
+well as all earlier cases. Compiler tests retain two byte locals across
+recursive calls and verify escaped aliases.
+
+The follow-up Linux run exercises 201 reported tests with expected missing
+historical-component skips in the isolated validation tree. The optional
+components in the working clone are preserved. Native Windows MSVC builds and
+the runtime/codegen suites pass; final native SmallC rebuild tests and the
+13 register/codegen tests exercise the same generated images on Windows.
+The ACK frontend remains a Linux/WSL build, so that optional native-Windows
+frontend test is skipped.

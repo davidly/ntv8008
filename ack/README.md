@@ -438,3 +438,23 @@ and recursive byte state with the C frontends.
 Byte local loads/stores and branch comparisons are fused before EM stack
 lowering. Small constant dense-switch descriptors use a direct jump-table
 sequence, including negative minima and page-crossing tables.
+
+### Register caches and stack joins
+
+The shared `tools/register8008.py` pass caches unescaped byte locals in free C/D
+registers, intersecting known values at control-flow joins. Stores retain their
+RAM copy, register writes invalidate the cache, and software-call continuations
+start empty. This permits reuse within recursive functions without changing
+argument layout or requiring a new calling convention. CD can also hold a frame
+address in regions where both registers are dead; callers, stores and conflicts
+conservatively end that region. Wider HL-relative adjustments handle carry and
+borrow at page boundaries.
+
+Expression values stay in AB across joins when every incoming path would
+otherwise PUSH immediately before a shared POP. Scratch-register and flag
+liveness, computed entries, and alternative consumers retain the original code.
+
+Recursive C TTT now uses 922,437,514 clocks for ten runs, versus 1,093,895,626
+before this revision (15.7% fewer). Integer BASIC TTT also benefits from
+register-held values and stack-join elimination: 3,369,136,732 to
+2,481,289,378 clocks (26.4% fewer). Benchmark sources are unchanged.

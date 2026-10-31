@@ -353,3 +353,26 @@ Truth-only short-circuit joins are threaded into direct branches. Constant
 indexed global loads and byte comparisons avoid intermediate expression-stack
 words. The frontend marks function entries in IR comments so ordinary branch
 labels are never mistaken for independent functions.
+
+### Register caches and stack joins
+
+The shared `tools/register8008.py` pass caches unescaped byte locals in free C/D
+registers, intersecting known values at control-flow joins. Stores retain their
+RAM copy, register writes invalidate the cache, and software-call continuations
+start empty. This permits reuse within recursive functions without changing
+argument layout or requiring a new calling convention. CD can also hold a frame
+address in regions where both registers are dead; callers, stores and conflicts
+conservatively end that region. Wider HL-relative adjustments handle carry and
+borrow at page boundaries.
+
+Expression values stay in AB across joins when every incoming path would
+otherwise PUSH immediately before a shared POP. Scratch-register and flag
+liveness, computed entries, and alternative consumers retain the original code.
+
+Local assignment addresses no longer need a stack operand for closed,
+call-free expressions, including ternaries and simple local increments. The
+rewriter adjusts SP-relative loads after removing that operand and rejects
+incoming/outgoing branch edges or exposed pointers. BYTE_CMP branch successors
+are included in stack-depth analysis, enabling safe local caching after those
+branches. The recursive TTT example now uses 762,252,864 clocks for ten runs,
+versus 1,045,360,912 before this revision (27.1% fewer).
