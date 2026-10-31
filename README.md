@@ -170,11 +170,11 @@ Measured from the included images on 2026-10-31. Values below are estimated
 | Implementation | Sieve | E | TTT per iteration |
 | --- | ---: | ---: | ---: |
 | A08 assembly | 78.1 | 36.5 | 32.2 |
-| ACK C | 358.0 | 359.1 | 332.0 |
-| SmallC-85 C | 378.2 | 264.2 | 288.9 |
-| ACK Pascal | 661.4 | 582.4 | 548.8 |
-| ACK Modula-2 | 812.1 | 531.8 | 420.0 |
-| ACK Occam 1 | 1,449.6 | 748.3 | 937.5 |
+| ACK C | 355.5 | 354.0 | 325.0 |
+| SmallC-85 C | 375.8 | 259.1 | 284.7 |
+| ACK Pascal | 639.3 | 575.9 | 536.0 |
+| ACK Modula-2 | 795.2 | 526.6 | 412.3 |
+| ACK Occam 1 | 1,413.5 | 739.2 | 913.8 |
 | ACK integer BASIC | 2,662.2 | 648.5 | 719.4 |
 
 Sieve includes all ten passes; E produces 192 digits. TTT is normalized to one

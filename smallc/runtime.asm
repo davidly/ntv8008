@@ -46,7 +46,8 @@ ADDSP:  LHI HIGH RSP
         JTC STACKFAULT
         RET
 ; PUSH/POP preserve C/D and handle odd stack addresses/page crossings.
-; Avoid spilling AB to PT/OT and calling ADDSP/LOADSP for every stack word.
+; Only update the pointer high byte on a borrow/carry; loads preserve carry.
+; Keep the PUSH bounds check on both paths, including the no-borrow path.
 PUSH:   LEA
         LHI HIGH RSP
         LLI LOW RSP
@@ -55,8 +56,10 @@ PUSH:   LEA
         LMA
         INL
         LAM
+        JFC PUSHREADY
         SBI 0
         LMA
+PUSHREADY:
         CPI HIGH STACKMIN
         JTC STACKFAULT
         DCL
@@ -78,9 +81,11 @@ POP:    LHI HIGH RSP
         LMA
         INL
         LBM
-        LAM
-        ACI 0
-        LMA
+        JFC POPREADY
+        INB
+        LMB
+        DCB
+POPREADY:
         LHB
         LLE
         LAM

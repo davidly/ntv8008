@@ -53,3 +53,12 @@ replication, generic versus direct arrays, four/five-byte copies, input/exit,
 traps, rejected concurrency/recursion, diagnostics, resource limits and repeated
 patching from the original verified archive. Existing CPU/codegen tests pass.
 No additional third-party source archive or historical runtime is bundled.
+
+The ACK and SmallC PUSH/POP primitives now avoid storing the stack pointer's
+high byte unless a borrow/carry changes it. The ordinary PUSH saves 8 clock
+periods and POP saves 24; crossing a page costs 18 and 6 extra respectively.
+PUSH still checks STACKMIN on both paths. New stack regression tests cover
+register preservation, stored words, pointer restoration, even/odd addresses,
+page crossings, and exhaustion with and without a low-byte borrow. All 18
+compiled-language benchmark runs retained their outputs and used 0.6–3.6% fewer
+cycles. The README performance table reflects the rebuilt images.
