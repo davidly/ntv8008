@@ -62,3 +62,21 @@ register preservation, stored words, pointer restoration, even/odd addresses,
 page crossings, and exhaustion with and without a low-byte borrow. All 18
 compiled-language benchmark runs retained their outputs and used 0.6–3.6% fewer
 cycles. The README performance table reflects the rebuilt images.
+
+ANSI Snake is implemented in SmallC with guest-side polling/delay helpers.
+The 32x16 game uses a circular body buffer and byte occupancy map. New tests
+cover growth, forbidden reversal, self/wall collisions, departing-tail entry,
+ring wrap, a full board, movement cost independent of body length, and helper
+return values/timing. Host tests exercise nonblocking status with queued bytes,
+EOF, files, remapped ports, and an open empty pipe. A POSIX pseudo-terminal test
+runs at 500 kHz, receives a live quit key, and verifies terminal restoration.
+A no-input run hits the wall after 3,213,044 clocks: 6.426 seconds estimated,
+6.426 seconds measured with throttling. The initial board takes about three
+seconds; ordinary movement is about five moves/second. Existing SmallC sieve,
+e and TTT cycle counts are unchanged after rebuilding with the new runtime.
+
+Native Windows MSVC builds pass without warnings. Windows runtime and SmallC
+compile tests pass, including multi-byte pipe polling; the host bypasses CRT
+stdio read-ahead with one-byte binary descriptor reads so PeekNamedPipe cannot
+miss a retained character. Both blocking reads and poll/read sequences are
+covered. POSIX-specific terminal tests are explicitly skipped on Windows.

@@ -77,8 +77,15 @@ main()
 * Global initializers and zero-initialized globals are supported. The frontend
   also has struct support, but general struct functionality is not comprehensively
   validated by this port. Prefer byte/int arrays and scalar locals.
-* `<stdio.h>` selects `putchar`, `getchar`, `puts`, and `putu` (unsigned decimal).
-  Those four function names are reserved. Only that system header is provided. Quoted local includes are flattened
+* `<stdio.h>` selects `putchar`, `getchar`, `puts`, `putu` (unsigned decimal),
+  `kbhit`, and `waitkey`. `kbhit()` returns 128 when a character is available,
+  otherwise zero. `waitkey(ticks)` polls for roughly `ticks` milliseconds at
+  500 kHz (0..255 ticks), returning the last seven-bit character or -1. Zero
+  ticks returns -1 without consuming input. Each empty tick is 524 clock periods
+  (the final tick is 520), plus call overhead; input adds a small amount of work.
+  These helpers use the default keyboard/status ports 2/1.
+  These function names are reserved. Only that system header is provided.
+  Quoted local includes are flattened
   relative to their containing file, before the Small C preprocessor runs;
   includes should be unconditional, without relying on conditional inclusion.
   EOF ends the emulator; it does not return a C EOF value. Console newlines are
@@ -112,7 +119,10 @@ simple runtime algorithms and leave room for future performance improvements.
 * `ttt`: recursive alpha-beta minimax with last-move switch dispatch; ten
   iterations, 6493 nodes per iteration and three tied opening positions.
 
-`tests/smallc.py` runs all distributed images and independently checks prime,
+* `snake`: ANSI Snake at roughly five moves per second with `-s:500000`.
+  See the root README for controls and `tests/snake.py --compile` for rule tests.
+
+`tests/smallc.py` runs the benchmark/demo images and independently checks prime,
 e-digit, and minimax results. `--compile` additionally rebuilds every example
 and checks signed/unsigned boundary comparisons, console input, ANSI parameters,
 switch fallthrough, full-width arithmetic, nested calls with unaligned locals,

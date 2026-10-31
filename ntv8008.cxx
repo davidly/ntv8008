@@ -15,11 +15,15 @@
 #include <string>
 #include <vector>
 #ifdef _WIN32
+#define NOMINMAX
+#include <windows.h>
 #include <conio.h>
 #include <io.h>
+#include <fcntl.h>
 #else
 #include <unistd.h>
 #include <termios.h>
+#include <poll.h>
 #endif
 #include "i8008.hxx"
 
@@ -30,20 +34,31 @@ static CTrace tracer;
 static FILE * g_input = stdin;
 static volatile sig_atomic_t g_stopped = 0;
 static bool g_eof = false;
+static int g_pendingInput = -1;
+static bool g_inputEof = false;
+static unsigned g_statusPort = 1;
 static unsigned g_inputPort = 2, g_outputPort = 10; // octal 12
 
 static void on_signal( int ) { g_stopped = 1; }
 
 class ConsoleConfiguration
 {
-#ifndef _WIN32
+#ifdef _WIN32
+    HANDLE output;
+    DWORD saved;
+    bool changed;
+#else
     termios saved;
     bool changed;
 #endif
 public:
     ConsoleConfiguration()
     {
-#ifndef _WIN32
+#ifdef _WIN32
+        output = GetStdHandle( STD_OUTPUT_HANDLE );
+        changed = GetConsoleMode( output, &saved ) &&
+            SetConsoleMode( output, saved | ENABLE_PROCESSED_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING );
+#else
         changed = false;
         if ( stdin == g_input && isatty( STDIN_FILENO ) && 0 == tcgetattr( STDIN_FILENO, &saved ) )
         {
@@ -58,36 +73,92 @@ public:
     }
     ~ConsoleConfiguration()
     {
-#ifndef _WIN32
+#ifdef _WIN32
+        if ( changed )
+            SetConsoleMode( output, saved );
+#else
         if ( changed )
             tcsetattr( STDIN_FILENO, TCSANOW, &saved );
 #endif
     }
 }; //ConsoleConfiguration
 
+static int read_character()
+{
+#ifdef _WIN32
+    // Even unbuffered Windows stdio can retain a second byte. Read exactly one
+    // byte through the CRT descriptor so PeekNamedPipe sees everything else.
+    unsigned char ch;
+    return 1 == _read( _fileno( g_input ), &ch, 1 ) ? ch : EOF;
+#else
+    return fgetc( g_input );
+#endif
+} //read_character
+
+// A status read never waits, consumes a character, or ends the emulation at EOF.
+// One-byte lookahead also works for redirected files and pipes. Disable stdio
+// read-ahead so a descriptor's readiness always reflects its remaining bytes.
+static bool keyboard_ready()
+{
+    if ( g_pendingInput >= 0 )
+        return true;
+    if ( g_inputEof )
+        return false;
+#ifdef _WIN32
+    if ( stdin == g_input && _isatty( _fileno( stdin ) ) )
+        return 0 != _kbhit();
+    HANDLE input = (HANDLE) _get_osfhandle( _fileno( g_input ) );
+    if ( FILE_TYPE_PIPE == GetFileType( input ) )
+    {
+        DWORD available = 0;
+        if ( !PeekNamedPipe( input, 0, 0, 0, &available, 0 ) || !available )
+            return false;
+    }
+    else if ( FILE_TYPE_DISK != GetFileType( input ) )
+        return false;
+#else
+    pollfd input = { fileno( g_input ), POLLIN, 0 };
+    if ( poll( &input, 1, 0 ) <= 0 || !( input.revents & ( POLLIN | POLLHUP ) ) )
+        return false;
+#endif
+    g_pendingInput = read_character();
+    g_inputEof = ( EOF == g_pendingInput );
+    return !g_inputEof;
+} //keyboard_ready
+
 uint8_t i8008_input( uint8_t port )
 {
+    if ( port == g_statusPort )
+        return keyboard_ready() ? 0x80 : 0;
     if ( port != g_inputPort )
     {
         tracer.Trace( "input port %u unmapped, returning ff\n", port );
         return 0xff;
     }
     int ch;
-#ifdef _WIN32
-    if ( stdin == g_input && _isatty( _fileno( stdin ) ) )
+    if ( g_pendingInput >= 0 )
     {
-        while ( !_kbhit() && !g_stopped )
-            std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
-        ch = g_stopped ? EOF : _getch();
-        if ( 0 == ch || 0xe0 == ch )
-        {
-            _getch();
-            return 0xff;
-        }
+        ch = g_pendingInput;
+        g_pendingInput = -1;
     }
     else
+    {
+#ifdef _WIN32
+        if ( stdin == g_input && _isatty( _fileno( stdin ) ) )
+        {
+            while ( !_kbhit() && !g_stopped )
+                std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+            ch = g_stopped ? EOF : _getch();
+            if ( 0 == ch || 0xe0 == ch )
+            {
+                _getch();
+                return 0xff;
+            }
+        }
+        else
 #endif
-        ch = fgetc( g_input );
+            ch = read_character();
+    }
     if ( EOF == ch || 3 == ch || 17 == ch )
     {
         g_eof = ( EOF == ch );
@@ -206,6 +277,7 @@ static void usage()
             "  -t          enable debug tracing to ntv8008.log (overwrites previous log)\n"
             "  -i          include each instruction in the log; requires -t\n"
             "  --in:port   keyboard port, 0..7 (default 2)\n"
+            "  --status:port keyboard status, 0..7 (default input port minus one, modulo 8)\n"
             "  --out:port  console port, 8..31 (default 10 decimal)\n"
             "Numbers use decimal, 0x hex, or leading-zero octal.\n"
             "Console: 7-bit characters, LF input becomes CR, CR output becomes LF.\n"
@@ -228,6 +300,7 @@ int main( int argc, char * argv[] )
     bool performance = false, trace = false, traceInstructions = false, options = true;
     std::vector< const char * > files;
     const char * inputPath = 0;
+    bool statusSpecified = false;
     for ( int i = 1; i < argc; i++ )
     {
         const char * arg = argv[ i ];
@@ -246,6 +319,11 @@ int main( int argc, char * argv[] )
             else if ( valid && 0 == strncmp( arg, "-n:", 3 ) && value ) limit = value;
             else if ( valid && 0 == strncmp( arg, "-s:", 3 ) && value ) hz = value;
             else if ( valid && 0 == strncmp( arg, "--in:", 5 ) && value < 8 ) g_inputPort = (unsigned) value;
+            else if ( valid && 0 == strncmp( arg, "--status:", 9 ) && value < 8 )
+            {
+                g_statusPort = (unsigned) value;
+                statusSpecified = true;
+            }
             else if ( valid && 0 == strncmp( arg, "--out:", 6 ) && value >= 8 && value < 32 ) g_outputPort = (unsigned) value;
             else { fprintf( stderr, "invalid option: %s\n", arg ); return 1; }
         }
@@ -253,6 +331,13 @@ int main( int argc, char * argv[] )
         {
             files.push_back( arg );
         }
+    }
+    if ( !statusSpecified )
+        g_statusPort = ( g_inputPort + 7 ) & 7;
+    if ( g_inputPort == g_statusPort )
+    {
+        fprintf( stderr, "keyboard input and status ports must differ\n" );
+        return 1;
     }
     if ( files.empty() ) { usage(); return 1; }
     if ( !tracer.Enable( trace, "ntv8008.log", true ) )
@@ -283,6 +368,12 @@ int main( int argc, char * argv[] )
         }
         tracer.Trace( "keyboard input file %s\n", inputPath );
     }
+#ifdef _WIN32
+    // Text-mode descriptor reads also perform lookahead for CR/LF translation.
+    // The machine's console is a byte interface with its own newline handling.
+    _setmode( _fileno( g_input ), _O_BINARY );
+#endif
+    setvbuf( g_input, 0, _IONBF, 0 );
     ConsoleConfiguration console;
 #ifdef _WIN32
     signal( SIGINT, on_signal );

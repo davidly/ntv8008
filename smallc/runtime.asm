@@ -562,6 +562,47 @@ SCPRINT:
 SCPRINTBYTE:
         OUT 12
         RET
+; kbhit() returns nonzero when getchar() will not block (default console ports).
+SC_6B62686974:
+        INP 1
+        LBI 0
+        JMP SCRETURN
+; waitkey(ticks): poll for approximately ticks milliseconds at 500 kHz.
+; ticks is 0..255; return the last character received, or -1 if there was none.
+; Each empty tick is 524 clocks except the final tick (520). Input adds clocks.
+SC_776169746B6579:
+        LAI 2
+        LBI 0
+        CAL SPADDR
+        LHB
+        LLA
+        LEM
+        LCI 0FFH
+        LAE
+        NDA
+        JTZ SCWAITDONE
+SCWAITOUTER:
+        LDI 6
+SCWAITLOOP:
+        INP 1
+        NDA
+        JTZ SCWAITNEXT
+        INP 2
+        NDI 7FH
+        LCA
+SCWAITNEXT:
+        DCD
+        JFZ SCWAITLOOP
+        DCE
+        JFZ SCWAITOUTER
+SCWAITDONE:
+        LAC
+        LBI 0
+        CPI 0FFH
+        JFZ SCWAITRETURN
+        LBI 0FFH
+SCWAITRETURN:
+        JMP SCRETURN
 SC_67657463686172:
         INP 2
         NDI 7FH

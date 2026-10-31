@@ -67,7 +67,7 @@ class Compiler(unittest.TestCase):
         return result.stdout
 
     def test_rebuild(self):
-        for name in ('hello','arithmetic','sieve','e','ttt'):
+        for name in ('hello','arithmetic','sieve','e','ttt','snake'):
             with self.subTest(name=name):
                 image, _, _ = compiler.compile_source(ROOT / f'smallc/examples/{name}.c')
                 self.assertEqual(image, (ROOT / f'smallc/examples/{name}.hex').read_text())

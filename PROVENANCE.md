@@ -55,3 +55,8 @@ The dormant frontend is repaired only in its verified build copy. Its console
 prelude/runtime and examples are project code; TTT uses explicit frames with
 the same ascending alpha-beta search as the other project implementations.
 No upstream Occam library/scheduler or new third-party dependency is included.
+
+ANSI Snake, its separate SmallC rules implementation, keyboard/timing helpers
+and regression tests were authored for this project. No external game source,
+artwork, terminal translation library or additional dependency is included.
+These contributions and the generated Snake image use BSD-3-Clause.

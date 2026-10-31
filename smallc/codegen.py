@@ -870,7 +870,7 @@ class Generator:
                 self.emit('JMP SCSWITCH')
             else:
                 raise CodegenError('unsupported backend operation: ' + line)
-        builtins = {'putchar','getchar','puts'}
+        builtins = {'putchar','getchar','puts','kbhit','waitkey'}
         missing = (self.references | {'main'}) - self.defined - builtins
         if missing:
             raise CodegenError('unresolved symbols: ' + ', '.join(sorted(missing)))

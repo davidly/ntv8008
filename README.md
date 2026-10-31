@@ -19,7 +19,7 @@ not part of the published source or binary images.
 | `ntv8008.cxx`, `trace.hxx` | Command-line host, Intel HEX loader, keyboard/console callbacks, speed limiting and optional debug/instruction tracing. |
 | `a08/` | Original assembly demos and sieve/e/TTT benchmarks, Robson's adapted MIT interpreter, runnable HEX images, and scripts for the official A08 dependency. |
 | `ack/` | ACK EM-to-8008 code generator, RAM-stack runtime, optimizer passes, host bootstrap, C/Pascal/Modula-2/BASIC/Occam integrations and examples. |
-| `smallc/` | Preserved SmallC-85 frontend, new 8008 code generator/runtime, host build scripts and C examples. |
+| `smallc/` | Preserved SmallC-85 frontend, new 8008 code generator/runtime, host build scripts, C benchmarks and ANSI Snake. |
 | `robson/` | Original MIT Tiny BASIC source/license, console adaptation and small BASIC examples. |
 | `scelbal/`, `forth/`, `plm8/` | Optional historical-language integration tools and project-authored examples; restricted or uncleared interpreter/compiler images are not bundled. |
 | `tests/` | Native CPU tests, integration/console checks, compiler regression and differential tests, benchmark references and publication checks. |
@@ -95,9 +95,14 @@ benchmarks; its own small examples exercise its supported dialect instead.
 ## Console, options and tracing
 
 Input port 2 supplies a seven-bit character with bit 7 set when ready. Output
-physical port 10 (octal 12) writes to the console. EOF ends input-driven apps.
+physical port 10 (octal 12) writes to the console. Status port 1 returns 0x80
+when a character is ready, or zero otherwise, without consuming it or waiting.
+Polling EOF returns zero; a blocking input read still exits on EOF.
+`--in:port` also moves the default status port to the preceding port (modulo 8);
+`--status:port` overrides that choice. Input and status ports must differ.
 Keyboard handling uses portable C/C++ plus the appropriate Windows/POSIX console
-primitives. Ctrl-C interrupts execution and restores the terminal.
+primitives. Ctrl-C interrupts execution and restores the terminal. Windows
+console output enables ANSI processing and restores its original mode on exit.
 
 ```sh
 ./ntv8008 -p a08/sieve.hex
@@ -116,6 +121,35 @@ compiler integrations use software stacks in RAM for deeper calls.
 Sieve makes ten passes over 8191 odd candidates and prints 1899 primes. E prints
 192 digits. Most compiled TTT examples run ten iterations; assembly and SCELBAL
 TTT run one. Divide total TTT cycles by the iteration count for comparisons.
+
+## Snake at 500 kHz
+
+Snake is written in SmallC, with assembly helpers for nonblocking keyboard
+polling and a cycle-based delay. The runnable image is included:
+
+```sh
+./m.sh
+./ntv8008 -s:500000 smallc/examples/snake.hex
+```
+
+On Windows, run `m.bat`, then
+`ntv8008.exe -s:500000 smallc\examples\snake.hex`.
+Use an ANSI-compatible terminal at least 34 columns by 23 rows. WASD steers
+(upper or lower case), Q quits, and Ctrl-C interrupts. Reversing directly into
+the snake is disallowed. Eat `*` to grow; walls and the snake's body end the game.
+
+At the original 500 kHz clock, the board takes about three seconds to draw;
+ordinary movement runs at about five moves per second. Only the new head,
+departing tail, food and score changes are drawn. The game uses a circular body
+buffer and occupancy map, so moving a longer snake does not require scanning
+its body. The delay uses emulated instructions rather than a host clock; other
+clock rates scale the game speed. CPU timing does not simulate serial baud rate.
+
+Rebuild with `python3 smallc/compile.py smallc/examples/snake.c` after
+`setup.py --smallc`, or use `smallc/rebuild.sh` / `smallc\rebuild.bat`.
+`tests/snake.py` checks the supplied image, ANSI output, and console polling;
+`--compile` also checks game rules and keyboard/timing helpers. Root test scripts
+include these checks. Snake is interactive and is excluded from `perfrun`.
 
 ## Build and test scripts
 

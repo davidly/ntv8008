@@ -13,9 +13,9 @@ def main():
     parser.add_argument('--compile',action='store_true',help='also rebuild/test ACK and SmallC host toolchains; run setup.py --all first')
     parser.add_argument('--basic-benchmarks',action='store_true',help='include slow optional SCELBAL benchmarks')
     args=parser.parse_args()
-    compilers={'ack','smallc','pascal','modula2','ack_basic','occam'}
+    compilers={'ack','smallc','pascal','modula2','ack_basic','occam','snake'}
     tests=('integration','plm8','forth','ack','smallc','robson','pascal',
-           'modula2','occam','stack','array_codegen','ack_codegen','smallc_codegen','ack_basic','publication')
+           'modula2','occam','stack','snake','array_codegen','ack_codegen','smallc_codegen','ack_basic','publication')
     if args.basic_benchmarks:
         tests+=('basic_benchmarks',)
     for name in tests:

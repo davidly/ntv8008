@@ -57,7 +57,7 @@ def main():
         assemble(name)
     if args.smallc or args.all:
         python('smallc/build.py')
-        for name in ('hello','arithmetic','sieve','e','ttt'):
+        for name in ('hello','arithmetic','sieve','e','ttt','snake'):
             python('smallc/compile.py',ROOT/f'smallc/examples/{name}.c')
     if args.ack or args.all:
         if os.name=='nt' and not os.environ.get('ACK_TOOLS'):

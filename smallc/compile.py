@@ -36,7 +36,7 @@ def includes(source, active=None):
                 if name != 'stdio.h':
                     raise CodegenError('unsupported system header: ' + name)
                 # Functions can be called before definition in Small C.
-                result.append('/* Builtin putchar/getchar/puts; putu supplied below. */')
+                result.append('/* Builtin putchar/getchar/puts/kbhit/waitkey; putu supplied below. */')
             else:
                 result.append(includes(source.parent / name, active))
         else:

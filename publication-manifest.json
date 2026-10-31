@@ -18,12 +18,12 @@
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "PROVENANCE.md": {
-      "sha256": "0373a2e73b42cc7f742418cbbc81b6e233ec5b26c479f3357cec812e9791876d",
+      "sha256": "c251f52e53bf0aa17aa1c967a2398acdcf273c377d2546602806d6a3e443f0a6",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "README.md": {
-      "sha256": "36f42406c275eb223c37878419d076004f7d0ed0a1adeed452971510f38bfa35",
+      "sha256": "b56df1a4d85c8b2057f03a2f2201c25132f8fdbeedaf7b4df4f3842e5253d3ba",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
@@ -33,7 +33,7 @@
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "VALIDATION.md": {
-      "sha256": "beb7bfc426c0e6a46373b8cd8a870b285279c896201d210a1b840f6c9842b8bc",
+      "sha256": "96e872977e5df8551b3e3ed7561c1ed815f3dd0bab88a0ac0ad12a26d47a5d9a",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
@@ -678,7 +678,7 @@
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "ntv8008.cxx": {
-      "sha256": "1fcc402a51f85fe5565b47e6d58acc8d7cef38905f25e3ebaa62a53cd0211db3",
+      "sha256": "3c5a9b039b4a63254a2318b8e508a24720c44d5be1b052658c9b6016a61ce740",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
@@ -833,7 +833,7 @@
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "setup.py": {
-      "sha256": "427a4272d14ac7ba55117315fbe97c87e530f4d4bcb03672b1bd5a6b7387cca3",
+      "sha256": "b88c42691ab9b615e8a621335a53d667c496edc156494c641161cbf22aa12964",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
@@ -848,7 +848,7 @@
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "smallc/README.md": {
-      "sha256": "0055744e38aee807aa4bc1ce344435dc1258ded0d045c4dc47625a000ceb72ed",
+      "sha256": "3b241943270acbcec2d23bbf215c70e89ce534ea8fde70bfc163e32f24bcc125",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
@@ -873,12 +873,12 @@
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "smallc/codegen.py": {
-      "sha256": "ce05cc840ebb533b96bbbd5652d2c59b0bb2d11744c56da1942324b30ebfbdd6",
+      "sha256": "cf3653d5e5ef09fa189b94b0f328cd64083c640f43d417ea8c0ade65dd64c70d",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "smallc/compile.py": {
-      "sha256": "efe63233f0a829c78b60d05ceaa9bb2703223c60c29df072f29a453a09a24134",
+      "sha256": "23960dd4abf02c86c2ad496b06ff0dbcdaae7ee3ac8e0e7d88d069c788290fbd",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
@@ -893,7 +893,7 @@
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
     "smallc/examples/arithmetic.hex": {
-      "sha256": "be80daa1b183c792930cf43b7bcf7844f934f0b1fc6e2c06b43b625afc0ac05f",
+      "sha256": "bfde2bc0e71e6c72cc73e7020ff749f08c0906c86f826adf22532f31bd5b2109",
       "license": "BSD-3-Clause",
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
@@ -903,7 +903,7 @@
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
     "smallc/examples/e.hex": {
-      "sha256": "ccc3ad8601fa4fd22f13f2dba3b1e588f788610000fd5a36c1be27605f14e69b",
+      "sha256": "a8f60d557283272a21fbe0ea244397b61316dc988d638a120dc9f92808ec46ac",
       "license": "BSD-3-Clause",
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
@@ -913,7 +913,7 @@
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
     "smallc/examples/hello.hex": {
-      "sha256": "c7b69ddea83c1980bfea0d7c203c6bd2448e5ff67de3b79d8e4b7fd364bd034e",
+      "sha256": "510550fa0431a6aee1a97fdabf68917ddd79f5ae1fcbda3d3ec09268c545fc12",
       "license": "BSD-3-Clause",
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
@@ -923,7 +923,22 @@
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
     "smallc/examples/sieve.hex": {
-      "sha256": "1fc4430bf3de3d286f42f65e0e5dcb5918ca4a6e70d88a6159feb696898b94cf",
+      "sha256": "c15816ed06f55282d76fa559d032b7f339c9cff87665e7cd212371883df71c32",
+      "license": "BSD-3-Clause",
+      "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
+    },
+    "smallc/examples/snake.c": {
+      "sha256": "1650e34ee90a938b8c1801775bb59b17383be7bc860a89aa4e59d27f7702fcd2",
+      "license": "BSD-3-Clause",
+      "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
+    },
+    "smallc/examples/snake.hex": {
+      "sha256": "bc3982dbbac43301dbd1b4a7183da228a6a798b7e87aa006d633efc0d840fda8",
+      "license": "BSD-3-Clause",
+      "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
+    },
+    "smallc/examples/snake_game.c": {
+      "sha256": "763401f7340932c86c9fe6c0fe8ee30a55eb6cbe13103d984db2899ccc5bc279",
       "license": "BSD-3-Clause",
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
@@ -933,22 +948,22 @@
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
     "smallc/examples/ttt.hex": {
-      "sha256": "af8e4dcbc3ddddbc746ca5b87b7649236f6d4d85545511acfc3eb1597429b272",
+      "sha256": "754ae6b01c6a3aadf1ce1651789db5a1c37e58909ac2ba7773d30cf7560b97aa",
       "license": "BSD-3-Clause",
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
     "smallc/rebuild.bat": {
-      "sha256": "dee7a4b1ad1c57d393c1c10ae3f8446399a9232926e550d8347067a9ce1537aa",
+      "sha256": "f22b3d61e416621f71e3b89a1aacea30207161af80cc8d9bcd2a695b013c5287",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "smallc/rebuild.sh": {
-      "sha256": "934e6a0b29d6fd3e2874cecdb1175ea3245d71f49fc3edab133b7ff8b06dd186",
+      "sha256": "4e63ece606ad0da4171b49114346f20a2770cd218a85cc8ce1060f8fc2e5852a",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "smallc/runtime.asm": {
-      "sha256": "443ea12a90a2c8e41e3cd22240be50848813bf103e0522c3de260b313cb0f33d",
+      "sha256": "d1b26b7337cec60ff0c2ddf68104424fac3985ef6b2efb71eac58c7788aa0257",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
@@ -1138,17 +1153,22 @@
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "tests/run.py": {
-      "sha256": "c707f4bca19d6f52a1c26aeab6b6c83f2e66b71a3d5dc7d23947399bb070e7e5",
+      "sha256": "5cc5850b6501feba2ebdcb1def847110c7b364ba36991d06e7e7bf9ce4e36014",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "tests/smallc.py": {
-      "sha256": "034ab054eee78a89858f3620d9061d1c8eeb3e8109f4d27402c00ee2fde29338",
+      "sha256": "376d73b436e64fde9c0733a585c6a39d57f32366a6328f610845bb0edf7da1d4",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "tests/smallc_codegen.py": {
       "sha256": "723efe729e77bdefc860c34daec54d59f2ca01248b54f6a806b278ee1d566fbb",
+      "license": "BSD-3-Clause",
+      "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
+    },
+    "tests/snake.py": {
+      "sha256": "a69e0abc3212c88022172456e66764bbc7a56667f0f2a0497ac2dac34f4bfd65",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
