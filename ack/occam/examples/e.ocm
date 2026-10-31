@@ -1,0 +1,25 @@
+-- Factorial-series decimal spigot: 200 working cells, 192 output digits.
+var a[byte 200], high, n, x:
+seq
+  seq i = [2 for 198]
+    a[byte i] := 1
+  a[byte 0] := 0
+  a[byte 1] := 2
+  x := 0
+  high := 200
+  while high > 9
+    seq
+      high := high - 1
+      n := high
+      while n > 0
+        seq
+          a[byte n] := x \ n
+          x := (10 * a[byte (n - 1)]) + (x / n)
+          n := n - 1
+      if
+        x >= 10
+          output ! (x / 10) + '0'
+        true
+          skip
+      output ! (x \ 10) + '0'
+  puts("*ndone.*n")

@@ -6,7 +6,7 @@ import subprocess
 import sys
 
 ROOT=Path(__file__).resolve().parents[1]
-LANGUAGES=('assembly','ack','smallc','pascal','modula2','ackbasic','basic','plm8','forth')
+LANGUAGES=('assembly','ack','smallc','pascal','modula2','ackbasic','occam','basic','plm8','forth')
 
 
 def main():
@@ -25,7 +25,7 @@ def main():
             else:
                 folder={'assembly':'a08','ack':'ack/examples','smallc':'smallc/examples',
                         'pascal':'ack/pascal/examples','modula2':'ack/modula2/examples',
-                        'ackbasic':'ack/basic/examples','plm8':'plm8/examples'}[language]
+                        'ackbasic':'ack/basic/examples','occam':'ack/occam/examples','plm8':'plm8/examples'}[language]
                 target=ROOT/f'{folder}/{app}.hex'
                 command=[str(target)]
             if not target.is_file():

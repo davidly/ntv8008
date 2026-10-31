@@ -90,6 +90,7 @@ def main():
         folding.write_text(text)
     import runpy
     runpy.run_path(str(HERE/'basic/patch.py'))['apply'](ack)
+    runpy.run_path(str(HERE/'occam/patch.py'))['apply'](ack)
     jobs = str(min(os.cpu_count() or 2, 8))
     subprocess.run(['make', '-j' + jobs, 'posix'], cwd=lua, check=True)
     makefile = ack / 'Makefile'
@@ -101,10 +102,12 @@ def main():
                     'lang/pc/comp/+all', 'lang/m2/comp/+all', 'lang/basic/src/+all',
                     'util/misc/+all', 'util/opt/+all'], cwd=ack,
                    env=environment, check=True)
+    subprocess.run(['make', 'NINJA=ninja -j'+jobs, 'lang/occam/comp/+all'],
+                   cwd=ack, env=environment, check=True)
     destination = BUILD / 'bin'
     destination.mkdir(exist_ok=True)
     suffix = '.exe' if os.name == 'nt' else ''
-    for name in ('em_cemcom.ansi', 'cpp.ansi', 'em_opt', 'em_opt2', 'em_decode', 'em_pc', 'em_m2', 'em_bem'):
+    for name in ('em_cemcom.ansi', 'cpp.ansi', 'em_opt', 'em_opt2', 'em_decode', 'em_pc', 'em_m2', 'em_bem', 'em_occam'):
         shutil.copy2(ack / '.obj/staging/lib/ack' / (name + suffix), destination)
     licenses = BUILD / 'licenses'
     licenses.mkdir(exist_ok=True)

@@ -49,3 +49,9 @@ code. Public availability is not treated as permission. Local-input integration
 does not grant rights to the supplied historical software. The separate BA
 compiler development tree is outside this publication; no BA source or binary
 is copied here.
+
+Occam 1 was added on 2026-10-31 using the same pinned ACK source and notice.
+The dormant frontend is repaired only in its verified build copy. Its console
+prelude/runtime and examples are project code; TTT uses explicit frames with
+the same ascending alpha-beta search as the other project implementations.
+No upstream Occam library/scheduler or new third-party dependency is included.

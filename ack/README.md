@@ -407,3 +407,11 @@ negative stores can alias the loop variables. The final index is written back
 on either normal exit or fallback. Pascal sieve now takes 330,720,108 cycles
 (661.4 seconds at 500 kHz); Modula-2 takes 406,072,124 (812.1 seconds), without
 changing either benchmark source.
+
+
+The [Occam 1 integration](occam/README.md) uses the original ACK frontend with
+recorded build/portability fixes and an original sequential console runtime.
+`setup.py --ack`/`--all` now build `em_occam` and its five examples. Sieve, e and
+TTT run natively; TTT uses explicit software frames rather than recursion.
+`tests/occam.py --compile` exercises frontend, lexical links, arrays, I/O,
+errors and benchmark results; `perfrun.sh --languages occam` reports timings.

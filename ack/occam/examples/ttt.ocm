@@ -1,0 +1,198 @@
+-- Ascending alpha-beta minimax. Explicit frames preserve Occam's no-recursion rule.
+var board[byte 9], moves, score, ok:
+proc winner(value move, var won) =
+  var p:
+  seq
+    p := board[byte move]
+    won := 0
+    if
+      move = 0
+        if
+          ((p = board[byte 1]) and (p = board[byte 2])) or ((p = board[byte 3]) and (p = board[byte 6])) or ((p = board[byte 4]) and (p = board[byte 8]))
+            won := p
+          true
+            skip
+      move = 1
+        if
+          ((p = board[byte 0]) and (p = board[byte 2])) or ((p = board[byte 4]) and (p = board[byte 7]))
+            won := p
+          true
+            skip
+      move = 2
+        if
+          ((p = board[byte 0]) and (p = board[byte 1])) or ((p = board[byte 5]) and (p = board[byte 8])) or ((p = board[byte 4]) and (p = board[byte 6]))
+            won := p
+          true
+            skip
+      move = 3
+        if
+          ((p = board[byte 4]) and (p = board[byte 5])) or ((p = board[byte 0]) and (p = board[byte 6]))
+            won := p
+          true
+            skip
+      move = 4
+        if
+          ((p = board[byte 3]) and (p = board[byte 5])) or ((p = board[byte 1]) and (p = board[byte 7])) or ((p = board[byte 0]) and (p = board[byte 8])) or ((p = board[byte 2]) and (p = board[byte 6]))
+            won := p
+          true
+            skip
+      move = 5
+        if
+          ((p = board[byte 3]) and (p = board[byte 4])) or ((p = board[byte 2]) and (p = board[byte 8]))
+            won := p
+          true
+            skip
+      move = 6
+        if
+          ((p = board[byte 7]) and (p = board[byte 8])) or ((p = board[byte 0]) and (p = board[byte 3])) or ((p = board[byte 2]) and (p = board[byte 4]))
+            won := p
+          true
+            skip
+      move = 7
+        if
+          ((p = board[byte 6]) and (p = board[byte 8])) or ((p = board[byte 1]) and (p = board[byte 4]))
+            won := p
+          true
+            skip
+      move = 8
+        if
+          ((p = board[byte 6]) and (p = board[byte 7])) or ((p = board[byte 2]) and (p = board[byte 5])) or ((p = board[byte 0]) and (p = board[byte 4]))
+            won := p
+          true
+            skip
+:
+proc search(value opening, var answer, nodes) =
+  var position[9], best[9], alpha[9], beta[9], last[9]:
+  var depth, state, finished, result, won, piece, move:
+  seq
+    board[byte opening] := 1
+    depth := 0
+    state := 0
+    finished := false
+    last[0] := opening
+    alpha[0] := 2
+    beta[0] := 9
+    while not finished
+      if
+        state = 0
+          seq
+            nodes := nodes + 1
+            result := 0
+            if
+              depth >= 4
+                seq
+                  winner(last[depth], won)
+                  if
+                    won = 1
+                      result := 6
+                    won = 2
+                      result := 4
+                    depth = 8
+                      result := 5
+                    true
+                      skip
+              true
+                skip
+            if
+              result <> 0
+                state := 2
+              true
+                seq
+                  position[depth] := 0
+                  if
+                    (depth /\ 1) <> 0
+                      best[depth] := 2
+                    true
+                      best[depth] := 9
+                  state := 1
+        state = 1
+          seq
+            while (position[depth] < 9) and (board[byte position[depth]] <> 0)
+              position[depth] := position[depth] + 1
+            if
+              position[depth] = 9
+                seq
+                  result := best[depth]
+                  state := 2
+              true
+                seq
+                  move := position[depth]
+                  if
+                    (depth /\ 1) <> 0
+                      piece := 1
+                    true
+                      piece := 2
+                  board[byte move] := piece
+                  alpha[depth + 1] := alpha[depth]
+                  beta[depth + 1] := beta[depth]
+                  depth := depth + 1
+                  last[depth] := move
+                  state := 0
+        true
+          if
+            depth = 0
+              seq
+                answer := result
+                finished := true
+            true
+              seq
+                move := last[depth]
+                depth := depth - 1
+                board[byte move] := 0
+                state := 1
+                if
+                  (depth /\ 1) <> 0
+                    if
+                      result > best[depth]
+                        seq
+                          best[depth] := result
+                          if
+                            (result = 6) or (result >= beta[depth])
+                              state := 2
+                            result > alpha[depth]
+                              alpha[depth] := result
+                            true
+                              skip
+                      true
+                        skip
+                  true
+                    if
+                      result < best[depth]
+                        seq
+                          best[depth] := result
+                          if
+                            (result = 4) or (result <= alpha[depth])
+                              state := 2
+                            result < beta[depth]
+                              beta[depth] := result
+                            true
+                              skip
+                      true
+                        skip
+                if
+                  state = 2
+                    result := best[depth]
+                  true
+                    position[depth] := position[depth] + 1
+    board[byte opening] := 0
+:
+seq
+  seq i = [0 for 9]
+    board[byte i] := 0
+  ok := true
+  seq iteration = [0 for 10]
+    seq
+      moves := 0
+      search(0, score, moves)
+      ok := ok and (score = 5)
+      search(1, score, moves)
+      ok := ok and (score = 5)
+      search(4, score, moves)
+      ok := ok and (score = 5)
+  if
+    ok
+      seq
+        putu(moves)
+        puts(" moves*n10 iterations*n")
+    true
+      puts("FAIL*n")

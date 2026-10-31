@@ -32,3 +32,24 @@ Validated 2026-10-30 on Linux and native Windows. macOS execution was not tested
 Build artifacts and downloaded dependencies are Git-ignored. These checks
 validate the recorded publication boundary; each third-party license remains
 applicable as documented in THIRD_PARTY_NOTICES.md.
+
+
+## Occam integration validation — 2026-10-31
+
+ACK's dormant Occam frontend was added to the build graph, repaired in a verified
+build copy, and exercised through the shared native 8008 backend. A fresh source
+export built all host tools with `setup.py --all`, passed `test.sh --compile`
+(170 reported tests, including 18 Occam tests and expected optional-component
+skips), and completed all 21 default benchmark runs. Sieve prints 1899 primes,
+e matches the independent 192-digit Decimal reference, and TTT visits 6493
+nodes per iteration with all three openings checked for a tie.
+
+Native Windows `setup.bat` and `test.bat` passed with the new Occam images,
+including `20 checks` from the arithmetic/array/parameter example. Host Occam
+frontend compilation remains a Linux/WSL build; Windows can run the supplied
+HEX or use compatible native ACK tools. The compiler regression tests cover
+lexical links, parameter passing, signed constant folding, zero/boundary
+replication, generic versus direct arrays, four/five-byte copies, input/exit,
+traps, rejected concurrency/recursion, diagnostics, resource limits and repeated
+patching from the original verified archive. Existing CPU/codegen tests pass.
+No additional third-party source archive or historical runtime is bundled.

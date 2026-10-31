@@ -53,3 +53,12 @@ in the generated images. Target-specific compiler changes and bug fixes are
 recorded in ack/basic/patch.py and applied to cached source by bootstrap.py;
 the verified original archive remains unchanged. No new third-party dependency
 or license is introduced.
+
+Occam integration (2026-10-31): the existing pinned ACK archive supplies its
+Occam 1 frontend under the retained ACK BSD terms. ack/occam/patch.py restores
+a pristine build copy from that verified archive and applies documented build,
+host portability and correctness repairs. The archive/hash are unchanged.
+The wrapper, sequential console runtime, console prelude, examples and tests
+are original project contributions under BSD-3-Clause. Shared lexical-link and
+array fallback support is this project's Pascal runtime. No historical liboccam
+source, scheduler or runtime binary is linked or redistributed.

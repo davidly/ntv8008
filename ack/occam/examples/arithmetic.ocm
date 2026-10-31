@@ -1,0 +1,57 @@
+-- Arithmetic, parameter passing, lexical links, byte/word arrays and loop counts.
+var checks, x, y, words[4], bytes[byte 4]:
+proc check(value condition) =
+  if
+    condition
+      checks := checks + 1
+    true
+      seq
+        puts("FAIL*n")
+        exit(1)
+:
+proc bump(var cell) =
+  cell := cell + 1
+:
+seq
+  checks := 0
+  x := 32767
+  x := x + 1
+  check(x = (-32768))
+  check(((32767 + 1) < 0))
+  x := -7
+  y := 3
+  check((x / y) = (-2))
+  check((x \ y) = (-1))
+  check(((-7) / 3) = (-2))
+  check(((-7) \ 3) = (-1))
+  check((not 0) = (-1))
+  x := 3
+  check((x << 4) = 48)
+  x := -32
+  check((x >> 3) = (-4))
+  x := 12
+  check((x /\ 10) = 8)
+  check((x \/ 3) = 15)
+  check((x >< 10) = 6)
+  x := 41
+  bump(x)
+  check(x = 42)
+  seq i = [0 for 4]
+    seq
+      words[i] := i * 257
+      bytes[byte i] := i + 254
+  check(words[3] = 771)
+  check(bytes[byte 0] = 254)
+  check(bytes[byte 1] = 255)
+  check(bytes[byte 2] = 0)
+  check(bytes[byte 3] = 1)
+  x := 0
+  y := 0
+  seq i = [5 for y]
+    x := x + 1
+  check(x = 0)
+  seq i = [3 for 4]
+    x := x + i
+  check(x = 18)
+  putu(checks)
+  puts(" checks*n")

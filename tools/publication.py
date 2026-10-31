@@ -102,7 +102,7 @@ def inventory(names):
         license,origin=category(name)
         result[name]={'sha256':hashlib.sha256((ROOT/name).read_bytes()).hexdigest(),
                       'license':license,'origin':origin}
-    return {'format':1,'reviewed':'2026-10-30','files':result}
+    return {'format':1,'reviewed':'2026-10-31','files':result}
 
 
 def main():

@@ -8,7 +8,7 @@ restriction. Third-party license texts themselves retain their original terms.
 
 | Component / files | Terms and provenance | Publication treatment |
 | --- | --- | --- |
-| ACK frontend/optimizer and local source patches | BSD-style three-clause grant, Copyright 1987, 1990, 1993, 2005 Vrije Universiteit. Full notice: [ack/ACK-COPYRIGHT](ack/ACK-COPYRIGHT); pins: [ack/NOTICE.txt](ack/NOTICE.txt). | Host sources/tools are downloaded and built in ignored `ack/build/`. Retain upstream file notices and the full ACK grant when redistributing ACK or patched ACK sources/binaries. New 8008 runtime/code generator is project code. |
+| ACK frontend/optimizer and local source patches | BSD-style three-clause grant, Copyright 1987, 1990, 1993, 2005 Vrije Universiteit. Full notice: [ack/ACK-COPYRIGHT](ack/ACK-COPYRIGHT); pins: [ack/NOTICE.txt](ack/NOTICE.txt). | Host sources/tools are downloaded and built in ignored `ack/build/`. Retain upstream file notices and the full ACK grant when redistributing ACK or patched ACK sources/binaries. New 8008 runtime/code generator is project code. Occam frontend repairs are recorded in `ack/occam/patch.py`; no upstream Occam runtime is linked. |
 | Lua 5.4.7, ACK build dependency | MIT, Copyright 1994–2024 Lua.org, PUC-Rio. License is in the fetched source's `src/lua.h` and `README`. | Downloaded to ignored `ack/build/`; not linked into generated 8008 applications. Preserve its license if redistributing Lua. |
 | SmallC-85 frontend, `smallc/upstream/*` | Upstream public-domain dedication / Unlicense and disclaimer, retained verbatim in [smallc/upstream/LICENSE](smallc/upstream/LICENSE). Original source notices and README retained. [Provenance](smallc/NOTICE.txt). | Selected unmodified frontend source included. No upstream 8080 backend, CP/M library, or historical executable included. New 8008 backend/runtime is BSD-3-Clause. |
 | Robson Tiny BASIC, `robson/upstream/basic.asm`, adapted `a08/robson.asm` and `a08/robson.hex` | MIT, Copyright 2016 paulscottrobson. Full grant: [robson/upstream/LICENSE](robson/upstream/LICENSE); [provenance and adaptations](robson/NOTICE.txt). | Source and adapted images included, with MIT attribution and license. Project additions retain the root BSD license without removing upstream rights. |
@@ -20,7 +20,7 @@ restriction. Third-party license texts themselves retain their original terms.
 | Intel PL/M-8 3.3 | Redistribution permission for the recovered Intel/PDP-10 runtime images and compiler-supplied output runtime remains unresolved. [Provenance](plm8/upstream/NOTICE.txt). | Compiler images and generated HEX are NOT included or automatically downloaded. Project runner/recovery code, example source and local-input build instructions are included. No permission to use or redistribute the historical images is asserted. |
 
 The generated ACK/SmallC applications use this project's original 8008 runtime;
-upstream ACK libpc, libm2, BASIC runtimes and the SmallC CP/M runtime are not
+upstream ACK libpc, libm2, BASIC/Occam runtimes and the SmallC CP/M runtime are not
 linked. Robson's image is a derivative of its MIT interpreter and retains that
 license. An assembler's license does not by itself govern an independently
 authored program assembled with it.

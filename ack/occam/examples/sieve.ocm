@@ -1,0 +1,27 @@
+-- Classic BYTE sieve: 8191 odd candidates, ten passes.
+def size = 8191:
+var flags[byte size], i, k, prime, count:
+seq
+  seq iteration = [0 for 10]
+    seq
+      seq j = [0 for size]
+        flags[byte j] := 1
+      count := 0
+      i := 0
+      while i < size
+        seq
+          if
+            flags[byte i] <> 0
+              seq
+                prime := (i + i) + 3
+                k := i + prime
+                while k < size
+                  seq
+                    flags[byte k] := 0
+                    k := k + prime
+                count := count + 1
+            true
+              skip
+          i := i + 1
+  putu(count)
+  puts(" primes.*n")

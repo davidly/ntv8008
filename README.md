@@ -18,7 +18,7 @@ not part of the published source or binary images.
 | `i8008.cxx`, `i8008.hxx` | Complete 8008 CPU implementation and embedding interface; instruction decoding, flags, interrupt injection, RAM access and clock-period accounting. |
 | `ntv8008.cxx`, `trace.hxx` | Command-line host, Intel HEX loader, keyboard/console callbacks, speed limiting and optional debug/instruction tracing. |
 | `a08/` | Original assembly demos and sieve/e/TTT benchmarks, Robson's adapted MIT interpreter, runnable HEX images, and scripts for the official A08 dependency. |
-| `ack/` | ACK EM-to-8008 code generator, RAM-stack runtime, optimizer passes, host bootstrap, C/Pascal/Modula-2/BASIC integrations and examples. |
+| `ack/` | ACK EM-to-8008 code generator, RAM-stack runtime, optimizer passes, host bootstrap, C/Pascal/Modula-2/BASIC/Occam integrations and examples. |
 | `smallc/` | Preserved SmallC-85 frontend, new 8008 code generator/runtime, host build scripts and C examples. |
 | `robson/` | Original MIT Tiny BASIC source/license, console adaptation and small BASIC examples. |
 | `scelbal/`, `forth/`, `plm8/` | Optional historical-language integration tools and project-authored examples; restricted or uncleared interpreter/compiler images are not bundled. |
@@ -70,6 +70,7 @@ uncached dependencies. A08 is fetched from its official site, not bundled.
 | [ACK C](ack/README.md) | New 8008 backend/runtime, examples, HEX; frontend downloaded | `python3 setup.py --ack` |
 | [ACK Pascal](ack/pascal/README.md) | Same backend, original Pascal support, examples and HEX | `python3 setup.py --ack` |
 | [ACK Modula-2](ack/modula2/README.md) | Same backend, original InOut support, examples and HEX | `python3 setup.py --ack` |
+| [ACK Occam 1](ack/occam/README.md) | Sequential subset, original console runtime, five examples and HEX | `python3 setup.py --ack` |
 | [ACK integer BASIC](ack/basic/README.md) | Same backend, original BASIC runtime, examples and HEX | `python3 setup.py --ack` |
 | [SmallC-85 C](smallc/README.md) | Permitted frontend source, new backend/runtime, examples and HEX | `python3 setup.py --smallc` |
 | [Robson Tiny BASIC](robson/README.md) | MIT interpreter, adaptation, examples and HEX | `python3 setup.py` |
@@ -77,7 +78,7 @@ uncached dependencies. A08 is fetched from its official site, not bundled.
 | Baker 8008-Forth | Integration, native additions and examples; kernel not included | [Local-source setup](forth/README.md) |
 | Intel PL/M-8 | Runner, recovery tool and example sources; compiler/output images not included | [Local-image setup](plm8/README.md) |
 
-`./setup.sh --all` builds the default tools plus SmallC and all four ACK frontends
+`./setup.sh --all` builds the default tools plus SmallC and all five ACK frontends
 and rebuilds their examples. ACK host builds currently require Linux/WSL with
 `make`, `ninja`, `gcc`, `flex` and `yacc` (for example, bison's yacc compatibility
 command), plus the usual C/C++ build tools. Lua is downloaded/built locally.
@@ -163,7 +164,7 @@ installed benchmark with `-p`. To select a subset:
 ./perfrun.sh --languages assembly ack pascal modula2 smallc
 ```
 
-Measured from the included images on 2026-10-30. Values below are estimated
+Measured from the included images on 2026-10-31. Values below are estimated
 **seconds on a 500 kHz 8008**, not seconds elapsed on a modern host:
 
 | Implementation | Sieve | E | TTT per iteration |
@@ -173,6 +174,7 @@ Measured from the included images on 2026-10-30. Values below are estimated
 | SmallC-85 C | 378.2 | 264.2 | 288.9 |
 | ACK Pascal | 661.4 | 582.4 | 548.8 |
 | ACK Modula-2 | 812.1 | 531.8 | 420.0 |
+| ACK Occam 1 | 1,449.6 | 748.3 | 937.5 |
 | ACK integer BASIC | 2,662.2 | 648.5 | 719.4 |
 
 Sieve includes all ten passes; E produces 192 digits. TTT is normalized to one

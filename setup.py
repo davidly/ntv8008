@@ -68,7 +68,8 @@ def main():
             if not os.environ.get('ACK_TOOLS'):
                 python('ack/bootstrap.py')
             for driver,folder,extension in (('compile','examples','c'),('pascal','pascal/examples','p'),
-                                             ('modula2','modula2/examples','mod'),('basic','basic/examples','bas')):
+                                             ('modula2','modula2/examples','mod'),('basic','basic/examples','bas'),
+                                             ('occam','occam/examples','ocm')):
                 for name in ('hello','arithmetic','sieve','e','ttt'):
                     python('ack/'+driver+'.py',ROOT/f'ack/{folder}/{name}.{extension}')
     if args.scelbal:

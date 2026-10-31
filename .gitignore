@@ -35,3 +35,6 @@ __pycache__/
 /ack/basic/examples/*.e
 /smallc/examples/*.asm
 /smallc/examples/*.ir
+
+/ack/occam/examples/*.asm
+/ack/occam/examples/*.e

@@ -1,0 +1,24 @@
+-- Original small console prelude; strings have a length byte at element zero.
+proc puts(value text[]) =
+  seq position = [1 for text[byte 0]]
+    output ! text[byte position]
+:
+proc putu(value number) =
+  var remaining, divisor, digit, printed:
+  seq
+    remaining := number
+    divisor := 10000
+    printed := false
+    while divisor > 0
+      seq
+        digit := remaining / divisor
+        remaining := remaining \ divisor
+        if
+          (digit <> 0) or printed or (divisor = 1)
+            seq
+              output ! digit + '0'
+              printed := true
+          true
+            skip
+        divisor := divisor / 10
+:
