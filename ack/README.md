@@ -415,3 +415,26 @@ recorded build/portability fixes and an original sequential console runtime.
 TTT run natively; TTT uses explicit software frames rather than recursion.
 `tests/occam.py --compile` exercises frontend, lexical links, arrays, I/O,
 errors and benchmark results; `perfrun.sh --languages occam` reports timings.
+
+### Byte state, leaf registers and frame reuse
+
+Unsigned byte comparisons use native 8-bit comparisons when both operands are
+known bytes. Other signed/word comparisons keep the full 16-bit semantics.
+The shared `tools/native8008.py` pass can keep one unescaped byte local in C
+inside an eligible leaf function. It checks control-flow initialization,
+register/flag liveness, interfering instructions, and overlapping word access;
+address exposure or unknown calls retain memory storage. Recursive calls keep
+the existing RAM-stack ABI.
+
+Frame-pointer/stack-pointer address calculations can reuse HL when every
+incoming path agrees on its value. Page crossings are handled explicitly;
+software-call return labels start with unknown pointer state. Dead register
+loads and unnecessary word promotions are removed only when their register
+and flag results are unused. `tests/native_codegen.py` differentially tests
+page boundaries, live flags/results, register interference, word aliases and
+software-call joins; `--compile` also checks all byte values, escaped locals
+and recursive byte state with the C frontends.
+
+Byte local loads/stores and branch comparisons are fused before EM stack
+lowering. Small constant dense-switch descriptors use a direct jump-table
+sequence, including negative minima and page-crossing tables.

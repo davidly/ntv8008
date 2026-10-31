@@ -80,3 +80,28 @@ compile tests pass, including multi-byte pipe polling; the host bypasses CRT
 stdio read-ahead with one-byte binary descriptor reads so PeekNamedPipe cannot
 miss a retained character. Both blocking reads and poll/read sequences are
 covered. POSIX-specific terminal tests are explicitly skipped on Windows.
+
+TTT byte-state/code-generation work (2026-10-31): ACK C and SmallC retain
+recursive search, ascending moves, the three opening positions, and ten runs
+of 6493 nodes. Bounds, positions, depth and scores are unsigned bytes; counters
+remain words. Byte lowering, leaf-local allocation to C, truth-only branch
+threading (SmallC), dense switches (ACK), cross-block frame-address reuse and
+liveness-based promotion/load elimination are tested independently of the
+benchmark. The new native differential suite covers odd/even page crossings,
+live flags and address-result registers, escaped and overlapping locals,
+conditional initialization, register interference and software-call returns.
+Optional compiler tests enumerate all 256 byte values and exercise aliases
+and recursive byte state.
+
+ACK C TTT: 1,624,852,796 -> 1,093,895,626 clocks (32.7% fewer).
+SmallC TTT: 1,423,549,596 -> 1,045,360,912 clocks (26.6% fewer).
+These are ten-iteration totals. The README table reflects all 18 regenerated
+compiled-language benchmarks. Snake also benefits from the shared pass; its
+no-input run now takes 3,131,122 clocks (6.262244 seconds at 500 kHz).
+
+The finalized Linux `test.sh --compile` run reports 196 tests with the expected
+optional historical-component skips. Native Windows `setup.bat --smallc`,
+`test.bat`, `tests/smallc.py --compile` and `tests/native_codegen.py --compile`
+pass; the latter skips the unavailable native ACK frontend. Windows regenerated
+SmallC images match Linux byte-for-byte. MSVC emits no new warnings. Existing
+CPU/console tests and the Snake rules, polling and terminal tests pass.

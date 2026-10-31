@@ -204,12 +204,22 @@ Measured from the included images on 2026-10-31. Values below are estimated
 | Implementation | Sieve | E | TTT per iteration |
 | --- | ---: | ---: | ---: |
 | A08 assembly | 78.1 | 36.5 | 32.2 |
-| ACK C | 355.5 | 354.0 | 325.0 |
-| SmallC-85 C | 375.8 | 259.1 | 284.7 |
-| ACK Pascal | 639.3 | 575.9 | 536.0 |
-| ACK Modula-2 | 795.2 | 526.6 | 412.3 |
-| ACK Occam 1 | 1,413.5 | 739.2 | 913.8 |
-| ACK integer BASIC | 2,662.2 | 648.5 | 719.4 |
+| ACK C | 321.3 | 346.8 | 218.8 |
+| SmallC-85 C | 349.0 | 253.9 | 209.1 |
+| ACK Pascal | 639.2 | 575.9 | 522.3 |
+| ACK Modula-2 | 740.8 | 526.6 | 385.7 |
+| ACK Occam 1 | 1,354.1 | 733.6 | 875.5 |
+| ACK integer BASIC | 2,587.9 | 639.0 | 673.8 |
+
+ACK and SmallC share a conservative native optimization pass for leaf byte
+locals, register/flag liveness, and frame-address reuse across control-flow
+joins. Their backends also lower unsigned byte comparisons directly. SmallC
+threads truth-only short-circuit branches; ACK directly dispatches small dense
+switch tables. C TTT uses bytes for board positions, depth, scores and bounds;
+the move counter remains 16 bits. Search order and the 6493-node workload are
+unchanged. Compared with the preceding revision, TTT drops from 325.0 to 218.8
+seconds per iteration for ACK C and from 284.7 to 209.1 for SmallC. The recursive
+RAM-stack calling convention is retained.
 
 Sieve includes all ten passes; E produces 192 digits. TTT is normalized to one
 iteration (6493 search nodes): compiled images run ten iterations, while the

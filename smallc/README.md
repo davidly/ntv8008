@@ -329,3 +329,27 @@ Sieve now takes **189,099,736 cycles (378.2 seconds at 500 kHz)**, a further
 1.13x PL/M's 335.1 seconds. Benchmark sources are unchanged. Differential tests
 cover zero-trip loops, page crossings, wrapping strides, untouched stride and
 older stack values, final indices, and conservative fallback.
+
+### Byte state, leaf registers and frame reuse
+
+Unsigned byte comparisons use native 8-bit comparisons when both operands are
+known bytes. Other signed/word comparisons keep the full 16-bit semantics.
+The shared `tools/native8008.py` pass can keep one unescaped byte local in C
+inside an eligible leaf function. It checks control-flow initialization,
+register/flag liveness, interfering instructions, and overlapping word access;
+address exposure or unknown calls retain memory storage. Recursive calls keep
+the existing RAM-stack ABI.
+
+Frame-pointer/stack-pointer address calculations can reuse HL when every
+incoming path agrees on its value. Page crossings are handled explicitly;
+software-call return labels start with unknown pointer state. Dead register
+loads and unnecessary word promotions are removed only when their register
+and flag results are unused. `tests/native_codegen.py` differentially tests
+page boundaries, live flags/results, register interference, word aliases and
+software-call joins; `--compile` also checks all byte values, escaped locals
+and recursive byte state with the C frontends.
+
+Truth-only short-circuit joins are threaded into direct branches. Constant
+indexed global loads and byte comparisons avoid intermediate expression-stack
+words. The frontend marks function entries in IR comments so ordinary branch
+labels are never mistaken for independent functions.

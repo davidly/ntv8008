@@ -50,7 +50,7 @@ int gen_push(int reg) { op("PUSH"); stkp -= 2; return 0; }
 int gen_pop() { op("POPSECOND"); stkp += 2; return 0; }
 int gen_swap_stack() { op("SWAPSTACK"); return 0; }
 int gen_call(char *s) { operand("CALL ", s); return 0; }
-int declare_entry_point(char *s) { output_string(s); output_label_terminator(); return 0; }
+int declare_entry_point(char *s) { operand("; FUNCTION ", s); output_string(s); output_label_terminator(); return 0; }
 int gen_ret() { op("RETURN"); return 0; }
 int callstk() { op("CALLIND"); stkp += 2; return 0; }
 int gen_jump(int l) { output_with_tab("JUMP "); print_label(l); newline(); return 0; }

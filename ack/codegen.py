@@ -6,6 +6,11 @@ seven saved hardware return addresses.
 """
 from pathlib import Path
 import re
+import sys
+if str(Path(__file__).resolve().parents[1]/'tools') not in sys.path:
+    sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'tools'))
+from native8008 import optimize_functions
+from ack_bytes import lower_bytes, dense_switches
 from division import reuse_quotients
 from memory import constant_byte_stores, local_updates, fill_loops, strided_loops, global_strided_loops
 
@@ -173,7 +178,7 @@ class Generator:
         if index >= len(lines):
             return None
         load = lines[index].strip().split()
-        if len(load) != 2 or load[0] not in ('lol','loe','loc'):
+        if len(load) != 2 or load[0] not in ('lol','llb','loe','loc'):
             return None
         cursor = index+1
         actions = []
@@ -184,9 +189,9 @@ class Generator:
                 constant = len(following)==2 and following[0]=='stc'
                 if not constant and following not in (['loi','1'],['loi','2'],['sti','1'],['sti','2']):
                     return None
-                if load[0] == 'lol':
+                if load[0] in ('lol','llb'):
                     if self.optimize:
-                        self.emit('@LOCAL_LOAD2 '+load[1])
+                        self.emit('@LOCAL_'+('LOAD1 ' if load[0]=='llb' else 'LOAD2 ')+load[1])
                     else:
                         self.local(int(load[1]))
                         self.emit('LAM', 'INL', 'LBM', 'CAL PUSH')
@@ -223,7 +228,7 @@ class Generator:
 
     def unit_code(self, text):
         self.unit += 1
-        lines = (constant_byte_stores(local_updates(fill_loops(strided_loops(global_strided_loops(reuse_quotients(text)))))) if self.optimize else text).splitlines()
+        lines = (dense_switches(lower_bytes(constant_byte_stores(local_updates(fill_loops(strided_loops(global_strided_loops(reuse_quotients(text)))))))) if self.optimize else text).splitlines()
         self.exports = {line.strip().split()[1] for line in lines
                         if line.strip().startswith(('exp ', 'exa '))}
         self.locals = ({line.strip().split()[1].split(',')[0] for line in lines
@@ -328,6 +333,19 @@ class Generator:
                     self.emit('@DOUBLE 1')
                     index += 1
                     continue
+            if op in ('llb','slb'):
+                self.emit('@LOCAL_'+('LOAD1 ' if op=='llb' else 'STORE1 ')+arg)
+                continue
+            if op == 'dcsa':
+                table,low,count,default=arg.split(',')
+                self.emit('@DENSE_SWITCH '+','.join((self.address(table),low,count,self.symbol(default))))
+                continue
+            if op == 'bcmp':
+                condition,target,left,right=arg.split(',')
+                operands=[('g:'+self.address(value[2:]) if value.startswith('g:') else value)
+                          for value in (left,right)]
+                self.emit('@BYTE_CMP '+','.join((condition,self.symbol(target),*operands)))
+                continue
             if op in ('mes', 'exp', 'exa', 'ina', 'inp', 'fil', 'lin', 'lni'):
                 if (op == 'mes' and self.function == 'F_MAIN' and
                         arg.startswith('9,') and arg != '9,0'):
@@ -361,6 +379,7 @@ class Generator:
                 if self.function in self.definitions:
                     raise CodegenError('duplicate function: ' + name)
                 self.definitions.add(self.function)
+                self.emit('; function '+self.function)
                 self.label(self.function)
                 self.emit('CAL ENTER')
                 if int(size):
@@ -398,6 +417,7 @@ class Generator:
                 if op != 'sar':
                     self.emit('LHI HIGH RV','LLI LOW RV','LAM','INL','LBM','CAL PUSH')
             elif op == 'lal':
+                self.emit('; escaped frame')
                 self.local(int(arg))
                 self.emit('LAL', 'LBH', 'CAL PUSH')
             elif op in ('lil', 'sil'):
@@ -408,6 +428,7 @@ class Generator:
                 if self.optimize and op in ('lol','stl'):
                     self.emit('@LOCAL_'+('LOAD2 ' if op == 'lol' else 'STORE2 ')+arg)
                     continue
+                self.emit('; local word access '+arg)
                 self.local(int(arg))
                 if op == 'lol':
                     self.emit('LAM', 'INL', 'LBM', 'CAL PUSH')
@@ -628,11 +649,46 @@ class Generator:
             instruction = line.strip()
             if instruction.startswith('@'):
                 operation, argument = instruction.split(None, 1)
-                if operation in ('@GLOBAL_LOAD2','@LOCAL_LOAD2'):
+                if operation == '@BYTE_CMP':
+                    if pending: output.append('        CAL PUSH')
+                elif operation in ('@GLOBAL_LOAD2','@LOCAL_LOAD2','@LOCAL_LOAD1'):
                     if pending:
                         output.append('        CAL PUSH')
                 elif not pending:
                     output.append('        CAL POP')
+                if operation == '@DENSE_SWITCH':
+                    table,low,count,default=argument.split(',')
+                    low=int(low);native=[]
+                    if low:native+=['SUI %dD'%(low&255),'LEA','LAB','SBI %dD'%(low>>8),'LBA','LAE']
+                    native+=['LEA','LAB','NDA','JFZ '+default,'LAE','CPI '+count+'D',
+                             'JFC '+default,'ADA','ADI LOW ('+table+'+6D)','LLA',
+                             'LAI HIGH ('+table+'+6D)','ACI 0','LHA','LAM','INL','LBM','JMP JUMPAB']
+                    output+=['        '+item for item in native]
+                    pending=False;continue
+                if operation == '@BYTE_CMP':
+                    condition,target,left,right=argument.split(',')
+                    native=[]
+                    for operand_number,operand in enumerate((right,left)):
+                        kind,value=operand.split(':',1)
+                        if kind=='i': native+=['LAI '+value+'D']
+                        elif kind=='g':
+                            address=value
+                            native+=['LHI HIGH ('+address+')','LLI LOW ('+address+')','LAM']
+                        else:
+                            offset=int(value);offset=(offset+(4 if offset>=0 else 0))&65535
+                            native+=['; local byte load '+value,'LHI HIGH FP','LLI LOW FP','LAM',
+                                     f'ADI {offset&255}D','LEA','INL','LAM',f'ACI {offset>>8}D',
+                                     'LHA','LLE','LAM','; end local byte']
+                        if operand_number==0: native+=['LDA']
+                    native+=['CPD']
+                    if condition in ('eq','ne','lt','ge'):
+                        native+=[{'eq':'JTZ','ne':'JFZ','lt':'JTC','ge':'JFC'}[condition]+' '+target]
+                    elif condition=='le': native+=['JTC '+target,'JTZ '+target]
+                    else:
+                        done=self.unique();native+=['JTC '+done,'JFZ '+target,done+':']
+                    output+=[item if item.endswith(':') else '        '+item for item in native]
+                    pending=False
+                    continue
                 if operation.startswith(('@INDEX_', '@GLOBAL_', '@LOCAL_')):
                     if operation == '@INDEX_CONST1':
                         argument,byte = argument.rsplit(',',1)
@@ -643,9 +699,16 @@ class Generator:
                         # Form FP+constant without destroying a cached store value.
                         offset = int(argument)
                         offset = (offset+(4 if offset >= 0 else 0)) & 65535
-                        native = ['LEA','LHI HIGH FP','LLI LOW FP','LAM',
-                                  f'ADI {offset & 255}D','LCA','INL','LAM',f'ACI {offset >> 8}D',
-                                  'LHA','LLC','LAE']
+                        if 'LOAD' in operation or operation.endswith('1'):
+                            native = ([] if 'LOAD' in operation else ['LBA']) + [
+                                'LHI HIGH FP','LLI LOW FP','LAM',f'ADI {offset&255}D',
+                                'LEA','INL','LAM',f'ACI {offset>>8}D','LHA','LLE']
+                            if 'LOAD' not in operation: native+=['LAB']
+                        else:
+                            native = ['LEA','LHI HIGH FP','LLI LOW FP','LAM',
+                                      f'ADI {offset&255}D','LCA','INL','LAM',f'ACI {offset>>8}D',
+                                      'LHA','LLC','LAE']
+                        native=['; local '+('byte' if operation.endswith('1') else 'word')+' '+('load ' if 'LOAD' in operation else 'store ')+argument]+native
                     else:
                         native = ['LHI HIGH ('+argument+')', 'LLI LOW ('+argument+')']
                     if operation == '@INDEX_CONST1':
@@ -656,6 +719,8 @@ class Generator:
                         if operation.startswith('@INDEX_'):
                             native += ['LCL','LDH','CAL POP','LHD','LLC']
                         native += ['LMA'] if operation.endswith('1') else ['LMA','INL','LMB']
+                    if operation.startswith('@LOCAL_') and operation.endswith('1'):
+                        native+=['; end local byte']
                     output += ['        '+item for item in native]
                     pending = 'LOAD' in operation
                     continue
@@ -776,7 +841,7 @@ class Generator:
                     helpers += ['        RLC', '        LAB']
                 helpers += ['        RAR', '        LBA', '        LAE', '        RAR']
             helpers += ['        JMP '+name+'LOOP', name+'DONE: LAE', '        RET']
-        return runtime + '\n' + '\n'.join(helpers + self.cached_code() + self.data) + '\nACKEND:\nSTACKMIN EQU (ACKEND+255D) AND 0FF00H\n        END\n'
+        return runtime + '\n' + '\n'.join(helpers + (optimize_functions(self.cached_code(),self.data,aligned=True) if self.optimize else self.cached_code()) + self.data) + '\nACKEND:\nSTACKMIN EQU (ACKEND+255D) AND 0FF00H\n        END\n'
 
 
 def generate(units, *, pascal=False, optimize=True):

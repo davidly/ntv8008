@@ -7,6 +7,11 @@ from pathlib import Path
 import re
 
 HERE = Path(__file__).resolve().parent
+import sys
+if str(HERE) not in sys.path: sys.path.insert(0,str(HERE))
+from smallc_bytes import thread_booleans, byte_comparisons, stack_depths
+if str(HERE.parent/'tools') not in sys.path: sys.path.insert(0,str(HERE.parent/'tools'))
+from native8008 import optimize_functions
 
 class CodegenError(ValueError):
     pass
@@ -250,7 +255,7 @@ class Generator:
                 continue
             if (len(first) == 2 and first[0] == 'IMM' and second == ['PUSH'] and
                     len(third) == 2 and third[0] == 'ADDRSP' and int(third[1]) >= 2 and
-                    fourth == ['LOAD','2']):
+                    fourth in (['LOAD','2'],['LOAD','1'],['LOAD','-1'])):
                 cursor = index+4
                 scaling = []
                 while parts(cursor) and parts(cursor)[0] in ('DOUBLE','OFFSET','SCALE'):
@@ -259,7 +264,7 @@ class Generator:
                 if parts(cursor) == ['ADD']:
                     # The old index was addressed after pushing the base. The
                     # fused sequence removes that push, so compensate by -2.
-                    output += ['ADDRSP '+str(int(third[1])-2),'LOAD 2']+scaling
+                    output += ['ADDRSP '+str(int(third[1])-2),'LOAD '+fourth[1]]+scaling
                     output.append('ADD_CONST '+first[1])
                     index = cursor+1
                     continue
@@ -605,12 +610,17 @@ class Generator:
         return '\n'.join(output)
 
     def render(self, text):
+        function_names={'main'} | set(re.findall(r'(?m)^\s*;\s*FUNCTION\s+(\w+)',text))
+        function_names.update(re.findall(r'(?m)^\s*CALL\s+(\w+)',text))
         if self.optimize:
-            text = self.optimized_ir(self.fold_expressions(self.dense_switches(self.strided_loops(self.fill_loops(self.reuse_quotients(text))))))
+            text = self.optimized_ir(thread_booleans(self.fold_expressions(self.dense_switches(self.strided_loops(self.fill_loops(self.reuse_quotients(text)))))))
             # Also catches loads exposed by indexed-address folding.
             text = re.sub(r'(?m)^ADDRSP (-?\d+)\nLOAD (-?\d+)$',
                           r'STACK_LOAD \1,\2', text)
-        for raw in text.splitlines():
+            text=byte_comparisons(text)
+        depths=stack_depths(text,function_names) if self.optimize else {}
+        for line_number,raw in enumerate(text.splitlines()):
+            self.frame_depth=depths.get(line_number)
             line = raw.split(';')[0].strip()
             if not line:
                 continue
@@ -620,6 +630,8 @@ class Generator:
                 if name in self.defined:
                     raise CodegenError('duplicate symbol: ' + name)
                 self.defined.add(name)
+                if name in function_names and self.output is self.code:
+                    self.emit('; function '+self.symbol(name))
                 self.label(self.symbol(name))
                 line = line.strip()
                 if not line:
@@ -645,6 +657,35 @@ class Generator:
                     mnemonic = {'BAND':'NDI','BOR':'ORI','BXOR':'XRI'}[operation]
                     self.emit(mnemonic+' %dD' % (value & 255),'LEA','LAB',
                               mnemonic+' %dD' % ((value >> 8) & 255),'LBA','LAE')
+            elif op == 'BYTE_CMP':
+                relation,jump,target,constant,keep,left,right=arg.split(',')
+                for number,operand in enumerate((right,left)):
+                    kind,value=operand.split('~',1)
+                    if kind=='i': self.emit('LAI '+value+'D')
+                    elif kind=='g':
+                        address=self.value(value)
+                        self.emit('LHI HIGH ('+address+')','LLI LOW ('+address+')','LAM')
+                    else:
+                        slot=int(value)-(self.frame_depth if self.frame_depth is not None else -65536)
+                        self.emit('; local byte load '+str(slot))
+                        self.stack_address(int(value));self.emit('LAM','; end local byte')
+                    if number==0:self.emit('LDA')
+                condition=relation.lstrip('U').lower()
+                if jump=='JFALSE' and keep=='0':
+                    condition={'eq':'ne','ne':'eq','lt':'ge','le':'gt','gt':'le','ge':'lt'}[condition]
+                yes=self.unique() if keep=='1' else self.value(target)
+                self.emit('CPD')
+                if condition in ('eq','ne','lt','ge'):
+                    self.emit({'eq':'JTZ','ne':'JFZ','lt':'JTC','ge':'JFC'}[condition]+' '+yes)
+                elif condition=='le': self.emit('JTC '+yes,'JTZ '+yes)
+                else:
+                    done=self.unique();self.emit('JTC '+done,'JFZ '+yes);self.label(done)
+                if keep=='1':
+                    done=self.unique();self.immediate('0')
+                    self.emit('JMP '+(self.value(target) if jump=='JFALSE' else done))
+                    self.label(yes);self.immediate('1')
+                    if jump=='JTRUE':self.emit('JMP '+self.value(target))
+                    self.label(done)
             elif op in ('COMPARE','CMPBRANCH'):
                 fields = arg.split(',')
                 relation = fields[0]
@@ -721,6 +762,9 @@ class Generator:
                 self.emit('LAM','ACD','LMA','LBA','LAE')
             elif op in ('LOCAL_UPDATE','LOCAL_CONST'):
                 fields = arg.split(',')
+                slot=int(fields[0])-(self.frame_depth if self.frame_depth is not None else -65536)
+                if op=='LOCAL_UPDATE' or fields[2]!='1':
+                    self.emit('; local word store '+str(slot))
                 self.stack_address(int(fields[0]))
                 if op == 'LOCAL_UPDATE':
                     value = int(fields[1]) & 65535
@@ -729,7 +773,9 @@ class Generator:
                     self.emit('LAM',f'ACI {value >> 8}D','LMA','LBA','LAE')
                 else:
                     self.immediate(self.value(fields[1]))
+                    if fields[2]=='1':self.emit('; local byte store '+str(slot))
                     self.emit('LMA')
+                    if fields[2]=='1':self.emit('; end local byte')
                     if fields[2] == '2':
                         self.inc_hl()
                         self.emit('LMB')
@@ -738,16 +784,22 @@ class Generator:
                 self.immediate(self.value(arg))
             elif op == 'STACK_STORE':
                 offset,width = map(int,arg.split(','))
+                slot=offset-(self.frame_depth if self.frame_depth is not None else -65536)
+                self.emit('; local '+('byte' if width==1 else 'word')+' store '+str(slot))
                 self.emit('LCA')
                 self.stack_address(offset)
                 self.emit('LAC','LMA')
                 if abs(width)==2:
                     self.inc_hl()
                     self.emit('LMB')
+                if width==1:self.emit('; end local byte')
             elif op == 'STACK_LOAD':
                 offset,width = map(int,arg.split(','))
+                slot=offset-(self.frame_depth if self.frame_depth is not None else -65536)
+                self.emit('; local '+('byte' if width==1 else 'word')+' load '+str(slot))
                 self.stack_address(offset)
                 self.load(width,address=False)
+                if width==1:self.emit('; end local byte')
             elif op == 'LOADQUOT':
                 self.emit('LHI HIGH DQUOT','LLI LOW DQUOT','LAM','INL','LBM')
             elif op in ('RMISAVE','RMUSAVE'):
@@ -778,6 +830,7 @@ class Generator:
             elif op == 'SWAPSTACK':
                 self.emit('LCA', 'LDB', 'CAL POP', 'CAL SWAP', 'CAL PUSH', 'LAC', 'LBD')
             elif op == 'ADDRSP':
+                self.emit('; escaped frame')
                 if self.optimize:
                     self.stack_address(int(arg))
                     self.emit('LAL','LBH')
@@ -875,7 +928,7 @@ class Generator:
         if missing:
             raise CodegenError('unresolved symbols: ' + ', '.join(sorted(missing)))
         runtime = (HERE / 'runtime.asm').read_text()
-        return (runtime + '\n' + '\n'.join(self.code + self.data) +
+        return (runtime + '\n' + '\n'.join((optimize_functions(self.code,self.data) if self.optimize else self.code) + self.data) +
                 '\nSCEND: DB 0\nSTACKMIN EQU (SCEND+255D) AND 0FF00H\n        END\n')
 
 

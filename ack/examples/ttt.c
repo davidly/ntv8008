@@ -2,9 +2,9 @@
 #include <stdio.h>
 static unsigned char board[9];
 static unsigned moves;
-static int winner(int move)
+static int winner(unsigned char move)
 {
-    int p = board[move];
+    unsigned char p = board[move];
     switch (move) {
     case 0: return ((p == board[1] && p == board[2]) ||
                     (p == board[3] && p == board[6]) ||
@@ -33,9 +33,9 @@ static int winner(int move)
     }
     return 0;
 }
-static int minmax(int alpha, int beta, int depth, int move)
+static int minmax(unsigned char alpha, unsigned char beta, unsigned char depth, unsigned char move)
 {
-    int pos, value, piece, score;
+    unsigned char pos, value, piece, score;
     ++moves;
     if (depth >= 4) {
         piece = winner(move);
@@ -65,9 +65,9 @@ static int minmax(int alpha, int beta, int depth, int move)
     }
     return value;
 }
-static int run(int move)
+static int run(unsigned char move)
 {
-    int score;
+    unsigned char score;
     board[move] = 1;
     score = minmax(2, 9, 0, move);
     board[move] = 0;
@@ -75,7 +75,7 @@ static int run(int move)
 }
 int main(void)
 {
-    int iteration;
+    unsigned char iteration;
     for (iteration = 0; iteration < 10; ++iteration) {
         moves = 0;
         if (!run(0) || !run(1) || !run(4)) { puts("FAIL"); return 1; }
