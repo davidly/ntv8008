@@ -92,8 +92,10 @@ known return address directly into RAM without saving live DE through a helper.
 Register-only value pops avoid copying operands to RAM; comparisons and long
 arithmetic request a separate pop into LEFT. RETURN patches its jump directly
 from the stack rather than copying through temporary return-address variables.
-`prepare.py` only expands these assembly macros. It
-does not parse or execute BASIC. Leaf helpers use bounded hardware CAL/RET;
+`prepare.py` expands these assembly macros and removes redundant immediate H/L
+address reloads inside straight-line regions. Labels, calls, branches, and
+register clobbers end the corresponding facts; removed loads leave flags
+untouched. BASIC parsing and execution remain entirely on the 8008. Leaf helpers use bounded hardware CAL/RET;
 recursive expression parsing uses RAM, avoiding the CPU's shallow return stack.
 The RAM return trampoline modifies its own JMP operand, so the code requires
 writable RAM, as provided by this machine.
@@ -119,6 +121,20 @@ parser and its precedence rules. Positive unit-step NEXT updates and compares
 the saved counter directly, with the same signed-bound/overflow behavior; other
 steps retain the general loop path. All stack capacity and error checks remain.
 
+Array indices and assignment right-hand sides share a speculative native parser
+for constants, scalars, and one constant `+`/`-` offset. Thus `A(I)`, `A(3)`,
+`A(I+1)`, `C=C+1`, and simple stores avoid full expression parsing. A nonmatching
+expression restores the token pointer and uses the full parser, retaining
+precedence, signed wraparound, and array bounds checks. No new program tokens
+or source edits are needed.
+
+Multiplication stops when its remaining multiplier becomes zero. Division
+handles a smaller dividend directly and skips leading zero bits before its
+bit loop. Signed division caches its last **operand values**, quotient, and
+remainder in eight bytes of existing workspace. An identical `/` or `MOD` pair
+can reuse both results even across multiplication, printing, INPUT, or NEW.
+Unsigned number formatting bypasses this cache; zero divisors are always errors.
+
 Code starts at `0040h` (with a jump at zero). Tokenized programs immediately
 follow the interpreter; arrays grow upward after the program's end marker.
 Workspace occupies `3b00h..3fffh`: input/branch cache, variables/state, array
@@ -139,15 +155,16 @@ Measured at 500 kHz on 2026-10-31:
 
 | Benchmark | b8008 cycles | b8008 seconds | SCELBAL seconds | Speedup |
 | --- | ---: | ---: | ---: | ---: |
-| Sieve, ten passes | 5,750,828,866 | 11,501.7 | 286,415.9 | 24.9x |
-| E, 192 digits | 1,424,933,366 | 2,849.9 | 16,176.1 | 5.7x |
-| TTT, one iteration | 3,669,866,632 | 7,339.7 | 118,046.0 | 16.1x |
+| Sieve, ten passes | 4,199,466,844 | 8,398.9 | 286,415.9 | 34.1x |
+| E, 192 digits | 939,516,764 | 1,879.0 | 16,176.1 | 8.6x |
+| TTT, one iteration | 2,789,402,456 | 5,578.8 | 118,046.0 | 21.2x |
 
 Literal branch resolution first reduced total cycles by 4.7% for sieve, 0.1%
 for e, and 12.7% for TTT. Streamlined software calls/returns, operand parsing,
 and positive unit-step loops then reduced cycles by another 42.4%, 32.6%, and
-46.0%, respectively. The full sieve array still fits with the interpreter;
-no benchmark workload was reduced.
+46.0%, respectively. Simple indices/assignments, shorter arithmetic, division
+reuse, and address-load cleanup now reduce cycles by a further 27.0%, 34.1%,
+and 24.0%. The full sieve array still fits; no benchmark workload was reduced.
 
 Timings include session loading/tokenization and execution, excluding host I/O
 waits. Use `-p` or `perfrun` for cycle counts and estimated 500 kHz runtime.
@@ -177,3 +194,9 @@ regressions run a variant that traps runtime line searches: all three literal
 branch forms and the full TTT workload must still succeed. They also cover
 computed-target fallback, untaken missing targets, zero-trip loop scanning,
 listing, rerunning, and edits/deletions that move or remove resolved targets.
+
+The latest regressions also check fast/fallback expression precedence, wrapped
+index offsets and bounds, small/signed arithmetic boundaries, and native
+execution before/after address-load elimination. An instrumented image counts
+real signed divisions to prove cached quotient/remainder reuse survives other
+arithmetic, formatting, input, reset, and division-by-zero recovery.

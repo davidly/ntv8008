@@ -61,6 +61,13 @@ LINKED  EQU VARS+137D
 BPATCH  EQU VARS+138D
 BLINE   EQU VARS+140D
 BSCAN   EQU VARS+142D
+IXSTART EQU VARS+144D
+IXLEFT  EQU VARS+146D
+IXOP    EQU VARS+148D
+DRIGHT  EQU VARS+149D
+DLEFT   EQU VARS+151D
+DQUOT   EQU VARS+153D
+DREM    EQU VARS+155D
 TNUM    EQU 80H
 TLE     EQU 81H
 TGE     EQU 82H
@@ -100,6 +107,8 @@ START:
         ST STKP
         ST MODE
         ST LINKED
+        ST DRIGHT
+        ST DRIGHT+1D
         LDI HIGH BANNER
         LEI LOW BANNER
         CAL TEXT
@@ -591,6 +600,8 @@ ASSIGN:
         ST AWIDTH
         LAI 61D
         CAL EXPECT
+        CAL SIMPLEVALUE
+        JTZ STOREVALUE
         CALL EXPR
 STOREVALUE:
         LD AWIDTH
@@ -1279,13 +1290,102 @@ LVALUE:
 INDEXED:
         CAL VPUSH
         CAL GET
+        CAL SIMPLEVALUE
+        JTZ INDEXCLOSE
         CALL EXPR
+INDEXCLOSE:
         LAI 41D
         CAL EXPECT
+INDEXDONE:
         CAL VPOP
         LAL
         CAL ARRAYADDR
         RETURN
+; Speculate on an atom plus/minus one constant, sharing the code for array
+; indices and simple assignment RHSs (including C=C+1). No new program tokens.
+; Z means success; NZ restores BC so EXPR can apply its full precedence rules.
+SIMPLEVALUE:
+        LAI 0D
+        ST IXOP
+        LEC
+        LDB
+        STW IXSTART
+        CAL GET
+        CPI TNUM
+        JTZ IXNUMBER
+        CPI 65D
+        JTC IXFAIL
+        CPI 91D
+        JFC IXFAIL
+        SUI 65D
+        ADA
+        LLA
+        LHI HIGH VARS
+        LEM
+        INL
+        LDM
+        JMP IXCHECK
+IXNUMBER:
+        CAL GET
+        LEA
+        CAL GET
+        LDA
+IXCHECK:
+        CAL PEEK
+        CPI 43D
+        JTZ IXOFFSET
+        CPI 45D
+        JFZ IXFINISH
+IXOFFSET:
+        ST IXOP
+        STW IXLEFT
+        CAL GET
+        CAL GET
+        CPI TNUM
+        JFZ IXFAIL
+        CAL GET
+        LEA
+        CAL GET
+        LDA
+        CAL PEEK
+IXFINISH:
+        ; Leave the delimiter to EXPECT or FINISH, exactly as EXPR does.
+        CPI 41D
+        JTZ IXAPPLY
+        NDA
+        JTZ IXAPPLY
+        CPI 58D
+        JFZ IXFAIL
+IXAPPLY:
+        LD IXOP
+        NDA
+        JTZ IXOK
+        CPI 45D
+        JFZ IXADD
+        CAL NEGATE
+IXADD:
+        LHI HIGH IXLEFT
+        LLI LOW IXLEFT
+        LAE
+        ADM
+        LEA
+        INL
+        LAD
+        ACM
+        LDA
+IXOK:
+        LAI 0D
+        NDA
+        RET
+IXFAIL:
+        LHI HIGH IXSTART
+        LLI LOW IXSTART
+        LCM
+        INL
+        LBM
+        LAI 1D
+        NDA
+        RET
 ARRAYADDR:
         ; A = array number; DE = zero-based index. Descriptor stride is 8.
         RLC
@@ -1518,10 +1618,11 @@ MULTIPLY:
         LDI 0D
         LEI 0D
         STW RESULT
-        LAI 16D
-        ST COUNT
 MULLOOP:
         LDW RIGHT
+        LAD
+        ORE
+        JTZ MULDONE
         LAD
         ORA
         RAR
@@ -1552,17 +1653,52 @@ MULSHIFT:
         LAM
         ACA
         LMA
-        LD COUNT
-        SUI 1D
-        ST COUNT
-        JFZ MULLOOP
+        JMP MULLOOP
+MULDONE:
         LDW RESULT
         RET
 DIVIDE:
-        STW RIGHT
+        ; Cache raw signed operand values, not variable addresses. UDIV and
+        ; multiply may change the working result/remainder without evicting it.
         LAD
         ORE
         JTZ DIVZERO
+        LHI HIGH DRIGHT
+        LLI LOW DRIGHT
+        LAE
+        CPM
+        JFZ DIVMISS
+        INL
+        LAD
+        CPM
+        JFZ DIVMISS
+        LD LEFT
+        LLI LOW DLEFT
+        CPM
+        JFZ DIVMISS
+        LD LEFT+1D
+        LLI LOW DLEFT+1D
+        CPM
+        JFZ DIVMISS
+        LDW DREM
+        STW REMDR
+        LDW DQUOT
+        RET
+DIVMISS:
+        STW DRIGHT
+        LD LEFT
+        ST DLEFT
+        LD LEFT+1D
+        ST DLEFT+1D
+        CAL DIVMAIN
+        STW DQUOT
+        LD REMDR
+        ST DREM
+        LD REMDR+1D
+        ST DREM+1D
+        RET
+DIVMAIN:
+        STW RIGHT
         LAD
         NDI 80H
         ST SIGN
@@ -1585,12 +1721,44 @@ DIVPOSR:
         JFS DIVPOSL
         CAL NEGATE
 DIVPOSL:
+        ; Operands are magnitudes here. A smaller dividend needs no bit loop.
+        LHI HIGH RIGHT
+        LLI LOW RIGHT
+        LAE
+        SUM
+        INL
+        LAD
+        SBM
+        JTC DIVSMALL
+        LAI 16D
+        ST COUNT
+DIVALIGN:
+        ; Skip leading zero dividend bits before the expensive divide loop.
+        LAD
+        NDA
+        JTS DIVALIGNED
+        LAE
+        ADE
+        LEA
+        LAD
+        ACD
+        LDA
+        LD COUNT
+        SUI 1D
+        ST COUNT
+        JMP DIVALIGN
+DIVALIGNED:
         STW RESULT
         LDI 0D
         LEI 0D
         STW REMDR
-        LAI 16D
-        ST COUNT
+        JMP DIVLOOP
+DIVSMALL:
+        STW REMDR
+        LDI 0D
+        LEI 0D
+        STW RESULT
+        JMP DIVSIGN
 DIVLOOP:
         ; Shift the dividend/quotient, then extend the partial remainder.
         LHI HIGH RESULT
@@ -1644,6 +1812,7 @@ DIVNEXT:
         SUI 1D
         ST COUNT
         JFZ DIVLOOP
+DIVSIGN:
         LD MSIGN
         NDA
         JTZ DIVREMOK

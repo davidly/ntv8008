@@ -63,6 +63,13 @@ LINKED  EQU VARS+137D
 BPATCH  EQU VARS+138D
 BLINE   EQU VARS+140D
 BSCAN   EQU VARS+142D
+IXSTART EQU VARS+144D
+IXLEFT  EQU VARS+146D
+IXOP    EQU VARS+148D
+DRIGHT  EQU VARS+149D
+DLEFT   EQU VARS+151D
+DQUOT   EQU VARS+153D
+DREM    EQU VARS+155D
 TNUM    EQU 80H
 TLE     EQU 81H
 TGE     EQU 82H
@@ -104,12 +111,16 @@ START:
         LLI LOW STKP
         LMA
 ; ST MODE
-        LHI HIGH MODE
         LLI LOW MODE
         LMA
 ; ST LINKED
-        LHI HIGH LINKED
         LLI LOW LINKED
+        LMA
+; ST DRIGHT
+        LLI LOW DRIGHT
+        LMA
+; ST DRIGHT+1D
+        LLI LOW DRIGHT+1D
         LMA
         LDI HIGH BANNER
         LEI LOW BANNER
@@ -123,7 +134,6 @@ PROMPT:
         LLI LOW STKP
         LMA
 ; ST MODE
-        LHI HIGH MODE
         LLI LOW MODE
         LMA
         LAI 62D
@@ -180,7 +190,6 @@ DIRECT:
         INL
         LMD
 ; CALL TOKENIZE
-        LHI HIGH STKP
         LLI LOW STKP
         LAM
         CPI 252D
@@ -210,7 +219,6 @@ NEW:
         LDI HIGH PROGRAM
         LEI LOW PROGRAM
 ; STW PE
-        LHI HIGH PE
         LLI LOW PE
         LME
         INL
@@ -219,13 +227,11 @@ NEW:
         LDI 0D
         LEI 0D
 ; STW LAST
-        LHI HIGH LAST
         LLI LOW LAST
         LME
         INL
         LMD
 ; LDW PE
-        LHI HIGH PE
         LLI LOW PE
         LEM
         INL
@@ -429,7 +435,6 @@ TOKFIND:
         LLI LOW KSAVE
         LMA
 ; LD RSTART
-        LHI HIGH RSTART
         LLI LOW RSTART
         LAM
         ADI 1D
@@ -507,7 +512,6 @@ TOKMATCH:
         LAM
         LCA
 ; LD KMATCH
-        LHI HIGH KMATCH
         LLI LOW KMATCH
         LAM
         CAL EMIT
@@ -595,7 +599,6 @@ EMIT:
         LMD
         LEA
 ; LD TLEN
-        LHI HIGH TLEN
         LLI LOW TLEN
         LAM
         CPI 250D
@@ -609,12 +612,9 @@ EMIT:
         LAM
         ADI 1D
 ; ST TLEN
-        LHI HIGH TLEN
-        LLI LOW TLEN
         LMA
         LAE
 ; LDW SAVEDE
-        LHI HIGH SAVEDE
         LLI LOW SAVEDE
         LEM
         INL
@@ -641,7 +641,6 @@ CLEARV:
         LLI LOW FSP
         LMA
 ; ST GSP
-        LHI HIGH GSP
         LLI LOW GSP
         LMA
         LHI HIGH DESC
@@ -663,7 +662,6 @@ CLEARD:
         ACI 0D
         LDA
 ; STW HEAP
-        LHI HIGH HEAP
         LLI LOW HEAP
         LME
         INL
@@ -776,11 +774,12 @@ XR3:
         INL
         LMD
 ; ST AWIDTH
-        LHI HIGH AWIDTH
         LLI LOW AWIDTH
         LMA
         LAI 61D
         CAL EXPECT
+        CAL SIMPLEVALUE
+        JTZ STOREVALUE
 ; CALL EXPR
         LHI HIGH STKP
         LLI LOW STKP
@@ -975,8 +974,6 @@ GSAVE:
         LAM
         ADI 2D
 ; ST GSP
-        LHI HIGH GSP
-        LLI LOW GSP
         LMA
         RET
 GRETURN:
@@ -1007,7 +1004,6 @@ FINDLINE:
         INL
         LMD
 ; STW CUR
-        LHI HIGH CUR
         LLI LOW CUR
         LME
         INL
@@ -1018,7 +1014,6 @@ FINDLINE:
         RLC
         RLC
 ; ST CACHEIX
-        LHI HIGH CACHEIX
         LLI LOW CACHEIX
         LMA
         LLA
@@ -1167,7 +1162,6 @@ RESOLVE:
         LEC
         LDB
 ; STW BSCAN
-        LHI HIGH BSCAN
         LLI LOW BSCAN
         LME
         INL
@@ -1465,8 +1459,6 @@ XR11:
         LLI LOW OP
         LMA
 ; LD OP
-        LHI HIGH OP
-        LLI LOW OP
         LAM
         CPI 43D
         JTZ SUMADD
@@ -1632,8 +1624,6 @@ XR14:
         LLI LOW OP
         LMA
 ; LD OP
-        LHI HIGH OP
-        LLI LOW OP
         LAM
         CPI 42D
         JTZ TERMUL
@@ -1858,6 +1848,8 @@ LVALUE:
 INDEXED:
         CAL VPUSH
         CAL GET
+        CAL SIMPLEVALUE
+        JTZ INDEXCLOSE
 ; CALL EXPR
         LHI HIGH STKP
         LLI LOW STKP
@@ -1876,13 +1868,117 @@ INDEXED:
         LMA
         JMP EXPR
 XR20:
+INDEXCLOSE:
         LAI 41D
         CAL EXPECT
+INDEXDONE:
         CAL VPOP
         LAL
         CAL ARRAYADDR
 ; RETURN
         JMP SRET
+; Speculate on an atom plus/minus one constant, sharing the code for array
+; indices and simple assignment RHSs (including C=C+1). No new program tokens.
+; Z means success; NZ restores BC so EXPR can apply its full precedence rules.
+SIMPLEVALUE:
+        LAI 0D
+; ST IXOP
+        LHI HIGH IXOP
+        LLI LOW IXOP
+        LMA
+        LEC
+        LDB
+; STW IXSTART
+        LLI LOW IXSTART
+        LME
+        INL
+        LMD
+        CAL GET
+        CPI TNUM
+        JTZ IXNUMBER
+        CPI 65D
+        JTC IXFAIL
+        CPI 91D
+        JFC IXFAIL
+        SUI 65D
+        ADA
+        LLA
+        LHI HIGH VARS
+        LEM
+        INL
+        LDM
+        JMP IXCHECK
+IXNUMBER:
+        CAL GET
+        LEA
+        CAL GET
+        LDA
+IXCHECK:
+        CAL PEEK
+        CPI 43D
+        JTZ IXOFFSET
+        CPI 45D
+        JFZ IXFINISH
+IXOFFSET:
+; ST IXOP
+        LHI HIGH IXOP
+        LLI LOW IXOP
+        LMA
+; STW IXLEFT
+        LLI LOW IXLEFT
+        LME
+        INL
+        LMD
+        CAL GET
+        CAL GET
+        CPI TNUM
+        JFZ IXFAIL
+        CAL GET
+        LEA
+        CAL GET
+        LDA
+        CAL PEEK
+IXFINISH:
+        ; Leave the delimiter to EXPECT or FINISH, exactly as EXPR does.
+        CPI 41D
+        JTZ IXAPPLY
+        NDA
+        JTZ IXAPPLY
+        CPI 58D
+        JFZ IXFAIL
+IXAPPLY:
+; LD IXOP
+        LHI HIGH IXOP
+        LLI LOW IXOP
+        LAM
+        NDA
+        JTZ IXOK
+        CPI 45D
+        JFZ IXADD
+        CAL NEGATE
+IXADD:
+        LHI HIGH IXLEFT
+        LLI LOW IXLEFT
+        LAE
+        ADM
+        LEA
+        INL
+        LAD
+        ACM
+        LDA
+IXOK:
+        LAI 0D
+        NDA
+        RET
+IXFAIL:
+        LHI HIGH IXSTART
+        LLI LOW IXSTART
+        LCM
+        INL
+        LBM
+        LAI 1D
+        NDA
+        RET
 ARRAYADDR:
         ; A = array number; DE = zero-based index. Descriptor stride is 8.
         RLC
@@ -1903,7 +1999,6 @@ ARRAYADDR:
         LLI LOW WIDTH
         LMA
 ; LD ASLOT
-        LHI HIGH ASLOT
         LLI LOW ASLOT
         LAM
         ADI 2D
@@ -1956,7 +2051,6 @@ COMPARE:
         LLI LOW RIGHT
         LMA
 ; LD LEFT+1D
-        LHI HIGH LEFT+1D
         LLI LOW LEFT+1D
         LAM
         XRI 80H
@@ -1985,7 +2079,6 @@ CMPFLAG:
         LLI LOW SIGN
         LMA
 ; LD OP
-        LHI HIGH OP
         LLI LOW OP
         LAM
         CPI 61D
@@ -2111,7 +2204,6 @@ LPOP:
         LLI LOW LEFT
         LMA
 ; LD STKP
-        LHI HIGH STKP
         LLI LOW STKP
         LAM
         ADI 1D
@@ -2129,7 +2221,6 @@ SRET:
         LLI LOW RETA
         LMA
 ; LD STKP
-        LHI HIGH STKP
         LLI LOW STKP
         LAM
         CPI 2D
@@ -2219,16 +2310,10 @@ MULTIPLY:
         LDI 0D
         LEI 0D
 ; STW RESULT
-        LHI HIGH RESULT
         LLI LOW RESULT
         LME
         INL
         LMD
-        LAI 16D
-; ST COUNT
-        LHI HIGH COUNT
-        LLI LOW COUNT
-        LMA
 MULLOOP:
 ; LDW RIGHT
         LHI HIGH RIGHT
@@ -2236,6 +2321,9 @@ MULLOOP:
         LEM
         INL
         LDM
+        LAD
+        ORE
+        JTZ MULDONE
         LAD
         ORA
         RAR
@@ -2256,7 +2344,6 @@ MULLOOP:
         LEM
         INL
         LDM
-        LHI HIGH LEFT
         LLI LOW LEFT
         LAE
         ADM
@@ -2266,7 +2353,6 @@ MULLOOP:
         ACM
         LDA
 ; STW RESULT
-        LHI HIGH RESULT
         LLI LOW RESULT
         LME
         INL
@@ -2281,16 +2367,8 @@ MULSHIFT:
         LAM
         ACA
         LMA
-; LD COUNT
-        LHI HIGH COUNT
-        LLI LOW COUNT
-        LAM
-        SUI 1D
-; ST COUNT
-        LHI HIGH COUNT
-        LLI LOW COUNT
-        LMA
-        JFZ MULLOOP
+        JMP MULLOOP
+MULDONE:
 ; LDW RESULT
         LHI HIGH RESULT
         LLI LOW RESULT
@@ -2299,6 +2377,91 @@ MULSHIFT:
         LDM
         RET
 DIVIDE:
+        ; Cache raw signed operand values, not variable addresses. UDIV and
+        ; multiply may change the working result/remainder without evicting it.
+        LAD
+        ORE
+        JTZ DIVZERO
+        LHI HIGH DRIGHT
+        LLI LOW DRIGHT
+        LAE
+        CPM
+        JFZ DIVMISS
+        INL
+        LAD
+        CPM
+        JFZ DIVMISS
+; LD LEFT
+        LHI HIGH LEFT
+        LLI LOW LEFT
+        LAM
+        LLI LOW DLEFT
+        CPM
+        JFZ DIVMISS
+; LD LEFT+1D
+        LHI HIGH LEFT+1D
+        LLI LOW LEFT+1D
+        LAM
+        LLI LOW DLEFT+1D
+        CPM
+        JFZ DIVMISS
+; LDW DREM
+        LHI HIGH DREM
+        LLI LOW DREM
+        LEM
+        INL
+        LDM
+; STW REMDR
+        LLI LOW REMDR
+        LME
+        INL
+        LMD
+; LDW DQUOT
+        LLI LOW DQUOT
+        LEM
+        INL
+        LDM
+        RET
+DIVMISS:
+; STW DRIGHT
+        LHI HIGH DRIGHT
+        LLI LOW DRIGHT
+        LME
+        INL
+        LMD
+; LD LEFT
+        LLI LOW LEFT
+        LAM
+; ST DLEFT
+        LLI LOW DLEFT
+        LMA
+; LD LEFT+1D
+        LLI LOW LEFT+1D
+        LAM
+; ST DLEFT+1D
+        LLI LOW DLEFT+1D
+        LMA
+        CAL DIVMAIN
+; STW DQUOT
+        LHI HIGH DQUOT
+        LLI LOW DQUOT
+        LME
+        INL
+        LMD
+; LD REMDR
+        LLI LOW REMDR
+        LAM
+; ST DREM
+        LLI LOW DREM
+        LMA
+; LD REMDR+1D
+        LLI LOW REMDR+1D
+        LAM
+; ST DREM+1D
+        LLI LOW DREM+1D
+        LMA
+        RET
+DIVMAIN:
 ; STW RIGHT
         LHI HIGH RIGHT
         LLI LOW RIGHT
@@ -2306,12 +2469,8 @@ DIVIDE:
         INL
         LMD
         LAD
-        ORE
-        JTZ DIVZERO
-        LAD
         NDI 80H
 ; ST SIGN
-        LHI HIGH SIGN
         LLI LOW SIGN
         LMA
         LAD
@@ -2334,24 +2493,54 @@ DIVPOSR:
         LAD
         NDI 80H
 ; ST MSIGN
-        LHI HIGH MSIGN
         LLI LOW MSIGN
         LMA
 ; LD SIGN
-        LHI HIGH SIGN
         LLI LOW SIGN
         LAM
         XRD
         NDI 80H
 ; ST SIGN
-        LHI HIGH SIGN
-        LLI LOW SIGN
         LMA
         LAD
         NDA
         JFS DIVPOSL
         CAL NEGATE
 DIVPOSL:
+        ; Operands are magnitudes here. A smaller dividend needs no bit loop.
+        LHI HIGH RIGHT
+        LLI LOW RIGHT
+        LAE
+        SUM
+        INL
+        LAD
+        SBM
+        JTC DIVSMALL
+        LAI 16D
+; ST COUNT
+        LHI HIGH COUNT
+        LLI LOW COUNT
+        LMA
+DIVALIGN:
+        ; Skip leading zero dividend bits before the expensive divide loop.
+        LAD
+        NDA
+        JTS DIVALIGNED
+        LAE
+        ADE
+        LEA
+        LAD
+        ACD
+        LDA
+; LD COUNT
+        LHI HIGH COUNT
+        LLI LOW COUNT
+        LAM
+        SUI 1D
+; ST COUNT
+        LMA
+        JMP DIVALIGN
+DIVALIGNED:
 ; STW RESULT
         LHI HIGH RESULT
         LLI LOW RESULT
@@ -2361,16 +2550,26 @@ DIVPOSL:
         LDI 0D
         LEI 0D
 ; STW REMDR
+        LLI LOW REMDR
+        LME
+        INL
+        LMD
+        JMP DIVLOOP
+DIVSMALL:
+; STW REMDR
         LHI HIGH REMDR
         LLI LOW REMDR
         LME
         INL
         LMD
-        LAI 16D
-; ST COUNT
-        LHI HIGH COUNT
-        LLI LOW COUNT
-        LMA
+        LDI 0D
+        LEI 0D
+; STW RESULT
+        LLI LOW RESULT
+        LME
+        INL
+        LMD
+        JMP DIVSIGN
 DIVLOOP:
         ; Shift the dividend/quotient, then extend the partial remainder.
         LHI HIGH RESULT
@@ -2431,10 +2630,9 @@ DIVNEXT:
         LAM
         SUI 1D
 ; ST COUNT
-        LHI HIGH COUNT
-        LLI LOW COUNT
         LMA
         JFZ DIVLOOP
+DIVSIGN:
 ; LD MSIGN
         LHI HIGH MSIGN
         LLI LOW MSIGN
@@ -2462,7 +2660,6 @@ DIVREMOK:
         INL
         LDM
 ; LD SIGN
-        LHI HIGH SIGN
         LLI LOW SIGN
         LAM
         NDA
@@ -2582,7 +2779,6 @@ PRINTDIV:
         INL
         LDM
 ; STW LEFT
-        LHI HIGH LEFT
         LLI LOW LEFT
         LME
         INL
@@ -2597,16 +2793,13 @@ PRINTDIV:
         INL
         LMD
 ; LD REMDR
-        LHI HIGH REMDR
         LLI LOW REMDR
         LAM
         ADI 48D
 ; ST DIGIT
-        LHI HIGH DIGIT
         LLI LOW DIGIT
         LMA
 ; LD PRINTN
-        LHI HIGH PRINTN
         LLI LOW PRINTN
         LAM
         ADI 224D
@@ -2619,12 +2812,10 @@ PRINTDIV:
         LLI LOW RCOUNT
         LMA
 ; LD DIGIT
-        LHI HIGH DIGIT
         LLI LOW DIGIT
         LAM
         LEA
 ; LD RCOUNT
-        LHI HIGH RCOUNT
         LLI LOW RCOUNT
         LAM
         LLA
@@ -2636,11 +2827,8 @@ PRINTDIV:
         LAM
         ADI 1D
 ; ST PRINTN
-        LHI HIGH PRINTN
-        LLI LOW PRINTN
         LMA
 ; LDW DECNUM
-        LHI HIGH DECNUM
         LLI LOW DECNUM
         LEM
         INL
@@ -2655,8 +2843,6 @@ PRINTDIG:
         LAM
         SUI 1D
 ; ST PRINTN
-        LHI HIGH PRINTN
-        LLI LOW PRINTN
         LMA
         ADI 224D
         LLA
@@ -2680,15 +2866,12 @@ UDIV:
         LMD
         LAI 0D
 ; ST SIGN
-        LHI HIGH SIGN
         LLI LOW SIGN
         LMA
 ; ST MSIGN
-        LHI HIGH MSIGN
         LLI LOW MSIGN
         LMA
 ; LDW LEFT
-        LHI HIGH LEFT
         LLI LOW LEFT
         LEM
         INL
@@ -2782,13 +2965,11 @@ DIMSIZE:
         LLI LOW ASLOT
         LMA
 ; LDW FORLIM
-        LHI HIGH FORLIM
         LLI LOW FORLIM
         LEM
         INL
         LDM
 ; LD WIDTH
-        LHI HIGH WIDTH
         LLI LOW WIDTH
         LAM
         CPI 2D
@@ -2821,7 +3002,6 @@ DIMBYTES:
         INL
         LMD
 ; LD ASLOT
-        LHI HIGH ASLOT
         LLI LOW ASLOT
         LAM
         ADI 4D
@@ -2842,13 +3022,11 @@ DIMBYTES:
         LLI LOW RCOUNT
         LMA
 ; LDW HEAP
-        LHI HIGH HEAP
         LLI LOW HEAP
         LEM
         INL
         LDM
 ; LD RCOUNT
-        LHI HIGH RCOUNT
         LLI LOW RCOUNT
         LAM
         LLA
@@ -2863,13 +3041,11 @@ DIMBYTES:
         LLI LOW RCOUNT
         LMA
 ; LDW FORLIM
-        LHI HIGH FORLIM
         LLI LOW FORLIM
         LEM
         INL
         LDM
 ; LD RCOUNT
-        LHI HIGH RCOUNT
         LLI LOW RCOUNT
         LAM
         LLA
@@ -2884,12 +3060,10 @@ DIMBYTES:
         LLI LOW RCOUNT
         LMA
 ; LD WIDTH
-        LHI HIGH WIDTH
         LLI LOW WIDTH
         LAM
         LEA
 ; LD RCOUNT
-        LHI HIGH RCOUNT
         LLI LOW RCOUNT
         LAM
         LLA
@@ -2965,7 +3139,6 @@ XR24:
         LLI LOW FORVAR
         LAM
         LLA
-        LHI HIGH VARS
         LME
         INL
         LMD
@@ -2998,7 +3171,6 @@ XR25:
         LDI 0D
         LEI 1D
 ; STW FORSTEP
-        LHI HIGH FORSTEP
         LLI LOW FORSTEP
         LME
         INL
@@ -3046,12 +3218,10 @@ FORSAVE:
         LLI LOW RCOUNT
         LMA
 ; LD FORVAR
-        LHI HIGH FORVAR
         LLI LOW FORVAR
         LAM
         LEA
 ; LD RCOUNT
-        LHI HIGH RCOUNT
         LLI LOW RCOUNT
         LAM
         LLA
@@ -3064,7 +3234,6 @@ FORSAVE:
         INL
         LDM
 ; LD RCOUNT
-        LHI HIGH RCOUNT
         LLI LOW RCOUNT
         LAM
         ADI 1D
@@ -3080,7 +3249,6 @@ FORSAVE:
         INL
         LDM
 ; LD RCOUNT
-        LHI HIGH RCOUNT
         LLI LOW RCOUNT
         LAM
         ADI 3D
@@ -3105,13 +3273,10 @@ FORSAVE:
         LAM
         ADI 8D
 ; ST FSP
-        LHI HIGH FSP
-        LLI LOW FSP
         LMA
         ; Initial bounds are tested too: FOR 2 TO 1 executes zero times.
         LAI 0D
 ; ST KSTART
-        LHI HIGH KSTART
         LLI LOW KSTART
         LMA
         JMP FORCHECK
@@ -3153,7 +3318,6 @@ NEXTGO:
         LLI LOW KSTART
         LMA
 ; LD RCOUNT
-        LHI HIGH RCOUNT
         LLI LOW RCOUNT
         LAM
         ADI 3D
@@ -3172,18 +3336,15 @@ NEXTGENERAL:
         LLI LOW FORVAR
         LAM
         LLA
-        LHI HIGH VARS
         LEM
         INL
         LDM
 ; STW FOROLD
-        LHI HIGH FOROLD
         LLI LOW FOROLD
         LME
         INL
         LMD
 ; LD RCOUNT
-        LHI HIGH RCOUNT
         LLI LOW RCOUNT
         LAM
         ADI 3D
@@ -3201,12 +3362,10 @@ NEXTGENERAL:
         LLI LOW FORVAR
         LAM
         LLA
-        LHI HIGH VARS
         LME
         INL
         LMD
 ; LD RCOUNT
-        LHI HIGH RCOUNT
         LLI LOW RCOUNT
         LAM
         ADI 4D
@@ -3234,7 +3393,6 @@ NEXTONE:
         LLI LOW FORVAR
         LAM
         LLA
-        LHI HIGH VARS
         LAM
         ADI 1D
         LMA
@@ -3282,7 +3440,6 @@ FORCHECK:
         LAM
         SUI 8D
 ; ST RCOUNT
-        LHI HIGH RCOUNT
         LLI LOW RCOUNT
         LMA
 FORTEST:
@@ -3299,13 +3456,11 @@ FORTEST:
         INL
         LDM
 ; STW RIGHT
-        LHI HIGH RIGHT
         LLI LOW RIGHT
         LME
         INL
         LMD
 ; LD RCOUNT
-        LHI HIGH RCOUNT
         LLI LOW RCOUNT
         LAM
         ADI 1D
@@ -3317,7 +3472,6 @@ FORTEST:
         LLI LOW LEFT
         LMA
 ; LD RCOUNT
-        LHI HIGH RCOUNT
         LLI LOW RCOUNT
         LAM
         ADI 2D
@@ -3329,7 +3483,6 @@ FORTEST:
         LLI LOW LEFT+1D
         LMA
 ; LD RCOUNT
-        LHI HIGH RCOUNT
         LLI LOW RCOUNT
         LAM
         ADI 4D
@@ -3346,7 +3499,6 @@ FOROP:
         LLI LOW OP
         LMA
 ; LDW RIGHT
-        LHI HIGH RIGHT
         LLI LOW RIGHT
         LEM
         INL
@@ -3380,11 +3532,8 @@ FORDONE:
         LAM
         SUI 8D
 ; ST FSP
-        LHI HIGH FSP
-        LLI LOW FSP
         LMA
 ; LD KSTART
-        LHI HIGH KSTART
         LLI LOW KSTART
         LAM
         NDA
@@ -3415,8 +3564,6 @@ FORSCAN:
         LAM
         SUI 1D
 ; ST KSTART
-        LHI HIGH KSTART
-        LLI LOW KSTART
         LMA
         JFZ FORSCAN
         CAL PEEK
@@ -3433,8 +3580,6 @@ FORSCANUP:
         LAM
         ADI 1D
 ; ST KSTART
-        LHI HIGH KSTART
-        LLI LOW KSTART
         LMA
         JMP FORSCAN
 FORSCANNUM:
@@ -3482,13 +3627,11 @@ XR27:
         INL
         LMD
 ; ST AWIDTH
-        LHI HIGH AWIDTH
         LLI LOW AWIDTH
         LMA
         LEC
         LDB
 ; STW PSAVE
-        LHI HIGH PSAVE
         LLI LOW PSAVE
         LME
         INL
@@ -3539,7 +3682,6 @@ INPUTVALUE:
         INL
         LMD
 ; LDW PSAVE
-        LHI HIGH PSAVE
         LLI LOW PSAVE
         LEM
         INL
@@ -3547,7 +3689,6 @@ INPUTVALUE:
         LBD
         LCE
 ; LDW FORLIM
-        LHI HIGH FORLIM
         LLI LOW FORLIM
         LEM
         INL
@@ -3727,7 +3868,6 @@ EDIT:
         INL
         LDM
 ; STW OLDEND
-        LHI HIGH OLDEND
         LLI LOW OLDEND
         LME
         INL
@@ -3776,25 +3916,21 @@ EDITFIND:
         ACI 0D
         LDA
 ; STW SOURCE
-        LHI HIGH SOURCE
         LLI LOW SOURCE
         LME
         INL
         LMD
 ; LDW INS
-        LHI HIGH INS
         LLI LOW INS
         LEM
         INL
         LDM
 ; STW TARGET
-        LHI HIGH TARGET
         LLI LOW TARGET
         LME
         INL
         LMD
 ; LDW OLDEND
-        LHI HIGH OLDEND
         LLI LOW OLDEND
         LEM
         INL
@@ -3820,7 +3956,6 @@ EDITEND1:
         LEM
         INL
         LDM
-        LHI HIGH OLDLEN
         LLI LOW OLDLEN
         LAE
         SUM
@@ -3829,7 +3964,6 @@ EDITEND1:
         SBI 0D
         LDA
 ; STW PE
-        LHI HIGH PE
         LLI LOW PE
         LME
         INL
@@ -3857,18 +3991,15 @@ EDITINSERT:
         LLI LOW NEWLEN
         LMA
 ; LDW PE
-        LHI HIGH PE
         LLI LOW PE
         LEM
         INL
         LDM
 ; STW SOURCE
-        LHI HIGH SOURCE
         LLI LOW SOURCE
         LME
         INL
         LMD
-        LHI HIGH NEWLEN
         LLI LOW NEWLEN
         LAE
         ADM
@@ -3896,7 +4027,6 @@ EDITUP0:
         INL
         LMD
 ; LDW SOURCE
-        LHI HIGH SOURCE
         LLI LOW SOURCE
         LEM
         INL
@@ -3926,13 +4056,11 @@ EDITUP:
         LLI LOW DIGIT
         LMA
 ; LDW TARGET
-        LHI HIGH TARGET
         LLI LOW TARGET
         LEM
         INL
         LDM
 ; LD DIGIT
-        LHI HIGH DIGIT
         LLI LOW DIGIT
         LAM
         LHD
@@ -3944,7 +4072,6 @@ EDITUP:
         LEM
         INL
         LDM
-        LHI HIGH INS
         LLI LOW INS
         LAE
         CPM
@@ -3967,7 +4094,6 @@ EDITMORE:
         INL
         LMD
 ; LDW TARGET
-        LHI HIGH TARGET
         LLI LOW TARGET
         LEM
         INL
@@ -3979,7 +4105,6 @@ EDITMORE:
         SBI 0D
         LDA
 ; STW TARGET
-        LHI HIGH TARGET
         LLI LOW TARGET
         LME
         INL
@@ -3995,7 +4120,6 @@ EDITWRITE:
         LBD
         LCE
 ; LDW LINE
-        LHI HIGH LINE
         LLI LOW LINE
         LEM
         INL
@@ -4016,7 +4140,6 @@ EDITWRITE:
         LLI LOW TLEN
         LAM
 ; ST RCOUNT
-        LHI HIGH RCOUNT
         LLI LOW RCOUNT
         LMA
 EDITTOK:
@@ -4034,8 +4157,6 @@ EDITTOK1:
         LAM
         SUI 1D
 ; ST RCOUNT
-        LHI HIGH RCOUNT
-        LLI LOW RCOUNT
         LMA
         JFZ EDITTOK
 EDITDELETED:
@@ -4056,7 +4177,6 @@ MOVEFORWARD:
         LEM
         INL
         LDM
-        LHI HIGH ENDPTR
         LLI LOW ENDPTR
         LAE
         CPM
@@ -4084,13 +4204,11 @@ MOVEONE1:
         INL
         LMD
 ; LDW TARGET
-        LHI HIGH TARGET
         LLI LOW TARGET
         LEM
         INL
         LDM
 ; LD DIGIT
-        LHI HIGH DIGIT
         LLI LOW DIGIT
         LAM
         LHD

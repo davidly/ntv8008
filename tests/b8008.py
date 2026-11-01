@@ -247,6 +247,152 @@ class B8008(unittest.TestCase):
         actual=[(int(a),int(b)) for a,b in re.findall(r'^@(-?\d+),(-?\d+)$',output,re.M)]
         self.assertEqual(actual,expected)
 
+    def test_simple_values_offsets_and_fallback(self):
+        source=('DIM A(300),BYTE B(300)\nI=255:J=1\n'
+                'A(I)=12345:B(I+1)=257\nA(65535+1)=7:A(I-254)=8\n'
+                'A(1+1)=9\nPRINT "@";A(I);",";B(I+1);",";A(0);",";A(1);",";A(2)\n'
+                'C=32767:C=C+1:PRINT "@";C\n'
+                'C=C-1:C=C+65535:C=C-65535:PRINT "@";C\n'
+                'A(I)=A(I)+1:B(I+1)=B(I+1)-2\n'
+                'A((I+J))=11:A(I+J*2)=12:A(I+1+1)=13\n'
+                'PRINT "@";A(I);",";B(I+1);",";A(I+1);",";A(I+2)\n'
+                'C=I+1*2:PRINT "@";C\nC=I-1-1:PRINT "@";C\n'
+                'C=I+(1+1):PRINT "@";C\nC=I+1>250:PRINT "@";C\n'
+                'I=-1:A(I+1)=14:A(65535+1)=15:PRINT "@";A(0)\n')
+        output=self.execute(source)
+        actual=re.findall(r'^@([^\n]+)$',output,re.M)
+        self.assertEqual(actual,['12345,1,7,8,9','-32768','32767',
+                                 '12346,255,11,13','257','253','257','1','15'])
+        for index in ('I+1','65535','32767+1'):
+            output=self.execute('DIM A(1)\nI=1\nA('+index+')=7\n'
+                                'PRINT "@";A(1)\n',errors=True)
+            self.assertIn('?BOUNDS\n',output)
+            self.assertTrue(output.endswith('@0\n>'))
+
+    def test_short_arithmetic_boundaries(self):
+        values=[0,1,2,7,255,256,32767,-1,-255,-32768]
+        divisors=[1,2,7,8,255,256,32767,-1,-2,-32768]
+        expressions=[]
+        expected=[]
+        for a in values:
+            for b in divisors:
+                q=abs(a)//abs(b)*(-1 if (a<0)!=(b<0) else 1)
+                for op,value in [('*',a*b),('/',q),(' MOD ',a-q*b)]:
+                    expressions.append(f'({a}){op}({b})')
+                    expected.append(signed(value))
+        self.assertEqual(self.values(expressions),expected)
+        output=self.execute('PRINT 0/0\nPRINT "@";42\n',errors=True)
+        self.assertIn('?DIVIDE BY ZERO\n',output)
+        self.assertTrue(output.endswith('@42\n>'))
+
+    def test_division_reuses_both_results(self):
+        # Count real signed divisions. Printing uses unsigned formatting, and
+        # multiplication overwrites scratch results; neither may poison cache.
+        with tempfile.TemporaryDirectory() as directory:
+            asm=Path(directory)/'division-count.asm'
+            image=asm.with_suffix('.hex')
+            source=(ROOT/'a08/b8008.asm').read_text().replace('DIVMAIN:\n',
+                'DIVMAIN:\n        LHI HIGH VARS\n        LLI 200D\n'
+                '        LAM\n        ADI 1D\n        LMA\n',1)
+            asm.write_text(source)
+            result=subprocess.run([str(ASSEMBLER),str(asm),'-o'+str(image)],
+                                  capture_output=True,timeout=15)
+            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+            marker='PRINT "@";PEEK(15560)\n'
+            program=('POKE 15560,0\nA=1234:B=17\n'
+                     'PRINT "Q";A/B;",";A MOD B\nC=10*7\n'
+                     'PRINT "R";A MOD B;",";A/B\n'+marker+
+                     'A=1235\nPRINT "Q";A/B;",";A MOD B\n'+marker+
+                     'A=-1235\nPRINT "Q";A/B;",";A MOD B\n'+marker+
+                     'B=-17\nPRINT "Q";A/B;",";A MOD B\n'+marker+
+                     'PRINT 0/0\n'+marker+
+                     'NEW\nPRINT "Q";(-1235)/(-17);",";(-1235) MOD (-17)\n'+marker+
+                     'INPUT A\n-1235\nINPUT B\n-17\n'
+                     'PRINT "Q";A/B;",";A MOD B\n'+marker+
+                     'PRINT "Q";1234/17;",";1234 MOD 17\n'+marker)
+            output=self.execute(program,errors=True,image=image)
+            self.assertEqual(re.findall(r'^@([0-9]+)$',output,re.M),
+                             ['1','2','3','4','4','4','4','5'])
+            self.assertEqual(re.findall(r'^Q([^\n]+)$',output,re.M),
+                             ['72,10','72,11','-72,-11','72,-11',
+                              '72,-11','72,-11','72,10'])
+            self.assertIn('R10,72\n',output)
+            self.assertEqual(output.count('?DIVIDE BY ZERO\n'),1)
+
+    def test_address_reload_elimination(self):
+        # Execute both versions: register clobbers, low-byte wrap, calls, and
+        # flags must behave identically despite eliminated immediate loads.
+        source="""VARS EQU 3C00H
+LEFT EQU VARS+88D
+        ORG 40H
+        LHI HIGH VARS
+        LHI HIGH LEFT
+        LLI 0D
+        LMI 66D
+        LLI 1D
+        LMI 65D
+        LHI HIGH VARS
+        LLI 1D
+        LAM
+        OUT 10D
+        LLI 255D
+        INL
+        LLI 0D
+        LAM
+        OUT 10D
+        LLI 2D
+        LMI 3DH
+        LHM
+        LHI HIGH VARS
+        LLI 0D
+        LAM
+        OUT 10D
+        LLI 3D
+        LMI 1D
+        LLM
+        LLI 3D
+        LAM
+        OUT 10D
+        CAL CLOBBER
+        LHI HIGH VARS
+        LLI 0D
+        LAM
+        OUT 10D
+        LAI 1D
+        CPI 1D
+        LHI HIGH VARS
+        LLI 0D
+        LHI HIGH VARS
+        LLI 0D
+        JTZ DONE
+        LAI 63D
+        OUT 10D
+        HLT
+DONE:   LAI 33D
+        OUT 10D
+        HLT
+CLOBBER:
+        LHI 3DH
+        LLI 7D
+        RET
+        END
+"""
+        optimized='\n'.join(prepare.address_loads(source.splitlines(),prepare.addresses(source)))+'\n'
+        self.assertLess(len(optimized),len(source))
+        outputs=[]
+        with tempfile.TemporaryDirectory() as directory:
+            for name,text in [('original',source),('optimized',optimized)]:
+                asm=Path(directory)/(name+'.asm')
+                image=asm.with_suffix('.hex')
+                asm.write_text(text)
+                result=subprocess.run([str(ASSEMBLER),str(asm),'-o'+str(image)],
+                                      capture_output=True,timeout=15)
+                self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+                result=run('-n:100000',image)
+                self.assertEqual(result.returncode,0,result.stderr)
+                outputs.append(result.stdout)
+        self.assertEqual(outputs,[b'ABB\x01B!']*2)
+
     def test_errors_recover(self):
         cases = [('PRINT 1/0','DIVIDE BY ZERO'), ('PRINT (2+3','SYNTAX'),
                  ('DIM A(3):PRINT A(4)','BOUNDS'), ('PRINT B(0)','BOUNDS'),

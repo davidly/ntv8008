@@ -302,3 +302,55 @@ performance command runs all three complete benchmarks. Session cycle counts
 are 5,750,828,866 / 1,424,933,366 / 3,669,866,632 for sieve/e/TTT. The banner is
 one byte longer, leaving code end at 187eh; RAM-fit and reproducibility checks
 still pass. The publication inventory retains 254 reviewed files plus manifest.
+
+
+## b8008 indices, arithmetic, division reuse, and simple stores (2026-10-31)
+
+Implemented the four proposed runtime improvements:
+
+* Array indices accept a fast atom or atom +/- constant. The existing full
+  bounds check remains; complex or nested expressions restore the original
+  token pointer and retain general expression evaluation.
+* Multiplication terminates when the remaining multiplier is zero. Division
+  returns early for a smaller dividend and skips leading zero dividend bits
+  before the restoring loop, retaining 16-bit wrapping and signed remainders.
+* A private eight-byte last-division cache keys both raw signed operand values
+  and saves quotient/remainder independently of arithmetic scratch. Zero
+  divisors are rejected before lookup. Unsigned decimal formatting bypasses
+  the cache, avoiding signed/unsigned collisions for 8000h.
+* Simple assignment RHSs share the index fast parser, covering increments,
+  decrements, constants, and scalar stores. This runs natively at statement
+  execution; no added tokens, precompiled BASIC, or benchmark changes are used.
+
+To retain RAM fit, prepare.py eliminates redundant immediate H/L reloads in
+straight-line assembly only. It tracks register writes and byte wrap and drops
+facts at labels/control transfers; removed instructions do not alter flags.
+This recovered roughly 250 bytes before adding the runtime paths. Final code
+ends at 18c3h (6275 bytes from 0040h plus the three-byte startup jump at zero),
+only 69 bytes above the prior image. The full sieve's 8191-byte array still fits
+with its tokenized program below workspace at 3b00h.
+
+All 23 b8008 tests pass on Linux and with native Windows assembler/emulator.
+Four added tests cover offset/assignment fast paths and precedence fallback,
+wrapped/negative/out-of-range indices, small arithmetic and signed boundaries,
+and actual execution equivalence of address-load elimination (including calls,
+register clobbers, low-byte wrap, and flags). A native DIVMAIN counter proves
+one signed division supplies both / and MOD across multiplication and unsigned
+printing, changed operands/signs, INPUT/NEW, and division-by-zero recovery.
+Earlier image reproducibility, stack limits, literal-branch/no-lookup, editing,
+full prime/e/minimax benchmarks, and RAM-fit checks all pass.
+
+| Benchmark | Before cycles | After cycles | Fewer cycles |
+| --- | ---: | ---: | ---: |
+| Sieve, ten passes | 5,750,828,866 | 4,199,466,844 | 27.0% |
+| E, 192 digits | 1,424,933,366 | 939,516,764 | 34.1% |
+| TTT, one iteration | 3,669,866,632 | 2,789,402,456 | 24.0% |
+
+Intermediate cycle totals (sieve / e / TTT): address cleanup alone
+5,649,945,454 / 1,361,251,810 / 3,619,410,560; index paths
+4,714,487,622 / 1,203,653,668 / 3,071,722,680; shorter arithmetic
+4,714,777,628 / 998,848,360 / 3,071,700,558; division reuse
+4,714,473,848 / 897,096,190 / 3,071,611,836. Shared simple-store matching then
+helps sieve/TTT further while adding about 4.7% to e's compound-assignment paths;
+all three workloads improve substantially overall. Totals include native input,
+tokenization, binding/unbinding, and execution, excluding host I/O waits.
