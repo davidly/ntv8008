@@ -180,7 +180,8 @@ seq
         import runpy
         import hashlib
         root=ROOT/'ack/build/src/ack'
-        if not root.is_dir():self.skipTest('native ACK_TOOLS has no local source build')
+        if not root.is_dir():root=ROOT/'ack/build/msvc/src/ack'
+        if not root.is_dir():self.skipTest('ACK_TOOLS has no local source build')
         apply=runpy.run_path(str(ROOT/'ack/occam/patch.py'))['apply']
         apply(root)
         files=[p for p in (root/'lang/occam/comp').iterdir() if p.is_file()]

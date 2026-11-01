@@ -237,7 +237,10 @@ main()
 class Compilers(unittest.TestCase):
     def compiler(self,name):
         suffix='.exe' if os.name=='nt' else ''
-        tool=ROOT/name/'build'/('bin/em_cemcom.ansi'+suffix if name=='ack' else 'scc8008'+suffix)
+        if name=='ack':
+            tool=Path(os.environ.get('ACK_TOOLS',str(ROOT/'ack/build/bin')))/('em_cemcom.ansi'+suffix)
+        else:
+            tool=ROOT/name/'build'/('scc8008'+suffix)
         if not tool.is_file():self.skipTest(name+' host tools unavailable')
         with tempfile.TemporaryDirectory() as directory:
             source=Path(directory)/'bytes.c';source.write_text(SOURCE)

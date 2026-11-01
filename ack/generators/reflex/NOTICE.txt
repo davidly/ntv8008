@@ -1,0 +1,15 @@
+reflex 20260131, maintained by Thomas E. Dickey.
+Official project: https://invisible-island.net/reflex/reflex.html
+Source archive used: https://invisible-island.net/archives/reflex/reflex-20260131.tgz
+Archive SHA-256: ab51a65f33623bb9a3877fc5991ca7960b2421ed112d94c733d85597991748bd
+Terms: MIT-style additions plus the original Flex BSD-style notice with acknowledgement/advertising requirements; see upstream/COPYING.
+
+Selected upstream C sources, headers, grammar/skeleton bootstrap files and
+notices are copied verbatim into upstream/. No configure scripts, generated
+Windows binaries or build objects are published. Configuration headers and
+build-time adaptations live outside upstream/ in the original project driver.
+The complete source archive is available at the recorded upstream location.
+
+Reflex acknowledgement applicable to binary distribution:
+This product includes software developed by the University of California,
+Berkeley and its contributors.

@@ -1,0 +1,14 @@
+10 REM Four byte-sized elements, indexed from zero through three
+20 DIM BYTE S(3)
+30 S(0)=0:S(1)=1:S(2)=4:S(3)=9
+40 PRINT "8008 SQUARE TABLE"
+50 PRINT "Choose 0..3:"
+60 INPUT N
+70 IF N<0 THEN 200
+80 IF N>3 THEN 200
+90 PRINT "SQUARE ="
+100 PRINT S(N)
+110 END
+200 PRINT "USE A DIGIT FROM 0 TO 3."
+210 END
+RUN

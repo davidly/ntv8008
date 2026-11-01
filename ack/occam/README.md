@@ -34,11 +34,12 @@ py -3 tests\occam.py
 perfrun.bat --languages occam
 ```
 
-ACK host frontend building uses Linux/WSL; the Python code generator and console
-runtime are portable. With compatible native tools including the patched
-`em_occam` selected through `ACK_TOOLS`, `py -3 ack\occam.py source.ocm` and
-`ack\occam\rebuild.bat` also work. An unrelated unpatched Occam executable does
-not provide this integration's regression fixes.
+Native Windows host tools now build with `setup.bat --ack` (or `--all`) in a
+Visual Studio 2022 developer command prompt, using Python/MSVC and bundled
+parser generators. No WSL is required. After setup, the local `rebuild.bat`
+script and `tests/occam.py --compile` use the native tools. `ACK_TOOLS` can
+select an alternative compatible tool directory. See the [MSVC guide](../MSVC.md).
+
 
 The compile wrapper accepts `-o image.hex`, `--assembly program.asm` and
 `--em program.e`. Failed compilation preserves an existing output image.

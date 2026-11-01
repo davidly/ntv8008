@@ -22,11 +22,12 @@ python3 ack/modula2.py program.mod -o program.hex \
 ./ntv8008 program.hex
 ```
 
-The checked-in HEX files run on Linux, macOS, and Windows. The Windows
-`rebuild.bat` wrapper can use native ACK tools via `ACK_TOOLS`; building the
-frontend from source is validated on Linux. On Windows, WSL is the supported
-way to build the compiler. Run checked-in programs with `ntv8008.exe` and
-validate them with `py -3 tests\modula2.py`.
+Native Windows host tools now build with `setup.bat --ack` (or `--all`) in a
+Visual Studio 2022 developer command prompt, using Python/MSVC and bundled
+parser generators. No WSL is required. After setup, the local `rebuild.bat`
+script and `tests/modula2.py --compile` use the native tools. `ACK_TOOLS` can
+select an alternative compatible tool directory. See the [MSVC guide](../MSVC.md).
+
 
 ## Examples
 

@@ -1,0 +1,313 @@
+#!/usr/bin/env python3
+"""Build ACK's native Windows host tools using Python, MSVC and bundled generators."""
+import argparse
+import hashlib
+import json
+import os
+from pathlib import Path, PurePosixPath
+import re
+import shlex
+import shutil
+import subprocess
+import sys
+from time import perf_counter
+HERE = Path(__file__).resolve().parent
+RUNTIME_TOOLS = ('em_cemcom.ansi', 'cpp.ansi', 'em_opt', 'em_opt2', 'em_decode', 'em_pc', 'em_m2', 'em_bem', 'em_occam')
+
+class Builder:
+
+    def __init__(self, source, output, tools):
+        (self.source, self.output, self.tools) = (source, output, tools)
+        self.shims = HERE / 'msvc'
+        self.output.mkdir(parents=True, exist_ok=True)
+        self.plan = json.loads((HERE / 'msvc/recipe.json').read_text())
+        (self.done, self.active, self.groups) = (set(), set(), set())
+        self.rules = {p: r for r in self.plan['rules'] for p in r['outs']}
+        self.env = dict(os.environ, LLGEN_LIB_DIR=str(source / 'util/LLgen/lib'))
+        self.logs = output / 'logs'
+        self.logs.mkdir(exist_ok=True)
+        self.command_count = 0
+
+    def norm(self, p):
+        return str(PurePosixPath(p))
+
+    def path(self, p):
+        return self.source / self.norm(p)
+
+    def target(self, p, ext):
+        return self.output / (hashlib.sha256(p.encode()).hexdigest()[:20] + ext)
+
+    def exe(self, p):
+        return self.target(p, '.exe')
+
+    def run(self, args, stdin=None, cwd=None):
+        self.command_count += 1
+        log = self.logs / ('%04d.log' % self.command_count)
+        args = list(map(str, args))
+        result = subprocess.run(args, input=stdin, cwd=cwd or self.output, env=self.env, capture_output=True)
+        log.write_bytes(result.stdout + result.stderr)
+        with (self.logs / 'commands.jsonl').open('a', encoding='utf-8') as stream:
+            stream.write(json.dumps({'command': args, 'log': log.name}) + '\n')
+        if result.returncode:
+            print((result.stdout + result.stderr).decode(errors='replace')[-3000:])
+            raise RuntimeError('command failed; see ' + str(log))
+        return result.stdout
+
+    def compile(self, p):
+        (source, gid) = self.plan['units'][p]
+        group = self.plan['groups'][gid]
+        self.build(source)
+        if gid not in self.groups:
+            for dep in group['deps']:
+                self.build(dep)
+            self.groups.add(gid)
+        args = ['cl', '/nologo', '/TC', '/std:c11', '/Zc:__STDC__', '/O2', '/DWIN32', '/D_CRT_SECURE_NO_WARNINGS', '/D_CRT_NONSTDC_NO_DEPRECATE', '/FI' + str(self.shims / 'compat.h'), '/I' + str(self.shims)]
+        args += ['/I' + str(self.path(i)) for i in group['includes']]
+        for d in group['defines']:
+            if d.startswith('UNREACHABLE_CODE='):
+                d = 'UNREACHABLE_CODE=__assume(0)'
+            if d.startswith('NORETURN='):
+                d = 'NORETURN=__declspec(noreturn)'
+            args += ['/D' + d]
+        args += ['/c', self.path(source), '/Fo' + str(self.target(p, '.obj'))]
+        data = self.run(args)
+        self.target(p, '.log').write_bytes(data)
+
+    def transform(self, script, inputs):
+        """Implement the pinned ACK sed/awk shell generators in Python."""
+        name = Path(script).name
+        text = ''.join((self.path(i).read_text() for i in inputs))
+        if name == 'make.parameters':
+            return '#ifndef PARAMETERS_H\n#define PARAMETERS_H\n' + ''.join((l + '\n' for l in text.splitlines() if not l.startswith('!'))) + '#endif\n'
+        if name == 'make.allocd':
+            result = []
+            for line in text.splitlines():
+                m = re.search('\\b(STATICALLOCDEF|ALLOCDEF)\\s+"(.*)"\\s*(\\d+)', line)
+                if not m:
+                    result.append(line)
+                    continue
+                (kind, typ, n) = m.groups()
+                static = kind == 'STATICALLOCDEF'
+                result.extend([f'/* allocation definitions of struct {typ} */', f"{('' if static else 'extern ')}struct {typ} *h_{typ};", '#ifdef DEBUG', f"{('' if static else 'extern ')}int cnt_{typ};"])
+                if not static:
+                    result.append('extern char *std_alloc();')
+                result.extend([f'#define new_{typ}() ((struct {typ} *) std_alloc((char **)&h_{typ}, sizeof(struct {typ}), {n}, &cnt_{typ}))', '#else', f'#define new_{typ}() ((struct {typ} *) st_alloc((char **)&h_{typ}, sizeof(struct {typ}), {n}))', '#endif', f'#define free_{typ}(p) st_free(p, &h_{typ}, sizeof(struct {typ}))'])
+            return '\n'.join(result) + '\n'
+        if name == 'make.next':
+            prefix = '#include "parameters.h"\n'
+            if 'lang/pc/' in script:
+                prefix += '#include "debug.h"\n'
+            for typ in re.findall('ALLOCDEF[^\\n]*"(.*)"', text):
+                prefix += f'struct {typ} *h_{typ} = 0;\n#ifdef DEBUG\nint cnt_{typ} = 0;\n#endif\n'
+            return prefix
+        if name == 'make.tokfile':
+            return '/* Generated by make.tokfile */\n/* $Id$ */\n' + ''.join(('%token\t' + line.rsplit('{', 1)[1].split(',', 1)[0] + ';\n' for line in text.splitlines() if re.search('\\{[A-Z]', line)))
+        if name == 'make.tokcase':
+            parts = re.findall("cat <<'--EOT--'\\n(.*?)\\n--EOT--", self.path(script).read_text(), re.S)
+            assert len(parts) == 2, script
+            middle = ''
+            for line in text.splitlines():
+                if re.search('\\{[A-Z]', line):
+                    m = re.search('.*\\{(.*),.*(".*").*$', line)
+                    assert m, line
+                    middle += '\tcase ' + m[1] + ' :\n\t\treturn ' + m[2] + ';\n'
+            return parts[0] + '\n' + middle + parts[1] + '\n'
+        if name == 'maketokentab':
+            return 'char* tokentab[] = {\n' + ''.join(('"' + l.split()[1] + '",\n' for l in text.splitlines() if l.startswith('#define'))) + '};\n'
+        raise RuntimeError('unhandled script ' + script)
+
+    def generate(self, rule):
+        """Execute only recognized recipe operations, never a host shell.
+
+     LLgen writes directly into its destination, making the old mv step a no-op.
+     """
+        for dep in rule['deps']:
+            self.build(dep)
+        for output in rule['outs']:
+            self.path(output).parent.mkdir(parents=True, exist_ok=True)
+        for cmd in rule['commands']:
+            a = shlex.split(cmd)
+            if a[0] == 'cp':
+                shutil.copy2(self.path(a[-2]), self.path(a[-1]))
+                continue
+            if a[0] == 'mv':
+                continue
+            if a[0] == 'echo':
+                p = self.path(a[-1])
+                data = (a[1] + '\n').encode()
+                p.write_bytes((p.read_bytes() if a[-2] == '>>' else b'') + data)
+                continue
+            if a[0] == 'grep':
+                p = self.path(a[-1])
+                data = ''.join((l + '\n' for l in self.path(a[a.index('<') + 1]).read_text().splitlines() if not l.startswith('!'))).encode()
+                p.write_bytes((p.read_bytes() if a[-2] == '>>' else b'') + data)
+                continue
+            if a[0] == 'cat':
+                p = self.path(a[-1])
+                p.write_bytes(p.read_bytes() + self.path(a[1]).read_bytes())
+                continue
+            if a[0] == 'lua':
+                data = self.run([self.tools / 'lua.exe', self.path(a[1])], stdin=self.path(a[a.index('<') + 1]).read_bytes(), cwd=self.source)
+                self.path(a[-1]).write_bytes(data)
+                continue
+            if a[0] == 'sh':
+                a = a[1:]
+            if Path(a[0]).name.startswith('make'):
+                inp = [a[a.index('<') + 1]] if '<' in a else a[1:a.index('>')]
+                self.path(a[-1]).write_bytes(self.transform(a[0], inp).encode())
+                continue
+            if a[0] == 'awk':
+                table = self.path(a[a.index('<') + 1]).read_text().splitlines()
+                table = table[next((i for (i, l) in enumerate(table) if re.search('\\baar\\b', l))):]
+                rows = [(l.split() + ['', '', ''])[:3] for l in table]
+                text = '#include "pop_push.h"\n\nchar *pop_push[] = {\n"",\n'
+                for r in rows:
+                    text += '/* %s */ "%s",\n' % (r[0], '-?' if r[0] in ('cal', 'cai') else r[2])
+                text += "};\n\nchar flow_tab[]= {\n'\\000',\n"
+                for r in rows[:-1]:
+                    text += '/* ' + r[0] + ' */ ' + ('HASLABEL|' if r[1].ljust(2)[0] == 'b' else '') + ('CONDBRA' if r[1].ljust(2)[1] == 'c' else 'JUMP' if r[1].ljust(2)[1] == 't' else "'\\000'") + ',\n'
+                self.path(a[-1]).write_bytes((text + '};\n').encode())
+                continue
+            if a[0] == 'bison':
+                h = a[1].split('=', 1)[1]
+                c = a[2].split('=', 1)[1]
+                self.run([self.tools / 'byacc.exe', '-d', '-H', self.path(h), '-o', self.path(c), self.path(a[3])])
+                continue
+            if a[0] == 'flex':
+                data = self.path(a[-3] if a[-2] == '>' else a[-1]).read_bytes()
+                opts = [x for x in a[1:] if x in ('-s', '-t')]
+                if '--noyywrap' in a:
+                    data = b'%option noyywrap\n' + data
+                self.path(a[-1]).write_bytes(self.run([self.tools / 'reflex.exe', *opts], stdin=data))
+                continue
+            tool = self.norm(a[0])
+            if tool in self.plan['programs']:
+                if '|' in a:
+                    split = a.index('|')
+                    second = self.norm(a[split + 1])
+                    self.build(second)
+                    data = self.run([self.exe(tool)], stdin=self.path(a[a.index('<') + 1]).read_bytes(), cwd=self.source)
+                    data = self.run([self.exe(second)], stdin=data, cwd=self.source)
+                    self.path(a[-1]).write_bytes(data)
+                elif '/+LLgen/' in tool:
+                    outdir = self.path(rule['outs'][0]).parent
+                    self.run([self.exe(tool), *[self.path(i).as_posix() for i in a[1:]]], cwd=outdir)
+                else:
+                    args = [self.exe(tool), *['-f' + str(self.path(i[2:])) if i.startswith('-f') else str(self.path(i)) for i in a[1:a.index('>')]]]
+                    self.path(a[-1]).write_bytes(self.run(args, cwd=self.source))
+                continue
+            raise RuntimeError('unhandled generator ' + cmd)
+        for p in rule['outs']:
+            self.done.add(p)
+
+    def build(self, p):
+        p = self.norm(p)
+        if p in self.done:
+            return
+        if not p.startswith('.obj/'):
+            if not self.path(p).exists():
+                raise RuntimeError('missing source ' + p)
+            self.done.add(p)
+            return
+        if p in self.active:
+            raise RuntimeError('dependency cycle ' + p)
+        self.active.add(p)
+        if p in self.plan['units']:
+            self.compile(p)
+        elif p in self.plan['libraries']:
+            for d in self.plan['libraries'][p]:
+                self.build(d)
+            self.run(['lib', '/nologo', '/OUT:' + str(self.target(p, '.lib')), *[self.target(d, '.obj') for d in self.plan['libraries'][p]]])
+        elif p in self.plan['programs']:
+            for d in self.plan['programs'][p]:
+                self.build(d)
+            self.run(['link', '/nologo', self.tools / 'compat.obj', '/OUT:' + str(self.exe(p)), *[self.target(d, '.lib' if d.endswith('.a') else '.obj') for d in self.plan['programs'][p]]])
+            print('Linked', p, flush=True)
+        elif p in self.rules:
+            self.generate(self.rules[p])
+        else:
+            raise RuntimeError('unknown node ' + p)
+        self.active.remove(p)
+        self.done.add(p)
+
+    def build_all(self, binaries):
+        binaries.mkdir(parents=True, exist_ok=True)
+        for name in RUNTIME_TOOLS:
+            node = self.plan['targets'][name]
+            self.build(node)
+            shutil.copy2(self.exe(node), binaries / (name + '.exe'))
+
+def build_generators(builder, lua):
+    """Build the bundled C generators and downloaded MIT Lua with MSVC."""
+    tools = builder.tools
+    tools.mkdir(parents=True, exist_ok=True)
+    shim = tools / 'compat.obj'
+    builder.run(['cl', '/nologo', '/TC', '/std:c11', '/O2', '/c', builder.shims / 'compat.c', '/Fo' + str(shim)])
+
+    def compile_program(name, sources, includes=()):
+        objects = []
+        for source in sources:
+            obj = tools / (name + '-' + source.stem + '.obj')
+            objects.append(obj)
+            builder.run(['cl', '/nologo', '/TC', '/std:c11', '/Zc:__STDC__', '/O2', '/DWIN32', '/D_CRT_SECURE_NO_WARNINGS', '/D_CRT_NONSTDC_NO_DEPRECATE', '/FI' + str(builder.shims / 'compat.h'), '/I' + str(builder.shims), *['/I' + str(p) for p in includes], '/c', source, '/Fo' + str(obj)])
+        builder.run(['link', '/nologo', '/OUT:' + str(tools / (name + '.exe')), *objects, shim])
+        print('Built generator', name, flush=True)
+    byacc = HERE / 'generators/byacc/upstream'
+    compile_program('byacc', [byacc / (n + '.c') for n in 'closure error graph lalr lr0 main mkpar mstring output reader yaccpar symtab verbose warshall'.split()])
+    reflex = HERE / 'generators/reflex/upstream'
+    (tools / 'config.h').write_text('#define STDC_HEADERS 1\n#define HAVE_STRING_H 1\n#define HAVE_SYS_TYPES_H 1\n#define HAVE_STDINT_H 1\n#define HAVE_INTTYPES_H 1\n#define HAVE_MALLOC_H 1\n#define HAVE_ALLOCA 1\n#define MIXEDCASE_FILENAMES 1\n')
+    builder.run([tools / 'byacc.exe', '-d', '-o', tools / 'parse.c', reflex / 'parse.y'])
+    shutil.copy2(reflex / 'initscan.c', tools / 'scan.c')
+    compile_program('reflex', [reflex / (n + '.c') for n in 'ccl dfa ecs gen main misc nfa skel sym tblcmp yylex'.split()] + [tools / 'parse.c', tools / 'scan.c'], [tools, reflex])
+    compile_program('lua', [p for p in sorted((lua / 'src').glob('*.c')) if p.name not in ('luac.c', 'onelua.c')], [lua / 'src'])
+
+def bootstrap(build_dir=None, binaries=None):
+    if os.name != 'nt':
+        raise ValueError('use Windows Python in a Visual Studio developer command prompt')
+    for tool in ('cl', 'lib', 'link'):
+        if not shutil.which(tool):
+            raise ValueError('missing MSVC tool: ' + tool)
+    import bootstrap as upstream
+    root = (build_dir or HERE / 'build/msvc').resolve()
+    binaries = (binaries or HERE / 'build/bin').resolve()
+    root.mkdir(parents=True, exist_ok=True)
+    for name in ('ack', 'lua'):
+        cached = HERE / 'build' / (name + '.tar.gz')
+        destination = root / (name + '.tar.gz')
+        if cached.is_file() and (not destination.exists()):
+            shutil.copy2(cached, destination)
+    previous = upstream.BUILD
+    upstream.BUILD = root
+    try:
+        ack = upstream.unpack('ack', 'https://codeload.github.com/davidgiven/ack/tar.gz/' + upstream.REVISION, upstream.ACK_SHA256, 'ACK_ARCHIVE')
+        lua = upstream.unpack('lua', 'https://www.lua.org/ftp/lua-5.4.7.tar.gz', upstream.LUA_SHA256, 'LUA_ARCHIVE')
+    finally:
+        upstream.BUILD = previous
+    upstream.patch_sources(ack)
+    builder = Builder(ack, root / 'objects', root / 'tools')
+    if builder.plan['revision'] != upstream.REVISION:
+        raise ValueError('native build recipe must be reviewed for the pinned ACK revision')
+    started = perf_counter()
+    build_generators(builder, lua)
+    builder.build_all(binaries)
+    licenses = root / 'licenses'
+    licenses.mkdir(exist_ok=True)
+    shutil.copy2(ack / 'Copyright', licenses / 'ACK-Copyright')
+    shutil.copy2(lua / 'README', licenses / 'Lua-README')
+    shutil.copy2(HERE / 'generators/byacc/upstream/LICENSE', licenses / 'BYACC-LICENSE')
+    shutil.copy2(HERE / 'generators/reflex/upstream/COPYING', licenses / 'Reflex-COPYING')
+    print('Native ACK tools ready in', binaries)
+    print('Build/generation time: %.1f seconds; logs: %s' % (perf_counter() - started, builder.logs))
+    return binaries
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--build-dir', type=Path, help='isolated sources/objects/tools directory (default: ack/build/msvc)')
+    parser.add_argument('--bin-dir', type=Path, help='native frontend output directory (default: ack/build/bin)')
+    args = parser.parse_args()
+    bootstrap(args.build_dir, args.bin_dir)
+if __name__ == '__main__':
+    try:
+        main()
+    except (OSError, ValueError, KeyError, RuntimeError, subprocess.CalledProcessError) as error:
+        sys.exit(str(error))

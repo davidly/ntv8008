@@ -20,7 +20,8 @@ EXCLUDED_NAMES={'a08/a85.c','a08/a85.h','a08/a85eval.c','a08/a85eval_nosplit.c',
 REQUIRED={'LICENSE','THIRD_PARTY_NOTICES.md','PROVENANCE.md','licenses/CC0-1.0.txt',
           'ack/ACK-COPYRIGHT','ack/NOTICE.txt','smallc/upstream/LICENSE',
           'smallc/NOTICE.txt','robson/upstream/LICENSE','robson/NOTICE.txt',
-          'scelbal/NOTICE.txt','forth/NOTICE.txt','plm8/upstream/NOTICE.txt'}
+          'scelbal/NOTICE.txt','forth/NOTICE.txt','plm8/upstream/NOTICE.txt',
+          'ack/generators/byacc/upstream/LICENSE','ack/generators/reflex/upstream/COPYING'}
 
 
 def ignored(name):
@@ -79,6 +80,12 @@ def validate(names):
 
 
 def category(name):
+    if name.startswith('ack/generators/byacc/upstream/'):
+        return 'LicenseRef-Public-Domain','Berkeley Yacc 20260126; ack/generators/byacc/NOTICE.txt and upstream/LICENSE'
+    if name.startswith('ack/generators/reflex/upstream/'):
+        return 'LicenseRef-Reflex','Reflex 20260131; full MIT/Flex acknowledgement terms in upstream/COPYING; ack/generators/reflex/NOTICE.txt'
+    if name=='ack/msvc/recipe.json':
+        return 'BSD-3-Clause','Build metadata derived from pinned ACK graph; ack/ACK-COPYRIGHT and ack/NOTICE.txt'
     if name.startswith('smallc/upstream/'):
         return 'Unlicense','ncb85/SmallC-85 cfeb1bce46d6454a91ec0d819626a1c75358a030; smallc/NOTICE.txt'
     if name.startswith('robson/upstream/'):

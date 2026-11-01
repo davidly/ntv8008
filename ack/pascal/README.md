@@ -22,11 +22,12 @@ compiler. Existing installations need that build step once to add Pascal.
 Subsequent compilation is offline. The source archive and license are unchanged;
 see [the ACK notice](../NOTICE.txt) and [ACK-COPYRIGHT](../ACK-COPYRIGHT).
 
-The host build is validated on Linux. On Windows, use WSL to compile, then run
-`ntv8008.exe ack\pascal\examples\hello.hex` in Windows. Native Windows ACK tools
-can be selected with `ACK_TOOLS`; `call ack\pascal\rebuild.bat` uses those tools,
-but building the ACK host tools natively on Windows has not been validated.
-The included HEX programs and default runtime tests work directly on Windows.
+Native Windows host tools now build with `setup.bat --ack` (or `--all`) in a
+Visual Studio 2022 developer command prompt, using Python/MSVC and bundled
+parser generators. No WSL is required. After setup, the local `rebuild.bat`
+script and `tests/pascal.py --compile` use the native tools. `ACK_TOOLS` can
+select an alternative compatible tool directory. See the [MSVC guide](../MSVC.md).
+
 
 `python3 ack/pascal.py source.p -o output.hex` compiles a single program.
 `--assembly file.asm` and `--em file.e` save generated assembly and linked EM.

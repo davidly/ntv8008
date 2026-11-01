@@ -26,6 +26,14 @@ not part of the published source or binary images.
 | `tools/` | Verified dependency fetching/building, benchmark runner and publication-inventory audit. |
 | `LICENSE`, `THIRD_PARTY_NOTICES.md`, `PROVENANCE.md` | Project BSD license, retained third-party licensing references and source provenance. |
 
+## Write your own programs
+
+The [first-program guide](docs/first-program.md) walks through creating, building,
+running and modifying an application. [Starter projects](starters/README.md) for
+SmallC, b8008 BASIC, assembly and ACK C include Windows/Linux build/run wrappers,
+recorded input and a small checked array lookup. Copy one to the ignored `work/`
+folder to begin a project without changing the supplied examples.
+
 ## Build and run
 
 Full setup on Linux/macOS requires a C++11 compiler, C compiler and Python 3.8 or newer.
@@ -79,15 +87,21 @@ uncached dependencies. A08 is fetched from its official site, not bundled.
 | Baker 8008-Forth | Integration, native additions and examples; kernel not included | [Local-source setup](forth/README.md) |
 | Intel PL/M-8 | Runner, recovery tool and example sources; compiler/output images not included | [Local-image setup](plm8/README.md) |
 
-`./setup.sh --all` builds the default tools plus SmallC and all five ACK frontends
-and rebuilds their examples. ACK host builds currently require Linux/WSL with
-`make`, `ninja`, `gcc`, `flex` and `yacc` (for example, bison's yacc compatibility
-command), plus the usual C/C++ build tools. Lua is downloaded/built locally.
-Native Windows setup builds SmallC and the other default tools; ACK images still
-run there. Rebuild ACK under WSL, or supply compatible native tools via
-`ACK_TOOLS`. See the component READMEs for language subsets and ABI details.
-The ACK upstream toolchain has platform assumptions; macOS host rebuilding is
-not validated. The emulator and supplied images require no ACK host tools.
+`./setup.sh --all` or `setup.bat --all` builds the default tools, SmallC and all
+five ACK frontends, then rebuilds their examples. Native Windows ACK setup uses
+Python and Visual Studio 2022/MSVC. It builds bundled Berkeley Yacc and Reflex,
+downloads/builds pinned MIT Lua and ACK sources, and generates every parser/table
+locally. No WSL, MSYS2, GNU Make, GCC, flex, or bison installation is needed.
+See [the native Windows build guide](ack/MSVC.md).
+
+Linux ACK builds use `make`, `ninja`, `gcc`, `flex` and `yacc` (for example,
+bison's yacc compatibility command), plus the usual C/C++ tools. `ACK_TOOLS` can
+select an existing compatible host toolchain on either platform. ACK host
+rebuilding on macOS remains unvalidated. Supplied HEX images run without any
+host compiler. Bundled generator notices are recorded in
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+This product includes software developed by the University of California,
+Berkeley and its contributors.
 
 All full compiler integrations include sieve, e and tic-tac-toe benchmarks.
 Robson's byte-only Tiny BASIC lacks the arrays/precision needed for these full
@@ -173,7 +187,7 @@ include these checks. Snake is interactive and is excluded from `perfrun`.
 ./perfrun.sh
 ```
 
-Windows: `test.bat`, `test.bat --compile` (with compatible ACK host tools), and
+Windows: `test.bat`, `test.bat --compile` after `setup.bat --all`, and
 `perfrun.bat`. Tests include CPU instructions, cycle counts, HEX validation,
 keyboard/terminal behavior, source regeneration, native compiler differential
 tests and reference benchmark results. Missing optional historical components
@@ -183,11 +197,10 @@ Full optional SCELBAL benchmarks: `./test.sh --basic-benchmarks`.
 [GitHub Actions regression tests](https://github.com/davidly/ntv8008/actions/workflows/regression.yml)
 run on every push and pull request, and can also be started manually. Linux
 builds all five ACK frontends and SmallC before running `test.sh --compile`.
-Windows uses MSVC, runs `test.bat`, and additionally tests native SmallC compiler
-rebuilds, Snake, and compiler differential cases. Both include the b8008 suite.
-ACK runtime/code-generation tests run on Windows with the supplied images;
-ACK frontend rebuilds run on Linux. Optional PL/M, Forth, and SCELBAL inputs
-are not downloaded by CI, so their unavailable tests report explicit skips.
+Windows builds all five ACK frontends and SmallC natively with MSVC before
+running `test.bat --compile`. Both platforms include starter projects, b8008,
+compiler rebuilds and differential checks. Optional PL/M, Forth, and SCELBAL
+inputs are not downloaded by CI, so unavailable tests report explicit skips.
 
 Validation covers all instruction encodings, arithmetic and branch behavior,
 clock counts, HEX loader errors, redirected/file/interactive input, terminal

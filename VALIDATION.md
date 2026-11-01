@@ -1,6 +1,8 @@
 # Publication validation
 
-Validated 2026-10-30 on Linux and native Windows. macOS execution was not tested.
+Initial publication validated 2026-10-30 on Linux and native Windows. Later
+entries record expanded coverage; see the 2026-11-01 native ACK section below.
+macOS execution was not tested.
 
 * A08 was fetched from its official site and pinned by SHA-256. The official
   release contains the RTS fix; the build-copy patch only changes `main`'s
@@ -712,3 +714,32 @@ Low code ends at 1900h, one byte above 18ffh; descriptor-tail code is four bytes
 smaller, giving a net resident-code saving of three bytes. Full sieve HEAP=14823
 leaves 281 bytes below workspace. The conservative low-code + 8191-byte array +
 512-byte source allowance still passes unchanged.
+
+## Native Windows ACK bootstrap — 2026-11-01
+
+Fresh Linux and native Windows checkouts both completed full setup and compiler
+regressions. Linux ran `setup.py --all` and `test.sh --compile`: 278 Python tests,
+with 20 expected optional-historical-component skips, plus native CPU tests.
+Windows ran `setup.bat --all` and `test.bat --compile`: 278 Python tests with
+22 expected optional/POSIX skips, plus native CPU tests. The new portable native
+build-generation suite and all four starter projects are included.
+
+Windows setup started from verified ACK/Lua archives and the included BYACC and
+Reflex sources, built all generators with MSVC, generated all parser/table C
+locally, and built nine ACK host tools. No pre-generated Linux `.obj` input or GNU
+build executable was used. The command log records only MSVC tools and native
+locally built executables. Source/build/output directories with spaces and a
+WSL UNC location were validated using native Windows Python and MSVC 19.44 x64.
+The native generation/compilation stage took approximately 45–46 seconds on the
+development host; downloads and extraction are excluded from that timing.
+
+All 25 ACK example HEX images rebuilt on both platforms match the existing
+published images byte-for-byte. Native Windows compiler suites exercise C,
+Pascal, Modula-2, BASIC and Occam, including source regeneration, arithmetic,
+console input, diagnostics, array and frame optimizations, and native differential
+cases. Occam's source-patch idempotence check also runs against the native build.
+
+This supersedes earlier Linux/WSL-only ACK host-build limitations in historical
+entries above. Windows CI now builds the full toolchains and executes compiler
+regressions. New bundled generator sources remain verbatim with their complete
+license notices; publication inventory and required-notice checks pass.

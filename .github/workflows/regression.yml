@@ -39,7 +39,7 @@ jobs:
         run: ./test.sh --compile
 
   windows:
-    name: Windows (MSVC, native SmallC tests)
+    name: Windows (MSVC, full compiler tests)
     runs-on: windows-2022
     timeout-minutes: 30
     steps:
@@ -56,13 +56,7 @@ jobs:
           if not defined VS_INSTALL exit /b 1
           call "%VS_INSTALL%\Common7\Tools\VsDevCmd.bat" -no_logo -arch=x64 -host_arch=x64
           if errorlevel 1 exit /b 1
-          call setup.bat --smallc
+          call setup.bat --all
           if errorlevel 1 exit /b 1
-          call test.bat
-          if errorlevel 1 exit /b 1
-          python tests\smallc.py --compile
-          if errorlevel 1 exit /b 1
-          python tests\snake.py --compile
-          if errorlevel 1 exit /b 1
-          python tests\native_codegen.py --compile Compilers
+          call test.bat --compile
           if errorlevel 1 exit /b 1

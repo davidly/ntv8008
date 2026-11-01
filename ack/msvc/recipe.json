@@ -1,0 +1,4567 @@
+{
+  "revision": "7afa32a0a0f13e865fa2e8104e442689005cd627",
+  "groups": [
+    {
+      "includes": [
+        "util/LLgen/src"
+      ],
+      "defines": [
+        "UNREACHABLE_CODE=__builtin_unreachable()",
+        "NORETURN=_Noreturn",
+        "LIBDIR=\"util/LLgen/lib\"",
+        "NON_CORRECTING"
+      ],
+      "deps": [
+        "util/LLgen/src/Lpars.h",
+        "util/LLgen/src/cclass.h",
+        "util/LLgen/src/extern.h",
+        "util/LLgen/src/fileio.h",
+        "util/LLgen/src/sets.h",
+        "util/LLgen/src/types.h"
+      ]
+    },
+    {
+      "includes": [],
+      "defines": [
+        "UNREACHABLE_CODE=__builtin_unreachable()",
+        "NORETURN=_Noreturn"
+      ],
+      "deps": []
+    },
+    {
+      "includes": [
+        ".obj/modules/src/data/+data_hdr"
+      ],
+      "defines": [
+        "UNREACHABLE_CODE=__builtin_unreachable()",
+        "NORETURN=_Noreturn"
+      ],
+      "deps": [
+        ".obj/modules/src/data/+data_hdr/array.h",
+        ".obj/modules/src/data/+data_hdr/astring.h",
+        ".obj/modules/src/data/+data_hdr/imap.h",
+        ".obj/modules/src/data/+data_hdr/pmap.h",
+        ".obj/modules/src/data/+data_hdr/smap.h",
+        ".obj/modules/src/data/+data_hdr/stringlist.h",
+        ".obj/modules/src/data/+data_hdr/warnings.h"
+      ]
+    },
+    {
+      "includes": [
+        ".obj/modules/src/string/+string_hdr"
+      ],
+      "defines": [
+        "UNREACHABLE_CODE=__builtin_unreachable()",
+        "NORETURN=_Noreturn"
+      ],
+      "deps": [
+        ".obj/modules/src/string/+string_hdr/ack_string.h"
+      ]
+    },
+    {
+      "includes": [
+        ".obj/modules/src/data/+data_hdr",
+        ".obj/modules/src/string/+string_hdr",
+        ".obj/modules/src/system/+system_hdr"
+      ],
+      "defines": [
+        "UNREACHABLE_CODE=__builtin_unreachable()",
+        "NORETURN=_Noreturn"
+      ],
+      "deps": [
+        ".obj/modules/src/data/+data_hdr/array.h",
+        ".obj/modules/src/data/+data_hdr/astring.h",
+        ".obj/modules/src/data/+data_hdr/imap.h",
+        ".obj/modules/src/data/+data_hdr/pmap.h",
+        ".obj/modules/src/data/+data_hdr/smap.h",
+        ".obj/modules/src/data/+data_hdr/stringlist.h",
+        ".obj/modules/src/data/+data_hdr/warnings.h",
+        ".obj/modules/src/string/+string_hdr/ack_string.h",
+        ".obj/modules/src/system/+system_hdr/system.h"
+      ]
+    },
+    {
+      "includes": [
+        ".obj/modules/h/+h_hdr",
+        ".obj/modules/src/alloc/+alloc_hdr",
+        ".obj/modules/src/data/+data_hdr",
+        ".obj/modules/src/string/+string_hdr",
+        ".obj/modules/src/system/+system_hdr"
+      ],
+      "defines": [
+        "UNREACHABLE_CODE=__builtin_unreachable()",
+        "NORETURN=_Noreturn"
+      ],
+      "deps": [
+        ".obj/modules/h/+h_hdr/em.h",
+        ".obj/modules/h/+h_hdr/emO_code.h",
+        ".obj/modules/h/+h_hdr/em_arith.h",
+        ".obj/modules/h/+h_hdr/em_label.h",
+        ".obj/modules/h/+h_hdr/em_mesX.h",
+        ".obj/modules/src/alloc/+alloc_hdr/alloc.h",
+        ".obj/modules/src/data/+data_hdr/array.h",
+        ".obj/modules/src/data/+data_hdr/astring.h",
+        ".obj/modules/src/data/+data_hdr/imap.h",
+        ".obj/modules/src/data/+data_hdr/pmap.h",
+        ".obj/modules/src/data/+data_hdr/smap.h",
+        ".obj/modules/src/data/+data_hdr/stringlist.h",
+        ".obj/modules/src/data/+data_hdr/warnings.h",
+        ".obj/modules/src/string/+string_hdr/ack_string.h",
+        ".obj/modules/src/system/+system_hdr/system.h"
+      ]
+    },
+    {
+      "includes": [
+        ".obj/h/+h_hdr",
+        ".obj/modules/src/em_data/+em_data_hdr"
+      ],
+      "defines": [
+        "UNREACHABLE_CODE=__builtin_unreachable()",
+        "NORETURN=_Noreturn"
+      ],
+      "deps": [
+        ".obj/h/+h_hdr/arch.h",
+        ".obj/h/+h_hdr/as_spec.h",
+        ".obj/h/+h_hdr/cg_pattern.h",
+        ".obj/h/+h_hdr/cgg_cg.h",
+        ".obj/h/+h_hdr/con_float",
+        ".obj/h/+h_hdr/em_abs.h",
+        ".obj/h/+h_hdr/em_ego.h",
+        ".obj/h/+h_hdr/em_flag.h",
+        ".obj/h/+h_hdr/em_mes.h",
+        ".obj/h/+h_hdr/em_path.h",
+        ".obj/h/+h_hdr/em_ptyp.h",
+        ".obj/h/+h_hdr/em_reg.h",
+        ".obj/h/+h_hdr/ip_spec.h",
+        ".obj/h/+h_hdr/local.h",
+        ".obj/h/+h_hdr/out.h",
+        ".obj/h/+h_hdr/ranlib.h",
+        ".obj/h/+h_hdr/stb.h",
+        ".obj/modules/src/em_data/+em_data_hdr/em_mnem.h",
+        ".obj/modules/src/em_data/+em_data_hdr/em_pseu.h",
+        ".obj/modules/src/em_data/+em_data_hdr/em_spec.h"
+      ]
+    },
+    {
+      "includes": [
+        ".obj/h/+h_hdr",
+        ".obj/modules/h/+h_hdr",
+        ".obj/modules/src/alloc/+alloc_hdr",
+        ".obj/modules/src/data/+data_hdr",
+        ".obj/modules/src/em_code/+headers_hdr",
+        ".obj/modules/src/em_data/+em_data_hdr",
+        ".obj/modules/src/string/+string_hdr",
+        ".obj/modules/src/system/+system_hdr",
+        "modules/src/em_code",
+        "modules/src/read_em"
+      ],
+      "defines": [
+        "UNREACHABLE_CODE=__builtin_unreachable()",
+        "NORETURN=_Noreturn"
+      ],
+      "deps": [
+        ".obj/h/+h_hdr/arch.h",
+        ".obj/h/+h_hdr/as_spec.h",
+        ".obj/h/+h_hdr/cg_pattern.h",
+        ".obj/h/+h_hdr/cgg_cg.h",
+        ".obj/h/+h_hdr/con_float",
+        ".obj/h/+h_hdr/em_abs.h",
+        ".obj/h/+h_hdr/em_ego.h",
+        ".obj/h/+h_hdr/em_flag.h",
+        ".obj/h/+h_hdr/em_mes.h",
+        ".obj/h/+h_hdr/em_path.h",
+        ".obj/h/+h_hdr/em_ptyp.h",
+        ".obj/h/+h_hdr/em_reg.h",
+        ".obj/h/+h_hdr/ip_spec.h",
+        ".obj/h/+h_hdr/local.h",
+        ".obj/h/+h_hdr/out.h",
+        ".obj/h/+h_hdr/ranlib.h",
+        ".obj/h/+h_hdr/stb.h",
+        ".obj/modules/h/+h_hdr/em.h",
+        ".obj/modules/h/+h_hdr/emO_code.h",
+        ".obj/modules/h/+h_hdr/em_arith.h",
+        ".obj/modules/h/+h_hdr/em_label.h",
+        ".obj/modules/h/+h_hdr/em_mesX.h",
+        ".obj/modules/src/alloc/+alloc_hdr/alloc.h",
+        ".obj/modules/src/data/+data_hdr/array.h",
+        ".obj/modules/src/data/+data_hdr/astring.h",
+        ".obj/modules/src/data/+data_hdr/imap.h",
+        ".obj/modules/src/data/+data_hdr/pmap.h",
+        ".obj/modules/src/data/+data_hdr/smap.h",
+        ".obj/modules/src/data/+data_hdr/stringlist.h",
+        ".obj/modules/src/data/+data_hdr/warnings.h",
+        ".obj/modules/src/em_code/+headers_hdr/em_code.h",
+        ".obj/modules/src/em_code/+headers_hdr/em_codeCE.h",
+        ".obj/modules/src/em_code/+headers_hdr/em_codeEK.h",
+        ".obj/modules/src/em_code/+headers_hdr/em_codeO.h",
+        ".obj/modules/src/em_code/+headers_hdr/em_private.h",
+        ".obj/modules/src/em_data/+em_data_hdr/em_mnem.h",
+        ".obj/modules/src/em_data/+em_data_hdr/em_pseu.h",
+        ".obj/modules/src/em_data/+em_data_hdr/em_spec.h",
+        ".obj/modules/src/string/+string_hdr/ack_string.h",
+        ".obj/modules/src/system/+system_hdr/system.h",
+        "modules/src/em_code/insert.h",
+        "modules/src/read_em/em_comp.h"
+      ]
+    },
+    {
+      "includes": [
+        ".obj/h/+h_hdr",
+        ".obj/modules/h/+h_hdr",
+        ".obj/modules/src/alloc/+alloc_hdr",
+        ".obj/modules/src/data/+data_hdr",
+        ".obj/modules/src/em_code/+headers_hdr",
+        ".obj/modules/src/em_data/+em_data_hdr",
+        ".obj/modules/src/string/+string_hdr",
+        ".obj/modules/src/system/+system_hdr"
+      ],
+      "defines": [
+        "UNREACHABLE_CODE=__builtin_unreachable()",
+        "NORETURN=_Noreturn"
+      ],
+      "deps": [
+        ".obj/h/+h_hdr/arch.h",
+        ".obj/h/+h_hdr/as_spec.h",
+        ".obj/h/+h_hdr/cg_pattern.h",
+        ".obj/h/+h_hdr/cgg_cg.h",
+        ".obj/h/+h_hdr/con_float",
+        ".obj/h/+h_hdr/em_abs.h",
+        ".obj/h/+h_hdr/em_ego.h",
+        ".obj/h/+h_hdr/em_flag.h",
+        ".obj/h/+h_hdr/em_mes.h",
+        ".obj/h/+h_hdr/em_path.h",
+        ".obj/h/+h_hdr/em_ptyp.h",
+        ".obj/h/+h_hdr/em_reg.h",
+        ".obj/h/+h_hdr/ip_spec.h",
+        ".obj/h/+h_hdr/local.h",
+        ".obj/h/+h_hdr/out.h",
+        ".obj/h/+h_hdr/ranlib.h",
+        ".obj/h/+h_hdr/stb.h",
+        ".obj/modules/h/+h_hdr/em.h",
+        ".obj/modules/h/+h_hdr/emO_code.h",
+        ".obj/modules/h/+h_hdr/em_arith.h",
+        ".obj/modules/h/+h_hdr/em_label.h",
+        ".obj/modules/h/+h_hdr/em_mesX.h",
+        ".obj/modules/src/alloc/+alloc_hdr/alloc.h",
+        ".obj/modules/src/data/+data_hdr/array.h",
+        ".obj/modules/src/data/+data_hdr/astring.h",
+        ".obj/modules/src/data/+data_hdr/imap.h",
+        ".obj/modules/src/data/+data_hdr/pmap.h",
+        ".obj/modules/src/data/+data_hdr/smap.h",
+        ".obj/modules/src/data/+data_hdr/stringlist.h",
+        ".obj/modules/src/data/+data_hdr/warnings.h",
+        ".obj/modules/src/em_code/+headers_hdr/em_code.h",
+        ".obj/modules/src/em_code/+headers_hdr/em_codeCE.h",
+        ".obj/modules/src/em_code/+headers_hdr/em_codeEK.h",
+        ".obj/modules/src/em_code/+headers_hdr/em_codeO.h",
+        ".obj/modules/src/em_code/+headers_hdr/em_private.h",
+        ".obj/modules/src/em_data/+em_data_hdr/em_mnem.h",
+        ".obj/modules/src/em_data/+em_data_hdr/em_pseu.h",
+        ".obj/modules/src/em_data/+em_data_hdr/em_spec.h",
+        ".obj/modules/src/string/+string_hdr/ack_string.h",
+        ".obj/modules/src/system/+system_hdr/system.h"
+      ]
+    },
+    {
+      "includes": [
+        ".obj/h/+h_hdr",
+        ".obj/modules/h/+h_hdr",
+        ".obj/modules/src/flt_arith/+flt_arith_hdr",
+        "modules/src/flt_arith"
+      ],
+      "defines": [
+        "UNREACHABLE_CODE=__builtin_unreachable()",
+        "NORETURN=_Noreturn"
+      ],
+      "deps": [
+        ".obj/h/+h_hdr/arch.h",
+        ".obj/h/+h_hdr/as_spec.h",
+        ".obj/h/+h_hdr/cg_pattern.h",
+        ".obj/h/+h_hdr/cgg_cg.h",
+        ".obj/h/+h_hdr/con_float",
+        ".obj/h/+h_hdr/em_abs.h",
+        ".obj/h/+h_hdr/em_ego.h",
+        ".obj/h/+h_hdr/em_flag.h",
+        ".obj/h/+h_hdr/em_mes.h",
+        ".obj/h/+h_hdr/em_path.h",
+        ".obj/h/+h_hdr/em_ptyp.h",
+        ".obj/h/+h_hdr/em_reg.h",
+        ".obj/h/+h_hdr/ip_spec.h",
+        ".obj/h/+h_hdr/local.h",
+        ".obj/h/+h_hdr/out.h",
+        ".obj/h/+h_hdr/ranlib.h",
+        ".obj/h/+h_hdr/stb.h",
+        ".obj/modules/h/+h_hdr/em.h",
+        ".obj/modules/h/+h_hdr/emO_code.h",
+        ".obj/modules/h/+h_hdr/em_arith.h",
+        ".obj/modules/h/+h_hdr/em_label.h",
+        ".obj/modules/h/+h_hdr/em_mesX.h",
+        ".obj/modules/src/flt_arith/+flt_arith_hdr/flt_arith.h",
+        ".obj/modules/src/flt_arith/+flt_arith_hdr/flt_misc.h",
+        "modules/src/flt_arith/flt_misc.h"
+      ]
+    },
+    {
+      "includes": [
+        ".obj/modules/src/input/+input_hdr"
+      ],
+      "defines": [
+        "UNREACHABLE_CODE=__builtin_unreachable()",
+        "NORETURN=_Noreturn"
+      ],
+      "deps": [
+        ".obj/modules/src/input/+input_hdr/inp_pkg.body",
+        ".obj/modules/src/input/+input_hdr/inp_pkg.spec"
+      ]
+    },
+    {
+      "includes": [
+        ".obj/h/+h_hdr",
+        ".obj/lang/cem/cemcom.ansi/+allocd_code",
+        ".obj/lang/cem/cemcom.ansi/+allocd_declar",
+        ".obj/lang/cem/cemcom.ansi/+allocd_def",
+        ".obj/lang/cem/cemcom.ansi/+allocd_estack",
+        ".obj/lang/cem/cemcom.ansi/+allocd_expr",
+        ".obj/lang/cem/cemcom.ansi/+allocd_field",
+        ".obj/lang/cem/cemcom.ansi/+allocd_idf",
+        ".obj/lang/cem/cemcom.ansi/+allocd_l_brace",
+        ".obj/lang/cem/cemcom.ansi/+allocd_l_outdef",
+        ".obj/lang/cem/cemcom.ansi/+allocd_l_state",
+        ".obj/lang/cem/cemcom.ansi/+allocd_macro",
+        ".obj/lang/cem/cemcom.ansi/+allocd_next",
+        ".obj/lang/cem/cemcom.ansi/+allocd_proto",
+        ".obj/lang/cem/cemcom.ansi/+allocd_stack",
+        ".obj/lang/cem/cemcom.ansi/+allocd_stmt",
+        ".obj/lang/cem/cemcom.ansi/+allocd_struct",
+        ".obj/lang/cem/cemcom.ansi/+allocd_switch",
+        ".obj/lang/cem/cemcom.ansi/+allocd_type",
+        ".obj/lang/cem/cemcom.ansi/+allocd_util",
+        ".obj/lang/cem/cemcom.ansi/+llgen",
+        ".obj/lang/cem/cemcom.ansi/+parameters",
+        ".obj/modules/h/+h_hdr",
+        ".obj/modules/src/alloc/+alloc_hdr",
+        ".obj/modules/src/data/+data_hdr",
+        ".obj/modules/src/em_code/+headers_hdr",
+        ".obj/modules/src/em_data/+em_data_hdr",
+        ".obj/modules/src/flt_arith/+flt_arith_hdr",
+        ".obj/modules/src/idf/+idf_hdr",
+        ".obj/modules/src/input/+input_hdr",
+        ".obj/modules/src/string/+string_hdr",
+        ".obj/modules/src/system/+system_hdr",
+        "lang/cem/cemcom.ansi"
+      ],
+      "defines": [
+        "UNREACHABLE_CODE=__builtin_unreachable()",
+        "NORETURN=_Noreturn"
+      ],
+      "deps": [
+        ".obj/h/+h_hdr/arch.h",
+        ".obj/h/+h_hdr/as_spec.h",
+        ".obj/h/+h_hdr/cg_pattern.h",
+        ".obj/h/+h_hdr/cgg_cg.h",
+        ".obj/h/+h_hdr/con_float",
+        ".obj/h/+h_hdr/em_abs.h",
+        ".obj/h/+h_hdr/em_ego.h",
+        ".obj/h/+h_hdr/em_flag.h",
+        ".obj/h/+h_hdr/em_mes.h",
+        ".obj/h/+h_hdr/em_path.h",
+        ".obj/h/+h_hdr/em_ptyp.h",
+        ".obj/h/+h_hdr/em_reg.h",
+        ".obj/h/+h_hdr/ip_spec.h",
+        ".obj/h/+h_hdr/local.h",
+        ".obj/h/+h_hdr/out.h",
+        ".obj/h/+h_hdr/ranlib.h",
+        ".obj/h/+h_hdr/stb.h",
+        ".obj/lang/cem/cemcom.ansi/+allocd_code/code.h",
+        ".obj/lang/cem/cemcom.ansi/+allocd_declar/declar.h",
+        ".obj/lang/cem/cemcom.ansi/+allocd_def/def.h",
+        ".obj/lang/cem/cemcom.ansi/+allocd_estack/estack.h",
+        ".obj/lang/cem/cemcom.ansi/+allocd_expr/expr.h",
+        ".obj/lang/cem/cemcom.ansi/+allocd_field/field.h",
+        ".obj/lang/cem/cemcom.ansi/+allocd_idf/idf.h",
+        ".obj/lang/cem/cemcom.ansi/+allocd_l_brace/l_brace.h",
+        ".obj/lang/cem/cemcom.ansi/+allocd_l_outdef/l_outdef.h",
+        ".obj/lang/cem/cemcom.ansi/+allocd_l_state/l_state.h",
+        ".obj/lang/cem/cemcom.ansi/+allocd_macro/macro.h",
+        ".obj/lang/cem/cemcom.ansi/+allocd_next/next.h",
+        ".obj/lang/cem/cemcom.ansi/+allocd_proto/proto.h",
+        ".obj/lang/cem/cemcom.ansi/+allocd_stack/stack.h",
+        ".obj/lang/cem/cemcom.ansi/+allocd_stmt/stmt.h",
+        ".obj/lang/cem/cemcom.ansi/+allocd_struct/struct.h",
+        ".obj/lang/cem/cemcom.ansi/+allocd_switch/switch.h",
+        ".obj/lang/cem/cemcom.ansi/+allocd_type/type.h",
+        ".obj/lang/cem/cemcom.ansi/+allocd_util/util.h",
+        ".obj/lang/cem/cemcom.ansi/+llgen/Lpars.h",
+        ".obj/lang/cem/cemcom.ansi/+parameters/parameters.h",
+        ".obj/modules/h/+h_hdr/em.h",
+        ".obj/modules/h/+h_hdr/emO_code.h",
+        ".obj/modules/h/+h_hdr/em_arith.h",
+        ".obj/modules/h/+h_hdr/em_label.h",
+        ".obj/modules/h/+h_hdr/em_mesX.h",
+        ".obj/modules/src/alloc/+alloc_hdr/alloc.h",
+        ".obj/modules/src/data/+data_hdr/array.h",
+        ".obj/modules/src/data/+data_hdr/astring.h",
+        ".obj/modules/src/data/+data_hdr/imap.h",
+        ".obj/modules/src/data/+data_hdr/pmap.h",
+        ".obj/modules/src/data/+data_hdr/smap.h",
+        ".obj/modules/src/data/+data_hdr/stringlist.h",
+        ".obj/modules/src/data/+data_hdr/warnings.h",
+        ".obj/modules/src/em_code/+headers_hdr/em_code.h",
+        ".obj/modules/src/em_code/+headers_hdr/em_codeCE.h",
+        ".obj/modules/src/em_code/+headers_hdr/em_codeEK.h",
+        ".obj/modules/src/em_code/+headers_hdr/em_codeO.h",
+        ".obj/modules/src/em_code/+headers_hdr/em_private.h",
+        ".obj/modules/src/em_data/+em_data_hdr/em_mnem.h",
+        ".obj/modules/src/em_data/+em_data_hdr/em_pseu.h",
+        ".obj/modules/src/em_data/+em_data_hdr/em_spec.h",
+        ".obj/modules/src/flt_arith/+flt_arith_hdr/flt_arith.h",
+        ".obj/modules/src/flt_arith/+flt_arith_hdr/flt_misc.h",
+        ".obj/modules/src/idf/+idf_hdr/idf_pkg.body",
+        ".obj/modules/src/idf/+idf_hdr/idf_pkg.spec",
+        ".obj/modules/src/input/+input_hdr/inp_pkg.body",
+        ".obj/modules/src/input/+input_hdr/inp_pkg.spec",
+        ".obj/modules/src/string/+string_hdr/ack_string.h",
+        ".obj/modules/src/system/+system_hdr/system.h",
+        "lang/cem/cemcom.ansi/LLlex.h",
+        "lang/cem/cemcom.ansi/align.h",
+        "lang/cem/cemcom.ansi/arith.h",
+        "lang/cem/cemcom.ansi/atw.h",
+        "lang/cem/cemcom.ansi/blocks.h",
+        "lang/cem/cemcom.ansi/ch3.h",
+        "lang/cem/cemcom.ansi/ch3bin.h",
+        "lang/cem/cemcom.ansi/ch3mon.h",
+        "lang/cem/cemcom.ansi/class.h",
+        "lang/cem/cemcom.ansi/conversion.h",
+        "lang/cem/cemcom.ansi/cstoper.h",
+        "lang/cem/cemcom.ansi/dataflow.h",
+        "lang/cem/cemcom.ansi/declarator.h",
+        "lang/cem/cemcom.ansi/decspecs.h",
+        "lang/cem/cemcom.ansi/domacro.h",
+        "lang/cem/cemcom.ansi/error.h",
+        "lang/cem/cemcom.ansi/eval.h",
+        "lang/cem/cemcom.ansi/file_info.h",
+        "lang/cem/cemcom.ansi/fltcstoper.h",
+        "lang/cem/cemcom.ansi/input.h",
+        "lang/cem/cemcom.ansi/interface.h",
+        "lang/cem/cemcom.ansi/l_class.h",
+        "lang/cem/cemcom.ansi/l_comment.h",
+        "lang/cem/cemcom.ansi/l_em.h",
+        "lang/cem/cemcom.ansi/l_lint.h",
+        "lang/cem/cemcom.ansi/label.h",
+        "lang/cem/cemcom.ansi/level.h",
+        "lang/cem/cemcom.ansi/mes.h",
+        "lang/cem/cemcom.ansi/options.h",
+        "lang/cem/cemcom.ansi/pragma.h",
+        "lang/cem/cemcom.ansi/sizes.h",
+        "lang/cem/cemcom.ansi/skip.h",
+        "lang/cem/cemcom.ansi/specials.h",
+        "lang/cem/cemcom.ansi/stab.h",
+        "lang/cem/cemcom.ansi/tokenname.h"
+      ]
+    },
+    {
+      "includes": [
+        ".obj/h/+h_hdr",
+        ".obj/lang/cem/cpp.ansi/+allocd_macro",
+        ".obj/lang/cem/cpp.ansi/+allocd_replace",
+        ".obj/lang/cem/cpp.ansi/+llgen",
+        ".obj/modules/h/+h_hdr",
+        ".obj/modules/src/alloc/+alloc_hdr",
+        ".obj/modules/src/data/+data_hdr",
+        ".obj/modules/src/em_code/+headers_hdr",
+        ".obj/modules/src/em_data/+em_data_hdr",
+        ".obj/modules/src/flt_arith/+flt_arith_hdr",
+        ".obj/modules/src/idf/+idf_hdr",
+        ".obj/modules/src/input/+input_hdr",
+        ".obj/modules/src/string/+string_hdr",
+        ".obj/modules/src/system/+system_hdr",
+        "lang/cem/cpp.ansi"
+      ],
+      "defines": [
+        "UNREACHABLE_CODE=__builtin_unreachable()",
+        "NORETURN=_Noreturn"
+      ],
+      "deps": [
+        ".obj/h/+h_hdr/arch.h",
+        ".obj/h/+h_hdr/as_spec.h",
+        ".obj/h/+h_hdr/cg_pattern.h",
+        ".obj/h/+h_hdr/cgg_cg.h",
+        ".obj/h/+h_hdr/con_float",
+        ".obj/h/+h_hdr/em_abs.h",
+        ".obj/h/+h_hdr/em_ego.h",
+        ".obj/h/+h_hdr/em_flag.h",
+        ".obj/h/+h_hdr/em_mes.h",
+        ".obj/h/+h_hdr/em_path.h",
+        ".obj/h/+h_hdr/em_ptyp.h",
+        ".obj/h/+h_hdr/em_reg.h",
+        ".obj/h/+h_hdr/ip_spec.h",
+        ".obj/h/+h_hdr/local.h",
+        ".obj/h/+h_hdr/out.h",
+        ".obj/h/+h_hdr/ranlib.h",
+        ".obj/h/+h_hdr/stb.h",
+        ".obj/lang/cem/cpp.ansi/+allocd_macro/macro.h",
+        ".obj/lang/cem/cpp.ansi/+allocd_replace/replace.h",
+        ".obj/lang/cem/cpp.ansi/+llgen/Lpars.h",
+        ".obj/modules/h/+h_hdr/em.h",
+        ".obj/modules/h/+h_hdr/emO_code.h",
+        ".obj/modules/h/+h_hdr/em_arith.h",
+        ".obj/modules/h/+h_hdr/em_label.h",
+        ".obj/modules/h/+h_hdr/em_mesX.h",
+        ".obj/modules/src/alloc/+alloc_hdr/alloc.h",
+        ".obj/modules/src/data/+data_hdr/array.h",
+        ".obj/modules/src/data/+data_hdr/astring.h",
+        ".obj/modules/src/data/+data_hdr/imap.h",
+        ".obj/modules/src/data/+data_hdr/pmap.h",
+        ".obj/modules/src/data/+data_hdr/smap.h",
+        ".obj/modules/src/data/+data_hdr/stringlist.h",
+        ".obj/modules/src/data/+data_hdr/warnings.h",
+        ".obj/modules/src/em_code/+headers_hdr/em_code.h",
+        ".obj/modules/src/em_code/+headers_hdr/em_codeCE.h",
+        ".obj/modules/src/em_code/+headers_hdr/em_codeEK.h",
+        ".obj/modules/src/em_code/+headers_hdr/em_codeO.h",
+        ".obj/modules/src/em_code/+headers_hdr/em_private.h",
+        ".obj/modules/src/em_data/+em_data_hdr/em_mnem.h",
+        ".obj/modules/src/em_data/+em_data_hdr/em_pseu.h",
+        ".obj/modules/src/em_data/+em_data_hdr/em_spec.h",
+        ".obj/modules/src/flt_arith/+flt_arith_hdr/flt_arith.h",
+        ".obj/modules/src/flt_arith/+flt_arith_hdr/flt_misc.h",
+        ".obj/modules/src/idf/+idf_hdr/idf_pkg.body",
+        ".obj/modules/src/idf/+idf_hdr/idf_pkg.spec",
+        ".obj/modules/src/input/+input_hdr/inp_pkg.body",
+        ".obj/modules/src/input/+input_hdr/inp_pkg.spec",
+        ".obj/modules/src/string/+string_hdr/ack_string.h",
+        ".obj/modules/src/system/+system_hdr/system.h",
+        "lang/cem/cpp.ansi/LLlex.h",
+        "lang/cem/cpp.ansi/arith.h",
+        "lang/cem/cpp.ansi/bits.h",
+        "lang/cem/cpp.ansi/ch3bin.h",
+        "lang/cem/cpp.ansi/ch3mon.h",
+        "lang/cem/cpp.ansi/class.h",
+        "lang/cem/cpp.ansi/domacro.h",
+        "lang/cem/cpp.ansi/error.h",
+        "lang/cem/cpp.ansi/expr.h",
+        "lang/cem/cpp.ansi/file_info.h",
+        "lang/cem/cpp.ansi/idf.h",
+        "lang/cem/cpp.ansi/init.h",
+        "lang/cem/cpp.ansi/input.h",
+        "lang/cem/cpp.ansi/options.h",
+        "lang/cem/cpp.ansi/parameters.h",
+        "lang/cem/cpp.ansi/preprocess.h",
+        "lang/cem/cpp.ansi/skip.h"
+      ]
+    },
+    {
+      "includes": [
+        ".obj/h/+h_hdr",
+        ".obj/lang/basic/src/+llgen",
+        ".obj/lang/basic/src/+tokentab_h",
+        ".obj/modules/h/+h_hdr",
+        ".obj/modules/src/alloc/+alloc_hdr",
+        ".obj/modules/src/data/+data_hdr",
+        ".obj/modules/src/em_code/+headers_hdr",
+        ".obj/modules/src/em_data/+em_data_hdr",
+        ".obj/modules/src/string/+string_hdr",
+        ".obj/modules/src/system/+system_hdr",
+        "lang/basic/src"
+      ],
+      "defines": [
+        "UNREACHABLE_CODE=__builtin_unreachable()",
+        "NORETURN=_Noreturn"
+      ],
+      "deps": [
+        ".obj/h/+h_hdr/arch.h",
+        ".obj/h/+h_hdr/as_spec.h",
+        ".obj/h/+h_hdr/cg_pattern.h",
+        ".obj/h/+h_hdr/cgg_cg.h",
+        ".obj/h/+h_hdr/con_float",
+        ".obj/h/+h_hdr/em_abs.h",
+        ".obj/h/+h_hdr/em_ego.h",
+        ".obj/h/+h_hdr/em_flag.h",
+        ".obj/h/+h_hdr/em_mes.h",
+        ".obj/h/+h_hdr/em_path.h",
+        ".obj/h/+h_hdr/em_ptyp.h",
+        ".obj/h/+h_hdr/em_reg.h",
+        ".obj/h/+h_hdr/ip_spec.h",
+        ".obj/h/+h_hdr/local.h",
+        ".obj/h/+h_hdr/out.h",
+        ".obj/h/+h_hdr/ranlib.h",
+        ".obj/h/+h_hdr/stb.h",
+        ".obj/lang/basic/src/+llgen/Lpars.h",
+        ".obj/lang/basic/src/+tokentab_h/tokentab.h",
+        ".obj/modules/h/+h_hdr/em.h",
+        ".obj/modules/h/+h_hdr/emO_code.h",
+        ".obj/modules/h/+h_hdr/em_arith.h",
+        ".obj/modules/h/+h_hdr/em_label.h",
+        ".obj/modules/h/+h_hdr/em_mesX.h",
+        ".obj/modules/src/alloc/+alloc_hdr/alloc.h",
+        ".obj/modules/src/data/+data_hdr/array.h",
+        ".obj/modules/src/data/+data_hdr/astring.h",
+        ".obj/modules/src/data/+data_hdr/imap.h",
+        ".obj/modules/src/data/+data_hdr/pmap.h",
+        ".obj/modules/src/data/+data_hdr/smap.h",
+        ".obj/modules/src/data/+data_hdr/stringlist.h",
+        ".obj/modules/src/data/+data_hdr/warnings.h",
+        ".obj/modules/src/em_code/+headers_hdr/em_code.h",
+        ".obj/modules/src/em_code/+headers_hdr/em_codeCE.h",
+        ".obj/modules/src/em_code/+headers_hdr/em_codeEK.h",
+        ".obj/modules/src/em_code/+headers_hdr/em_codeO.h",
+        ".obj/modules/src/em_code/+headers_hdr/em_private.h",
+        ".obj/modules/src/em_data/+em_data_hdr/em_mnem.h",
+        ".obj/modules/src/em_data/+em_data_hdr/em_pseu.h",
+        ".obj/modules/src/em_data/+em_data_hdr/em_spec.h",
+        ".obj/modules/src/string/+string_hdr/ack_string.h",
+        ".obj/modules/src/system/+system_hdr/system.h",
+        "lang/basic/src/basic.lex",
+        "lang/basic/src/bem.h",
+        "lang/basic/src/eval.h",
+        "lang/basic/src/func.h",
+        "lang/basic/src/gencode.h",
+        "lang/basic/src/graph.h",
+        "lang/basic/src/llmess.h",
+        "lang/basic/src/parsepar.h",
+        "lang/basic/src/symbols.h",
+        "lang/basic/src/util.h",
+        "lang/basic/src/yylexp.h"
+      ]
+    },
+    {
+      "includes": [
+        ".obj/h/+h_hdr",
+        ".obj/lang/m2/comp/+llgen",
+        ".obj/lang/m2/comp/+parameters",
+        ".obj/lang/m2/include/+include_hdr",
+        ".obj/modules/h/+h_hdr",
+        ".obj/modules/src/alloc/+alloc_hdr",
+        ".obj/modules/src/data/+data_hdr",
+        ".obj/modules/src/em_code/+headers_hdr",
+        ".obj/modules/src/em_data/+em_data_hdr",
+        ".obj/modules/src/flt_arith/+flt_arith_hdr",
+        ".obj/modules/src/idf/+idf_hdr",
+        ".obj/modules/src/input/+input_hdr",
+        ".obj/modules/src/string/+string_hdr",
+        ".obj/modules/src/system/+system_hdr",
+        "lang/m2/comp"
+      ],
+      "defines": [
+        "UNREACHABLE_CODE=__builtin_unreachable()",
+        "NORETURN=_Noreturn"
+      ],
+      "deps": [
+        ".obj/h/+h_hdr/arch.h",
+        ".obj/h/+h_hdr/as_spec.h",
+        ".obj/h/+h_hdr/cg_pattern.h",
+        ".obj/h/+h_hdr/cgg_cg.h",
+        ".obj/h/+h_hdr/con_float",
+        ".obj/h/+h_hdr/em_abs.h",
+        ".obj/h/+h_hdr/em_ego.h",
+        ".obj/h/+h_hdr/em_flag.h",
+        ".obj/h/+h_hdr/em_mes.h",
+        ".obj/h/+h_hdr/em_path.h",
+        ".obj/h/+h_hdr/em_ptyp.h",
+        ".obj/h/+h_hdr/em_reg.h",
+        ".obj/h/+h_hdr/ip_spec.h",
+        ".obj/h/+h_hdr/local.h",
+        ".obj/h/+h_hdr/out.h",
+        ".obj/h/+h_hdr/ranlib.h",
+        ".obj/h/+h_hdr/stb.h",
+        ".obj/lang/m2/comp/+llgen/Lpars.h",
+        ".obj/lang/m2/comp/+parameters/parameters.h",
+        ".obj/lang/m2/include/+include_hdr/libm2.h",
+        ".obj/lang/m2/include/+include_hdr/m2_traps.h",
+        ".obj/modules/h/+h_hdr/em.h",
+        ".obj/modules/h/+h_hdr/emO_code.h",
+        ".obj/modules/h/+h_hdr/em_arith.h",
+        ".obj/modules/h/+h_hdr/em_label.h",
+        ".obj/modules/h/+h_hdr/em_mesX.h",
+        ".obj/modules/src/alloc/+alloc_hdr/alloc.h",
+        ".obj/modules/src/data/+data_hdr/array.h",
+        ".obj/modules/src/data/+data_hdr/astring.h",
+        ".obj/modules/src/data/+data_hdr/imap.h",
+        ".obj/modules/src/data/+data_hdr/pmap.h",
+        ".obj/modules/src/data/+data_hdr/smap.h",
+        ".obj/modules/src/data/+data_hdr/stringlist.h",
+        ".obj/modules/src/data/+data_hdr/warnings.h",
+        ".obj/modules/src/em_code/+headers_hdr/em_code.h",
+        ".obj/modules/src/em_code/+headers_hdr/em_codeCE.h",
+        ".obj/modules/src/em_code/+headers_hdr/em_codeEK.h",
+        ".obj/modules/src/em_code/+headers_hdr/em_codeO.h",
+        ".obj/modules/src/em_code/+headers_hdr/em_private.h",
+        ".obj/modules/src/em_data/+em_data_hdr/em_mnem.h",
+        ".obj/modules/src/em_data/+em_data_hdr/em_pseu.h",
+        ".obj/modules/src/em_data/+em_data_hdr/em_spec.h",
+        ".obj/modules/src/flt_arith/+flt_arith_hdr/flt_arith.h",
+        ".obj/modules/src/flt_arith/+flt_arith_hdr/flt_misc.h",
+        ".obj/modules/src/idf/+idf_hdr/idf_pkg.body",
+        ".obj/modules/src/idf/+idf_hdr/idf_pkg.spec",
+        ".obj/modules/src/input/+input_hdr/inp_pkg.body",
+        ".obj/modules/src/input/+input_hdr/inp_pkg.spec",
+        ".obj/modules/src/string/+string_hdr/ack_string.h",
+        ".obj/modules/src/system/+system_hdr/system.h",
+        "lang/m2/comp/LLlex.h",
+        "lang/m2/comp/SYSTEMM2.h",
+        "lang/m2/comp/chk_expr.h",
+        "lang/m2/comp/class.h",
+        "lang/m2/comp/code.h",
+        "lang/m2/comp/cstoper.h",
+        "lang/m2/comp/debug.h",
+        "lang/m2/comp/def.h",
+        "lang/m2/comp/defmodule.h",
+        "lang/m2/comp/desig.h",
+        "lang/m2/comp/enter.h",
+        "lang/m2/comp/error.h",
+        "lang/m2/comp/f_info.h",
+        "lang/m2/comp/idf.h",
+        "lang/m2/comp/input.h",
+        "lang/m2/comp/lookup.h",
+        "lang/m2/comp/main.h",
+        "lang/m2/comp/misc.h",
+        "lang/m2/comp/node.h",
+        "lang/m2/comp/options.h",
+        "lang/m2/comp/real.h",
+        "lang/m2/comp/scope.h",
+        "lang/m2/comp/stab.h",
+        "lang/m2/comp/standards.h",
+        "lang/m2/comp/tmpvar.h",
+        "lang/m2/comp/tokenname.h",
+        "lang/m2/comp/type.h",
+        "lang/m2/comp/typequiv.h",
+        "lang/m2/comp/walk.h",
+        "lang/m2/comp/warning.h"
+      ]
+    },
+    {
+      "includes": [
+        ".obj/h/+h_hdr",
+        ".obj/lang/pc/comp/+def_h",
+        ".obj/lang/pc/comp/+desig_h",
+        ".obj/lang/pc/comp/+llgen",
+        ".obj/lang/pc/comp/+node_h",
+        ".obj/lang/pc/comp/+parameters",
+        ".obj/lang/pc/comp/+scope_h",
+        ".obj/lang/pc/comp/+type_h",
+        ".obj/lang/pc/include/+include_hdr",
+        ".obj/modules/h/+h_hdr",
+        ".obj/modules/src/alloc/+alloc_hdr",
+        ".obj/modules/src/data/+data_hdr",
+        ".obj/modules/src/em_code/+headers_hdr",
+        ".obj/modules/src/em_data/+em_data_hdr",
+        ".obj/modules/src/flt_arith/+flt_arith_hdr",
+        ".obj/modules/src/idf/+idf_hdr",
+        ".obj/modules/src/input/+input_hdr",
+        ".obj/modules/src/string/+string_hdr",
+        ".obj/modules/src/system/+system_hdr",
+        "lang/pc/comp"
+      ],
+      "defines": [
+        "UNREACHABLE_CODE=__builtin_unreachable()",
+        "NORETURN=_Noreturn"
+      ],
+      "deps": [
+        ".obj/h/+h_hdr/arch.h",
+        ".obj/h/+h_hdr/as_spec.h",
+        ".obj/h/+h_hdr/cg_pattern.h",
+        ".obj/h/+h_hdr/cgg_cg.h",
+        ".obj/h/+h_hdr/con_float",
+        ".obj/h/+h_hdr/em_abs.h",
+        ".obj/h/+h_hdr/em_ego.h",
+        ".obj/h/+h_hdr/em_flag.h",
+        ".obj/h/+h_hdr/em_mes.h",
+        ".obj/h/+h_hdr/em_path.h",
+        ".obj/h/+h_hdr/em_ptyp.h",
+        ".obj/h/+h_hdr/em_reg.h",
+        ".obj/h/+h_hdr/ip_spec.h",
+        ".obj/h/+h_hdr/local.h",
+        ".obj/h/+h_hdr/out.h",
+        ".obj/h/+h_hdr/ranlib.h",
+        ".obj/h/+h_hdr/stb.h",
+        ".obj/lang/pc/comp/+def_h/def.h",
+        ".obj/lang/pc/comp/+desig_h/desig.h",
+        ".obj/lang/pc/comp/+llgen/Lpars.h",
+        ".obj/lang/pc/comp/+node_h/node.h",
+        ".obj/lang/pc/comp/+parameters/parameters.h",
+        ".obj/lang/pc/comp/+scope_h/scope.h",
+        ".obj/lang/pc/comp/+type_h/type.h",
+        ".obj/lang/pc/include/+include_hdr/pc.h",
+        ".obj/lang/pc/include/+include_hdr/pc_err.h",
+        ".obj/lang/pc/include/+include_hdr/pc_file.h",
+        ".obj/lang/pc/include/+include_hdr/pc_math.h",
+        ".obj/modules/h/+h_hdr/em.h",
+        ".obj/modules/h/+h_hdr/emO_code.h",
+        ".obj/modules/h/+h_hdr/em_arith.h",
+        ".obj/modules/h/+h_hdr/em_label.h",
+        ".obj/modules/h/+h_hdr/em_mesX.h",
+        ".obj/modules/src/alloc/+alloc_hdr/alloc.h",
+        ".obj/modules/src/data/+data_hdr/array.h",
+        ".obj/modules/src/data/+data_hdr/astring.h",
+        ".obj/modules/src/data/+data_hdr/imap.h",
+        ".obj/modules/src/data/+data_hdr/pmap.h",
+        ".obj/modules/src/data/+data_hdr/smap.h",
+        ".obj/modules/src/data/+data_hdr/stringlist.h",
+        ".obj/modules/src/data/+data_hdr/warnings.h",
+        ".obj/modules/src/em_code/+headers_hdr/em_code.h",
+        ".obj/modules/src/em_code/+headers_hdr/em_codeCE.h",
+        ".obj/modules/src/em_code/+headers_hdr/em_codeEK.h",
+        ".obj/modules/src/em_code/+headers_hdr/em_codeO.h",
+        ".obj/modules/src/em_code/+headers_hdr/em_private.h",
+        ".obj/modules/src/em_data/+em_data_hdr/em_mnem.h",
+        ".obj/modules/src/em_data/+em_data_hdr/em_pseu.h",
+        ".obj/modules/src/em_data/+em_data_hdr/em_spec.h",
+        ".obj/modules/src/flt_arith/+flt_arith_hdr/flt_arith.h",
+        ".obj/modules/src/flt_arith/+flt_arith_hdr/flt_misc.h",
+        ".obj/modules/src/idf/+idf_hdr/idf_pkg.body",
+        ".obj/modules/src/idf/+idf_hdr/idf_pkg.spec",
+        ".obj/modules/src/input/+input_hdr/inp_pkg.body",
+        ".obj/modules/src/input/+input_hdr/inp_pkg.spec",
+        ".obj/modules/src/string/+string_hdr/ack_string.h",
+        ".obj/modules/src/system/+system_hdr/system.h",
+        "lang/pc/comp/LLlex.h",
+        "lang/pc/comp/body.h",
+        "lang/pc/comp/casestat.h",
+        "lang/pc/comp/chk_expr.h",
+        "lang/pc/comp/class.h",
+        "lang/pc/comp/code.h",
+        "lang/pc/comp/const.h",
+        "lang/pc/comp/cstoper.h",
+        "lang/pc/comp/debug.h",
+        "lang/pc/comp/enter.h",
+        "lang/pc/comp/error.h",
+        "lang/pc/comp/f_info.h",
+        "lang/pc/comp/idf.h",
+        "lang/pc/comp/input.h",
+        "lang/pc/comp/label.h",
+        "lang/pc/comp/lookup.h",
+        "lang/pc/comp/main.h",
+        "lang/pc/comp/misc.h",
+        "lang/pc/comp/options.h",
+        "lang/pc/comp/progs.h",
+        "lang/pc/comp/readwrite.h",
+        "lang/pc/comp/required.h",
+        "lang/pc/comp/stab.h",
+        "lang/pc/comp/tmpvar.h",
+        "lang/pc/comp/tokenname.h",
+        "lang/pc/comp/typequiv.h"
+      ]
+    },
+    {
+      "includes": [
+        ".obj/h/+h_hdr",
+        ".obj/lang/occam/comp/+llgen",
+        ".obj/modules/h/+h_hdr",
+        ".obj/modules/src/alloc/+alloc_hdr",
+        ".obj/modules/src/data/+data_hdr",
+        ".obj/modules/src/em_code/+headers_hdr",
+        ".obj/modules/src/em_data/+em_data_hdr",
+        ".obj/modules/src/string/+string_hdr",
+        ".obj/modules/src/system/+system_hdr",
+        "lang/occam/comp"
+      ],
+      "defines": [
+        "UNREACHABLE_CODE=__builtin_unreachable()",
+        "NORETURN=_Noreturn"
+      ],
+      "deps": [
+        ".obj/h/+h_hdr/arch.h",
+        ".obj/h/+h_hdr/as_spec.h",
+        ".obj/h/+h_hdr/cg_pattern.h",
+        ".obj/h/+h_hdr/cgg_cg.h",
+        ".obj/h/+h_hdr/con_float",
+        ".obj/h/+h_hdr/em_abs.h",
+        ".obj/h/+h_hdr/em_ego.h",
+        ".obj/h/+h_hdr/em_flag.h",
+        ".obj/h/+h_hdr/em_mes.h",
+        ".obj/h/+h_hdr/em_path.h",
+        ".obj/h/+h_hdr/em_ptyp.h",
+        ".obj/h/+h_hdr/em_reg.h",
+        ".obj/h/+h_hdr/ip_spec.h",
+        ".obj/h/+h_hdr/local.h",
+        ".obj/h/+h_hdr/out.h",
+        ".obj/h/+h_hdr/ranlib.h",
+        ".obj/h/+h_hdr/stb.h",
+        ".obj/lang/occam/comp/+llgen/Lpars.h",
+        ".obj/modules/h/+h_hdr/em.h",
+        ".obj/modules/h/+h_hdr/emO_code.h",
+        ".obj/modules/h/+h_hdr/em_arith.h",
+        ".obj/modules/h/+h_hdr/em_label.h",
+        ".obj/modules/h/+h_hdr/em_mesX.h",
+        ".obj/modules/src/alloc/+alloc_hdr/alloc.h",
+        ".obj/modules/src/data/+data_hdr/array.h",
+        ".obj/modules/src/data/+data_hdr/astring.h",
+        ".obj/modules/src/data/+data_hdr/imap.h",
+        ".obj/modules/src/data/+data_hdr/pmap.h",
+        ".obj/modules/src/data/+data_hdr/smap.h",
+        ".obj/modules/src/data/+data_hdr/stringlist.h",
+        ".obj/modules/src/data/+data_hdr/warnings.h",
+        ".obj/modules/src/em_code/+headers_hdr/em_code.h",
+        ".obj/modules/src/em_code/+headers_hdr/em_codeCE.h",
+        ".obj/modules/src/em_code/+headers_hdr/em_codeEK.h",
+        ".obj/modules/src/em_code/+headers_hdr/em_codeO.h",
+        ".obj/modules/src/em_code/+headers_hdr/em_private.h",
+        ".obj/modules/src/em_data/+em_data_hdr/em_mnem.h",
+        ".obj/modules/src/em_data/+em_data_hdr/em_pseu.h",
+        ".obj/modules/src/em_data/+em_data_hdr/em_spec.h",
+        ".obj/modules/src/string/+string_hdr/ack_string.h",
+        ".obj/modules/src/system/+system_hdr/system.h",
+        "lang/occam/comp/code.h",
+        "lang/occam/comp/expr.h",
+        "lang/occam/comp/occam-em.h",
+        "lang/occam/comp/sizes.h",
+        "lang/occam/comp/symtab.h",
+        "lang/occam/comp/token.h"
+      ]
+    },
+    {
+      "includes": [
+        ".obj/h/+h_hdr",
+        ".obj/modules/h/+h_hdr",
+        ".obj/modules/src/alloc/+alloc_hdr",
+        ".obj/modules/src/data/+data_hdr",
+        ".obj/modules/src/em_code/+headers_hdr",
+        ".obj/modules/src/em_data/+em_data_hdr",
+        ".obj/modules/src/string/+string_hdr",
+        ".obj/modules/src/system/+system_hdr",
+        "modules/src/em_code",
+        "modules/src/read_em"
+      ],
+      "defines": [
+        "UNREACHABLE_CODE=__builtin_unreachable()",
+        "NORETURN=_Noreturn",
+        "READABLE_EM"
+      ],
+      "deps": [
+        ".obj/h/+h_hdr/arch.h",
+        ".obj/h/+h_hdr/as_spec.h",
+        ".obj/h/+h_hdr/cg_pattern.h",
+        ".obj/h/+h_hdr/cgg_cg.h",
+        ".obj/h/+h_hdr/con_float",
+        ".obj/h/+h_hdr/em_abs.h",
+        ".obj/h/+h_hdr/em_ego.h",
+        ".obj/h/+h_hdr/em_flag.h",
+        ".obj/h/+h_hdr/em_mes.h",
+        ".obj/h/+h_hdr/em_path.h",
+        ".obj/h/+h_hdr/em_ptyp.h",
+        ".obj/h/+h_hdr/em_reg.h",
+        ".obj/h/+h_hdr/ip_spec.h",
+        ".obj/h/+h_hdr/local.h",
+        ".obj/h/+h_hdr/out.h",
+        ".obj/h/+h_hdr/ranlib.h",
+        ".obj/h/+h_hdr/stb.h",
+        ".obj/modules/h/+h_hdr/em.h",
+        ".obj/modules/h/+h_hdr/emO_code.h",
+        ".obj/modules/h/+h_hdr/em_arith.h",
+        ".obj/modules/h/+h_hdr/em_label.h",
+        ".obj/modules/h/+h_hdr/em_mesX.h",
+        ".obj/modules/src/alloc/+alloc_hdr/alloc.h",
+        ".obj/modules/src/data/+data_hdr/array.h",
+        ".obj/modules/src/data/+data_hdr/astring.h",
+        ".obj/modules/src/data/+data_hdr/imap.h",
+        ".obj/modules/src/data/+data_hdr/pmap.h",
+        ".obj/modules/src/data/+data_hdr/smap.h",
+        ".obj/modules/src/data/+data_hdr/stringlist.h",
+        ".obj/modules/src/data/+data_hdr/warnings.h",
+        ".obj/modules/src/em_code/+headers_hdr/em_code.h",
+        ".obj/modules/src/em_code/+headers_hdr/em_codeCE.h",
+        ".obj/modules/src/em_code/+headers_hdr/em_codeEK.h",
+        ".obj/modules/src/em_code/+headers_hdr/em_codeO.h",
+        ".obj/modules/src/em_code/+headers_hdr/em_private.h",
+        ".obj/modules/src/em_data/+em_data_hdr/em_mnem.h",
+        ".obj/modules/src/em_data/+em_data_hdr/em_pseu.h",
+        ".obj/modules/src/em_data/+em_data_hdr/em_spec.h",
+        ".obj/modules/src/string/+string_hdr/ack_string.h",
+        ".obj/modules/src/system/+system_hdr/system.h",
+        "modules/src/em_code/insert.h",
+        "modules/src/read_em/em_comp.h"
+      ]
+    },
+    {
+      "includes": [
+        ".obj/h/+h_hdr",
+        ".obj/modules/h/+h_hdr",
+        ".obj/modules/src/alloc/+alloc_hdr",
+        ".obj/modules/src/data/+data_hdr",
+        ".obj/modules/src/em_code/+headers_hdr",
+        ".obj/modules/src/em_data/+em_data_hdr",
+        ".obj/modules/src/read_em/+c_mnem_h",
+        ".obj/modules/src/read_em/+c_mnem_narg_h",
+        ".obj/modules/src/read_em/+lib_kv_hdr",
+        ".obj/modules/src/string/+string_hdr",
+        ".obj/modules/src/system/+system_hdr"
+      ],
+      "defines": [
+        "UNREACHABLE_CODE=__builtin_unreachable()",
+        "NORETURN=_Noreturn",
+        "CHECKING",
+        "COMPACT",
+        "EXPORT=",
+        "NDEBUG",
+        "PRIVATE=static"
+      ],
+      "deps": [
+        ".obj/h/+h_hdr/arch.h",
+        ".obj/h/+h_hdr/as_spec.h",
+        ".obj/h/+h_hdr/cg_pattern.h",
+        ".obj/h/+h_hdr/cgg_cg.h",
+        ".obj/h/+h_hdr/con_float",
+        ".obj/h/+h_hdr/em_abs.h",
+        ".obj/h/+h_hdr/em_ego.h",
+        ".obj/h/+h_hdr/em_flag.h",
+        ".obj/h/+h_hdr/em_mes.h",
+        ".obj/h/+h_hdr/em_path.h",
+        ".obj/h/+h_hdr/em_ptyp.h",
+        ".obj/h/+h_hdr/em_reg.h",
+        ".obj/h/+h_hdr/ip_spec.h",
+        ".obj/h/+h_hdr/local.h",
+        ".obj/h/+h_hdr/out.h",
+        ".obj/h/+h_hdr/ranlib.h",
+        ".obj/h/+h_hdr/stb.h",
+        ".obj/modules/h/+h_hdr/em.h",
+        ".obj/modules/h/+h_hdr/emO_code.h",
+        ".obj/modules/h/+h_hdr/em_arith.h",
+        ".obj/modules/h/+h_hdr/em_label.h",
+        ".obj/modules/h/+h_hdr/em_mesX.h",
+        ".obj/modules/src/alloc/+alloc_hdr/alloc.h",
+        ".obj/modules/src/data/+data_hdr/array.h",
+        ".obj/modules/src/data/+data_hdr/astring.h",
+        ".obj/modules/src/data/+data_hdr/imap.h",
+        ".obj/modules/src/data/+data_hdr/pmap.h",
+        ".obj/modules/src/data/+data_hdr/smap.h",
+        ".obj/modules/src/data/+data_hdr/stringlist.h",
+        ".obj/modules/src/data/+data_hdr/warnings.h",
+        ".obj/modules/src/em_code/+headers_hdr/em_code.h",
+        ".obj/modules/src/em_code/+headers_hdr/em_codeCE.h",
+        ".obj/modules/src/em_code/+headers_hdr/em_codeEK.h",
+        ".obj/modules/src/em_code/+headers_hdr/em_codeO.h",
+        ".obj/modules/src/em_code/+headers_hdr/em_private.h",
+        ".obj/modules/src/em_data/+em_data_hdr/em_mnem.h",
+        ".obj/modules/src/em_data/+em_data_hdr/em_pseu.h",
+        ".obj/modules/src/em_data/+em_data_hdr/em_spec.h",
+        ".obj/modules/src/read_em/+c_mnem_h/C_mnem.h",
+        ".obj/modules/src/read_em/+c_mnem_narg_h/C_mnem_narg.h",
+        ".obj/modules/src/read_em/+lib_kv_hdr/em_comp.h",
+        ".obj/modules/src/string/+string_hdr/ack_string.h",
+        ".obj/modules/src/system/+system_hdr/system.h"
+      ]
+    },
+    {
+      "includes": [
+        ".obj/h/+h_hdr",
+        ".obj/modules/h/+h_hdr",
+        ".obj/modules/src/alloc/+alloc_hdr",
+        ".obj/modules/src/data/+data_hdr",
+        ".obj/modules/src/em_code/+headers_hdr",
+        ".obj/modules/src/em_data/+em_data_hdr",
+        ".obj/modules/src/read_em/+lib_kv_hdr",
+        ".obj/modules/src/string/+string_hdr",
+        ".obj/modules/src/system/+system_hdr"
+      ],
+      "defines": [
+        "UNREACHABLE_CODE=__builtin_unreachable()",
+        "NORETURN=_Noreturn"
+      ],
+      "deps": [
+        ".obj/h/+h_hdr/arch.h",
+        ".obj/h/+h_hdr/as_spec.h",
+        ".obj/h/+h_hdr/cg_pattern.h",
+        ".obj/h/+h_hdr/cgg_cg.h",
+        ".obj/h/+h_hdr/con_float",
+        ".obj/h/+h_hdr/em_abs.h",
+        ".obj/h/+h_hdr/em_ego.h",
+        ".obj/h/+h_hdr/em_flag.h",
+        ".obj/h/+h_hdr/em_mes.h",
+        ".obj/h/+h_hdr/em_path.h",
+        ".obj/h/+h_hdr/em_ptyp.h",
+        ".obj/h/+h_hdr/em_reg.h",
+        ".obj/h/+h_hdr/ip_spec.h",
+        ".obj/h/+h_hdr/local.h",
+        ".obj/h/+h_hdr/out.h",
+        ".obj/h/+h_hdr/ranlib.h",
+        ".obj/h/+h_hdr/stb.h",
+        ".obj/modules/h/+h_hdr/em.h",
+        ".obj/modules/h/+h_hdr/emO_code.h",
+        ".obj/modules/h/+h_hdr/em_arith.h",
+        ".obj/modules/h/+h_hdr/em_label.h",
+        ".obj/modules/h/+h_hdr/em_mesX.h",
+        ".obj/modules/src/alloc/+alloc_hdr/alloc.h",
+        ".obj/modules/src/data/+data_hdr/array.h",
+        ".obj/modules/src/data/+data_hdr/astring.h",
+        ".obj/modules/src/data/+data_hdr/imap.h",
+        ".obj/modules/src/data/+data_hdr/pmap.h",
+        ".obj/modules/src/data/+data_hdr/smap.h",
+        ".obj/modules/src/data/+data_hdr/stringlist.h",
+        ".obj/modules/src/data/+data_hdr/warnings.h",
+        ".obj/modules/src/em_code/+headers_hdr/em_code.h",
+        ".obj/modules/src/em_code/+headers_hdr/em_codeCE.h",
+        ".obj/modules/src/em_code/+headers_hdr/em_codeEK.h",
+        ".obj/modules/src/em_code/+headers_hdr/em_codeO.h",
+        ".obj/modules/src/em_code/+headers_hdr/em_private.h",
+        ".obj/modules/src/em_data/+em_data_hdr/em_mnem.h",
+        ".obj/modules/src/em_data/+em_data_hdr/em_pseu.h",
+        ".obj/modules/src/em_data/+em_data_hdr/em_spec.h",
+        ".obj/modules/src/read_em/+lib_kv_hdr/em_comp.h",
+        ".obj/modules/src/string/+string_hdr/ack_string.h",
+        ".obj/modules/src/system/+system_hdr/system.h"
+      ]
+    },
+    {
+      "includes": [
+        ".obj/h/+h_hdr",
+        ".obj/modules/src/em_data/+em_data_hdr",
+        ".obj/util/opt/+bison",
+        "util/opt"
+      ],
+      "defines": [
+        "UNREACHABLE_CODE=__builtin_unreachable()",
+        "NORETURN=_Noreturn"
+      ],
+      "deps": [
+        ".obj/h/+h_hdr/arch.h",
+        ".obj/h/+h_hdr/as_spec.h",
+        ".obj/h/+h_hdr/cg_pattern.h",
+        ".obj/h/+h_hdr/cgg_cg.h",
+        ".obj/h/+h_hdr/con_float",
+        ".obj/h/+h_hdr/em_abs.h",
+        ".obj/h/+h_hdr/em_ego.h",
+        ".obj/h/+h_hdr/em_flag.h",
+        ".obj/h/+h_hdr/em_mes.h",
+        ".obj/h/+h_hdr/em_path.h",
+        ".obj/h/+h_hdr/em_ptyp.h",
+        ".obj/h/+h_hdr/em_reg.h",
+        ".obj/h/+h_hdr/ip_spec.h",
+        ".obj/h/+h_hdr/local.h",
+        ".obj/h/+h_hdr/out.h",
+        ".obj/h/+h_hdr/ranlib.h",
+        ".obj/h/+h_hdr/stb.h",
+        ".obj/modules/src/em_data/+em_data_hdr/em_mnem.h",
+        ".obj/modules/src/em_data/+em_data_hdr/em_pseu.h",
+        ".obj/modules/src/em_data/+em_data_hdr/em_spec.h",
+        ".obj/util/opt/+bison/bison.h",
+        "util/opt/optim.h",
+        "util/opt/param.h",
+        "util/opt/pattern.h",
+        "util/opt/types.h"
+      ]
+    },
+    {
+      "includes": [
+        ".obj/h/+h_hdr",
+        ".obj/modules/h/+h_hdr",
+        ".obj/modules/src/data/+data_hdr",
+        ".obj/modules/src/em_data/+em_data_hdr",
+        ".obj/modules/src/string/+string_hdr",
+        ".obj/modules/src/system/+system_hdr",
+        "util/opt"
+      ],
+      "defines": [
+        "UNREACHABLE_CODE=__builtin_unreachable()",
+        "NORETURN=_Noreturn"
+      ],
+      "deps": [
+        ".obj/h/+h_hdr/arch.h",
+        ".obj/h/+h_hdr/as_spec.h",
+        ".obj/h/+h_hdr/cg_pattern.h",
+        ".obj/h/+h_hdr/cgg_cg.h",
+        ".obj/h/+h_hdr/con_float",
+        ".obj/h/+h_hdr/em_abs.h",
+        ".obj/h/+h_hdr/em_ego.h",
+        ".obj/h/+h_hdr/em_flag.h",
+        ".obj/h/+h_hdr/em_mes.h",
+        ".obj/h/+h_hdr/em_path.h",
+        ".obj/h/+h_hdr/em_ptyp.h",
+        ".obj/h/+h_hdr/em_reg.h",
+        ".obj/h/+h_hdr/ip_spec.h",
+        ".obj/h/+h_hdr/local.h",
+        ".obj/h/+h_hdr/out.h",
+        ".obj/h/+h_hdr/ranlib.h",
+        ".obj/h/+h_hdr/stb.h",
+        ".obj/modules/h/+h_hdr/em.h",
+        ".obj/modules/h/+h_hdr/emO_code.h",
+        ".obj/modules/h/+h_hdr/em_arith.h",
+        ".obj/modules/h/+h_hdr/em_label.h",
+        ".obj/modules/h/+h_hdr/em_mesX.h",
+        ".obj/modules/src/data/+data_hdr/array.h",
+        ".obj/modules/src/data/+data_hdr/astring.h",
+        ".obj/modules/src/data/+data_hdr/imap.h",
+        ".obj/modules/src/data/+data_hdr/pmap.h",
+        ".obj/modules/src/data/+data_hdr/smap.h",
+        ".obj/modules/src/data/+data_hdr/stringlist.h",
+        ".obj/modules/src/data/+data_hdr/warnings.h",
+        ".obj/modules/src/em_data/+em_data_hdr/em_mnem.h",
+        ".obj/modules/src/em_data/+em_data_hdr/em_pseu.h",
+        ".obj/modules/src/em_data/+em_data_hdr/em_spec.h",
+        ".obj/modules/src/string/+string_hdr/ack_string.h",
+        ".obj/modules/src/system/+system_hdr/system.h",
+        "util/opt/alloc.h",
+        "util/opt/ext.h",
+        "util/opt/getline.h",
+        "util/opt/line.h",
+        "util/opt/lookup.h",
+        "util/opt/optim.h",
+        "util/opt/param.h",
+        "util/opt/pattern.h",
+        "util/opt/pop_push.h",
+        "util/opt/proinf.h",
+        "util/opt/putline.h",
+        "util/opt/reg.h",
+        "util/opt/tes.h",
+        "util/opt/types.h",
+        "util/opt/util.h"
+      ]
+    },
+    {
+      "includes": [
+        ".obj/h/+h_hdr",
+        ".obj/modules/h/+h_hdr",
+        ".obj/modules/src/data/+data_hdr",
+        ".obj/modules/src/em_data/+em_data_hdr",
+        ".obj/modules/src/string/+string_hdr",
+        ".obj/modules/src/system/+system_hdr",
+        "util/opt"
+      ],
+      "defines": [
+        "UNREACHABLE_CODE=__builtin_unreachable()",
+        "NORETURN=_Noreturn",
+        "GLOBAL_OPT"
+      ],
+      "deps": [
+        ".obj/h/+h_hdr/arch.h",
+        ".obj/h/+h_hdr/as_spec.h",
+        ".obj/h/+h_hdr/cg_pattern.h",
+        ".obj/h/+h_hdr/cgg_cg.h",
+        ".obj/h/+h_hdr/con_float",
+        ".obj/h/+h_hdr/em_abs.h",
+        ".obj/h/+h_hdr/em_ego.h",
+        ".obj/h/+h_hdr/em_flag.h",
+        ".obj/h/+h_hdr/em_mes.h",
+        ".obj/h/+h_hdr/em_path.h",
+        ".obj/h/+h_hdr/em_ptyp.h",
+        ".obj/h/+h_hdr/em_reg.h",
+        ".obj/h/+h_hdr/ip_spec.h",
+        ".obj/h/+h_hdr/local.h",
+        ".obj/h/+h_hdr/out.h",
+        ".obj/h/+h_hdr/ranlib.h",
+        ".obj/h/+h_hdr/stb.h",
+        ".obj/modules/h/+h_hdr/em.h",
+        ".obj/modules/h/+h_hdr/emO_code.h",
+        ".obj/modules/h/+h_hdr/em_arith.h",
+        ".obj/modules/h/+h_hdr/em_label.h",
+        ".obj/modules/h/+h_hdr/em_mesX.h",
+        ".obj/modules/src/data/+data_hdr/array.h",
+        ".obj/modules/src/data/+data_hdr/astring.h",
+        ".obj/modules/src/data/+data_hdr/imap.h",
+        ".obj/modules/src/data/+data_hdr/pmap.h",
+        ".obj/modules/src/data/+data_hdr/smap.h",
+        ".obj/modules/src/data/+data_hdr/stringlist.h",
+        ".obj/modules/src/data/+data_hdr/warnings.h",
+        ".obj/modules/src/em_data/+em_data_hdr/em_mnem.h",
+        ".obj/modules/src/em_data/+em_data_hdr/em_pseu.h",
+        ".obj/modules/src/em_data/+em_data_hdr/em_spec.h",
+        ".obj/modules/src/string/+string_hdr/ack_string.h",
+        ".obj/modules/src/system/+system_hdr/system.h",
+        "util/opt/alloc.h",
+        "util/opt/ext.h",
+        "util/opt/getline.h",
+        "util/opt/line.h",
+        "util/opt/lookup.h",
+        "util/opt/optim.h",
+        "util/opt/param.h",
+        "util/opt/pattern.h",
+        "util/opt/pop_push.h",
+        "util/opt/proinf.h",
+        "util/opt/putline.h",
+        "util/opt/reg.h",
+        "util/opt/tes.h",
+        "util/opt/types.h",
+        "util/opt/util.h"
+      ]
+    }
+  ],
+  "units": {
+    ".obj/util/LLgen/+LLgen/util/LLgen/src/LLgen.c/LLgen.o": [
+      "util/LLgen/src/LLgen.c",
+      0
+    ],
+    ".obj/util/LLgen/+LLgen/util/LLgen/src/Lpars.c/Lpars.o": [
+      "util/LLgen/src/Lpars.c",
+      0
+    ],
+    ".obj/util/LLgen/+LLgen/util/LLgen/src/alloc.c/alloc.o": [
+      "util/LLgen/src/alloc.c",
+      0
+    ],
+    ".obj/util/LLgen/+LLgen/util/LLgen/src/cclass.c/cclass.o": [
+      "util/LLgen/src/cclass.c",
+      0
+    ],
+    ".obj/util/LLgen/+LLgen/util/LLgen/src/check.c/check.o": [
+      "util/LLgen/src/check.c",
+      0
+    ],
+    ".obj/util/LLgen/+LLgen/util/LLgen/src/compute.c/compute.o": [
+      "util/LLgen/src/compute.c",
+      0
+    ],
+    ".obj/util/LLgen/+LLgen/util/LLgen/src/gencode.c/gencode.o": [
+      "util/LLgen/src/gencode.c",
+      0
+    ],
+    ".obj/util/LLgen/+LLgen/util/LLgen/src/global.c/global.o": [
+      "util/LLgen/src/global.c",
+      0
+    ],
+    ".obj/util/LLgen/+LLgen/util/LLgen/src/machdep.c/machdep.o": [
+      "util/LLgen/src/machdep.c",
+      0
+    ],
+    ".obj/util/LLgen/+LLgen/util/LLgen/src/main.c/main.o": [
+      "util/LLgen/src/main.c",
+      0
+    ],
+    ".obj/util/LLgen/+LLgen/util/LLgen/src/name.c/name.o": [
+      "util/LLgen/src/name.c",
+      0
+    ],
+    ".obj/util/LLgen/+LLgen/util/LLgen/src/reach.c/reach.o": [
+      "util/LLgen/src/reach.c",
+      0
+    ],
+    ".obj/util/LLgen/+LLgen/util/LLgen/src/savegram.c/savegram.o": [
+      "util/LLgen/src/savegram.c",
+      0
+    ],
+    ".obj/util/LLgen/+LLgen/util/LLgen/src/sets.c/sets.o": [
+      "util/LLgen/src/sets.c",
+      0
+    ],
+    ".obj/util/LLgen/+LLgen/util/LLgen/src/tokens.c/tokens.o": [
+      "util/LLgen/src/tokens.c",
+      0
+    ],
+    ".obj/util/LLgen/+LLgen/util/LLgen/src/utils.c/utils.o": [
+      "util/LLgen/src/utils.c",
+      0
+    ],
+    ".obj/util/cmisc/+tabgen/util/cmisc/tabgen.c/tabgen.o": [
+      "util/cmisc/tabgen.c",
+      1
+    ],
+    ".obj/modules/src/data/+data/modules/src/data/array.c/array.o": [
+      "modules/src/data/array.c",
+      2
+    ],
+    ".obj/modules/src/data/+data/modules/src/data/astring.c/astring.o": [
+      "modules/src/data/astring.c",
+      2
+    ],
+    ".obj/modules/src/data/+data/modules/src/data/warnings.c/warnings.o": [
+      "modules/src/data/warnings.c",
+      2
+    ],
+    ".obj/modules/src/data/+data/modules/src/data/imap.c/imap.o": [
+      "modules/src/data/imap.c",
+      2
+    ],
+    ".obj/modules/src/data/+data/modules/src/data/pmap.c/pmap.o": [
+      "modules/src/data/pmap.c",
+      2
+    ],
+    ".obj/modules/src/data/+data/modules/src/data/smap.c/smap.o": [
+      "modules/src/data/smap.c",
+      2
+    ],
+    ".obj/modules/src/data/+data/modules/src/data/stringlist.c/stringlist.o": [
+      "modules/src/data/stringlist.c",
+      2
+    ],
+    ".obj/modules/src/string/+string/modules/src/string/bts2str.c/bts2str.o": [
+      "modules/src/string/bts2str.c",
+      3
+    ],
+    ".obj/modules/src/string/+string/modules/src/string/long2str.c/long2str.o": [
+      "modules/src/string/long2str.c",
+      3
+    ],
+    ".obj/modules/src/system/+system/modules/src/system/maketempfile.c/maketempfile.o": [
+      "modules/src/system/maketempfile.c",
+      4
+    ],
+    ".obj/modules/src/system/+system/modules/src/system/syssystem.c/syssystem.o": [
+      "modules/src/system/syssystem.c",
+      4
+    ],
+    ".obj/modules/src/system/+system/modules/src/system/filesize.c/filesize.o": [
+      "modules/src/system/filesize.c",
+      4
+    ],
+    ".obj/modules/src/system/+system/modules/src/system/tmpdir.c/tmpdir.o": [
+      "modules/src/system/tmpdir.c",
+      4
+    ],
+    ".obj/modules/src/system/+system/modules/src/system/setbinarymode.c/setbinarymode.o": [
+      "modules/src/system/setbinarymode.c",
+      4
+    ],
+    ".obj/modules/src/system/+system/modules/src/system/strndup.c/strndup.o": [
+      "modules/src/system/strndup.c",
+      4
+    ],
+    ".obj/modules/src/system/+system/modules/src/system/basename.c/basename.o": [
+      "modules/src/system/basename.c",
+      4
+    ],
+    ".obj/modules/src/alloc/+alloc/modules/src/alloc/st_alloc.c/st_alloc.o": [
+      "modules/src/alloc/st_alloc.c",
+      5
+    ],
+    ".obj/modules/src/alloc/+alloc/modules/src/alloc/std_alloc.c/std_alloc.o": [
+      "modules/src/alloc/std_alloc.c",
+      5
+    ],
+    ".obj/modules/src/em_data/+em_data/modules/src/em_data/em_ptyp.c/em_ptyp.o": [
+      "modules/src/em_data/em_ptyp.c",
+      6
+    ],
+    ".obj/modules/src/em_data/+em_data/modules/src/em_data/+em_flag_c/flag.c/flag.o": [
+      ".obj/modules/src/em_data/+em_flag_c/flag.c",
+      6
+    ],
+    ".obj/modules/src/em_data/+em_data/modules/src/em_data/+em_mnem_c/mnem.c/mnem.o": [
+      ".obj/modules/src/em_data/+em_mnem_c/mnem.c",
+      6
+    ],
+    ".obj/modules/src/em_data/+em_data/modules/src/em_data/+em_pseu_c/pseu.c/pseu.o": [
+      ".obj/modules/src/em_data/+em_pseu_c/pseu.c",
+      6
+    ],
+    ".obj/modules/src/em_code/+lib_k/modules/src/em_code/C_out.c/C_out.o": [
+      "modules/src/em_code/C_out.c",
+      7
+    ],
+    ".obj/modules/src/em_code/+lib_k/modules/src/em_code/bhcst.c/bhcst.o": [
+      "modules/src/em_code/bhcst.c",
+      7
+    ],
+    ".obj/modules/src/em_code/+lib_k/modules/src/em_code/bhdlb.c/bhdlb.o": [
+      "modules/src/em_code/bhdlb.c",
+      7
+    ],
+    ".obj/modules/src/em_code/+lib_k/modules/src/em_code/bhdnam.c/bhdnam.o": [
+      "modules/src/em_code/bhdnam.c",
+      7
+    ],
+    ".obj/modules/src/em_code/+lib_k/modules/src/em_code/bhfcon.c/bhfcon.o": [
+      "modules/src/em_code/bhfcon.c",
+      7
+    ],
+    ".obj/modules/src/em_code/+lib_k/modules/src/em_code/bhicon.c/bhicon.o": [
+      "modules/src/em_code/bhicon.c",
+      7
+    ],
+    ".obj/modules/src/em_code/+lib_k/modules/src/em_code/bhilb.c/bhilb.o": [
+      "modules/src/em_code/bhilb.c",
+      7
+    ],
+    ".obj/modules/src/em_code/+lib_k/modules/src/em_code/bhpnam.c/bhpnam.o": [
+      "modules/src/em_code/bhpnam.c",
+      7
+    ],
+    ".obj/modules/src/em_code/+lib_k/modules/src/em_code/bhucon.c/bhucon.o": [
+      "modules/src/em_code/bhucon.c",
+      7
+    ],
+    ".obj/modules/src/em_code/+lib_k/modules/src/em_code/crcst.c/crcst.o": [
+      "modules/src/em_code/crcst.c",
+      7
+    ],
+    ".obj/modules/src/em_code/+lib_k/modules/src/em_code/crdlb.c/crdlb.o": [
+      "modules/src/em_code/crdlb.c",
+      7
+    ],
+    ".obj/modules/src/em_code/+lib_k/modules/src/em_code/crdnam.c/crdnam.o": [
+      "modules/src/em_code/crdnam.c",
+      7
+    ],
+    ".obj/modules/src/em_code/+lib_k/modules/src/em_code/crilb.c/crilb.o": [
+      "modules/src/em_code/crilb.c",
+      7
+    ],
+    ".obj/modules/src/em_code/+lib_k/modules/src/em_code/crpnam.c/crpnam.o": [
+      "modules/src/em_code/crpnam.c",
+      7
+    ],
+    ".obj/modules/src/em_code/+lib_k/modules/src/em_code/crscon.c/crscon.o": [
+      "modules/src/em_code/crscon.c",
+      7
+    ],
+    ".obj/modules/src/em_code/+lib_k/modules/src/em_code/crxcon.c/crxcon.o": [
+      "modules/src/em_code/crxcon.c",
+      7
+    ],
+    ".obj/modules/src/em_code/+lib_k/modules/src/em_code/cst.c/cst.o": [
+      "modules/src/em_code/cst.c",
+      7
+    ],
+    ".obj/modules/src/em_code/+lib_k/modules/src/em_code/dfdlb.c/dfdlb.o": [
+      "modules/src/em_code/dfdlb.c",
+      7
+    ],
+    ".obj/modules/src/em_code/+lib_k/modules/src/em_code/dfdnam.c/dfdnam.o": [
+      "modules/src/em_code/dfdnam.c",
+      7
+    ],
+    ".obj/modules/src/em_code/+lib_k/modules/src/em_code/dfilb.c/dfilb.o": [
+      "modules/src/em_code/dfilb.c",
+      7
+    ],
+    ".obj/modules/src/em_code/+lib_k/modules/src/em_code/dlb.c/dlb.o": [
+      "modules/src/em_code/dlb.c",
+      7
+    ],
+    ".obj/modules/src/em_code/+lib_k/modules/src/em_code/dnam.c/dnam.o": [
+      "modules/src/em_code/dnam.c",
+      7
+    ],
+    ".obj/modules/src/em_code/+lib_k/modules/src/em_code/em.c/em.o": [
+      "modules/src/em_code/em.c",
+      7
+    ],
+    ".obj/modules/src/em_code/+lib_k/modules/src/em_code/end.c/end.o": [
+      "modules/src/em_code/end.c",
+      7
+    ],
+    ".obj/modules/src/em_code/+lib_k/modules/src/em_code/endarg.c/endarg.o": [
+      "modules/src/em_code/endarg.c",
+      7
+    ],
+    ".obj/modules/src/em_code/+lib_k/modules/src/em_code/exc.c/exc.o": [
+      "modules/src/em_code/exc.c",
+      7
+    ],
+    ".obj/modules/src/em_code/+lib_k/modules/src/em_code/failed.c/failed.o": [
+      "modules/src/em_code/failed.c",
+      7
+    ],
+    ".obj/modules/src/em_code/+lib_k/modules/src/em_code/fcon.c/fcon.o": [
+      "modules/src/em_code/fcon.c",
+      7
+    ],
+    ".obj/modules/src/em_code/+lib_k/modules/src/em_code/getid.c/getid.o": [
+      "modules/src/em_code/getid.c",
+      7
+    ],
+    ".obj/modules/src/em_code/+lib_k/modules/src/em_code/icon.c/icon.o": [
+      "modules/src/em_code/icon.c",
+      7
+    ],
+    ".obj/modules/src/em_code/+lib_k/modules/src/em_code/ilb.c/ilb.o": [
+      "modules/src/em_code/ilb.c",
+      7
+    ],
+    ".obj/modules/src/em_code/+lib_k/modules/src/em_code/insert.c/insert.o": [
+      "modules/src/em_code/insert.c",
+      7
+    ],
+    ".obj/modules/src/em_code/+lib_k/modules/src/em_code/internerr.c/internerr.o": [
+      "modules/src/em_code/internerr.c",
+      7
+    ],
+    ".obj/modules/src/em_code/+lib_k/modules/src/em_code/msend.c/msend.o": [
+      "modules/src/em_code/msend.c",
+      7
+    ],
+    ".obj/modules/src/em_code/+lib_k/modules/src/em_code/msstart.c/msstart.o": [
+      "modules/src/em_code/msstart.c",
+      7
+    ],
+    ".obj/modules/src/em_code/+lib_k/modules/src/em_code/op.c/op.o": [
+      "modules/src/em_code/op.c",
+      7
+    ],
+    ".obj/modules/src/em_code/+lib_k/modules/src/em_code/opcst.c/opcst.o": [
+      "modules/src/em_code/opcst.c",
+      7
+    ],
+    ".obj/modules/src/em_code/+lib_k/modules/src/em_code/opdlb.c/opdlb.o": [
+      "modules/src/em_code/opdlb.c",
+      7
+    ],
+    ".obj/modules/src/em_code/+lib_k/modules/src/em_code/opdnam.c/opdnam.o": [
+      "modules/src/em_code/opdnam.c",
+      7
+    ],
+    ".obj/modules/src/em_code/+lib_k/modules/src/em_code/opilb.c/opilb.o": [
+      "modules/src/em_code/opilb.c",
+      7
+    ],
+    ".obj/modules/src/em_code/+lib_k/modules/src/em_code/opnarg.c/opnarg.o": [
+      "modules/src/em_code/opnarg.c",
+      7
+    ],
+    ".obj/modules/src/em_code/+lib_k/modules/src/em_code/oppnam.c/oppnam.o": [
+      "modules/src/em_code/oppnam.c",
+      7
+    ],
+    ".obj/modules/src/em_code/+lib_k/modules/src/em_code/pnam.c/pnam.o": [
+      "modules/src/em_code/pnam.c",
+      7
+    ],
+    ".obj/modules/src/em_code/+lib_k/modules/src/em_code/pro.c/pro.o": [
+      "modules/src/em_code/pro.c",
+      7
+    ],
+    ".obj/modules/src/em_code/+lib_k/modules/src/em_code/pronarg.c/pronarg.o": [
+      "modules/src/em_code/pronarg.c",
+      7
+    ],
+    ".obj/modules/src/em_code/+lib_k/modules/src/em_code/psdlb.c/psdlb.o": [
+      "modules/src/em_code/psdlb.c",
+      7
+    ],
+    ".obj/modules/src/em_code/+lib_k/modules/src/em_code/psdnam.c/psdnam.o": [
+      "modules/src/em_code/psdnam.c",
+      7
+    ],
+    ".obj/modules/src/em_code/+lib_k/modules/src/em_code/pspnam.c/pspnam.o": [
+      "modules/src/em_code/pspnam.c",
+      7
+    ],
+    ".obj/modules/src/em_code/+lib_k/modules/src/em_code/scon.c/scon.o": [
+      "modules/src/em_code/scon.c",
+      7
+    ],
+    ".obj/modules/src/em_code/+lib_k/modules/src/em_code/ucon.c/ucon.o": [
+      "modules/src/em_code/ucon.c",
+      7
+    ],
+    ".obj/modules/src/em_mes/+em_mes/modules/src/em_mes/C_ms_opt.c/C_ms_opt.o": [
+      "modules/src/em_mes/C_ms_opt.c",
+      8
+    ],
+    ".obj/modules/src/em_mes/+em_mes/modules/src/em_mes/C_ms_reg.c/C_ms_reg.o": [
+      "modules/src/em_mes/C_ms_reg.c",
+      8
+    ],
+    ".obj/modules/src/em_mes/+em_mes/modules/src/em_mes/C_ms_par.c/C_ms_par.o": [
+      "modules/src/em_mes/C_ms_par.c",
+      8
+    ],
+    ".obj/modules/src/em_mes/+em_mes/modules/src/em_mes/C_ms_flt.c/C_ms_flt.o": [
+      "modules/src/em_mes/C_ms_flt.c",
+      8
+    ],
+    ".obj/modules/src/em_mes/+em_mes/modules/src/em_mes/C_ms_src.c/C_ms_src.o": [
+      "modules/src/em_mes/C_ms_src.c",
+      8
+    ],
+    ".obj/modules/src/em_mes/+em_mes/modules/src/em_mes/C_ms_com.c/C_ms_com.o": [
+      "modules/src/em_mes/C_ms_com.c",
+      8
+    ],
+    ".obj/modules/src/em_mes/+em_mes/modules/src/em_mes/C_ms_emx.c/C_ms_emx.o": [
+      "modules/src/em_mes/C_ms_emx.c",
+      8
+    ],
+    ".obj/modules/src/em_mes/+em_mes/modules/src/em_mes/C_ms_gto.c/C_ms_gto.o": [
+      "modules/src/em_mes/C_ms_gto.c",
+      8
+    ],
+    ".obj/modules/src/em_mes/+em_mes/modules/src/em_mes/C_ms_err.c/C_ms_err.o": [
+      "modules/src/em_mes/C_ms_err.c",
+      8
+    ],
+    ".obj/modules/src/em_mes/+em_mes/modules/src/em_mes/C_ms_std.c/C_ms_std.o": [
+      "modules/src/em_mes/C_ms_std.c",
+      8
+    ],
+    ".obj/modules/src/em_mes/+em_mes/modules/src/em_mes/C_ms_stb.c/C_ms_stb.o": [
+      "modules/src/em_mes/C_ms_stb.c",
+      8
+    ],
+    ".obj/modules/src/em_mes/+em_mes/modules/src/em_mes/C_ms_ego.c/C_ms_ego.o": [
+      "modules/src/em_mes/C_ms_ego.c",
+      8
+    ],
+    ".obj/modules/src/flt_arith/+flt_arith/modules/src/flt_arith/flt_ar2flt.c/flt_ar2flt.o": [
+      "modules/src/flt_arith/flt_ar2flt.c",
+      9
+    ],
+    ".obj/modules/src/flt_arith/+flt_arith/modules/src/flt_arith/flt_div.c/flt_div.o": [
+      "modules/src/flt_arith/flt_div.c",
+      9
+    ],
+    ".obj/modules/src/flt_arith/+flt_arith/modules/src/flt_arith/flt_flt2ar.c/flt_flt2ar.o": [
+      "modules/src/flt_arith/flt_flt2ar.c",
+      9
+    ],
+    ".obj/modules/src/flt_arith/+flt_arith/modules/src/flt_arith/flt_modf.c/flt_modf.o": [
+      "modules/src/flt_arith/flt_modf.c",
+      9
+    ],
+    ".obj/modules/src/flt_arith/+flt_arith/modules/src/flt_arith/flt_str2fl.c/flt_str2fl.o": [
+      "modules/src/flt_arith/flt_str2fl.c",
+      9
+    ],
+    ".obj/modules/src/flt_arith/+flt_arith/modules/src/flt_arith/flt_cmp.c/flt_cmp.o": [
+      "modules/src/flt_arith/flt_cmp.c",
+      9
+    ],
+    ".obj/modules/src/flt_arith/+flt_arith/modules/src/flt_arith/flt_add.c/flt_add.o": [
+      "modules/src/flt_arith/flt_add.c",
+      9
+    ],
+    ".obj/modules/src/flt_arith/+flt_arith/modules/src/flt_arith/b64_add.c/b64_add.o": [
+      "modules/src/flt_arith/b64_add.c",
+      9
+    ],
+    ".obj/modules/src/flt_arith/+flt_arith/modules/src/flt_arith/flt_mul.c/flt_mul.o": [
+      "modules/src/flt_arith/flt_mul.c",
+      9
+    ],
+    ".obj/modules/src/flt_arith/+flt_arith/modules/src/flt_arith/flt_nrm.c/flt_nrm.o": [
+      "modules/src/flt_arith/flt_nrm.c",
+      9
+    ],
+    ".obj/modules/src/flt_arith/+flt_arith/modules/src/flt_arith/b64_sft.c/b64_sft.o": [
+      "modules/src/flt_arith/b64_sft.c",
+      9
+    ],
+    ".obj/modules/src/flt_arith/+flt_arith/modules/src/flt_arith/flt_umin.c/flt_umin.o": [
+      "modules/src/flt_arith/flt_umin.c",
+      9
+    ],
+    ".obj/modules/src/flt_arith/+flt_arith/modules/src/flt_arith/flt_chk.c/flt_chk.o": [
+      "modules/src/flt_arith/flt_chk.c",
+      9
+    ],
+    ".obj/modules/src/flt_arith/+flt_arith/modules/src/flt_arith/split.c/split.o": [
+      "modules/src/flt_arith/split.c",
+      9
+    ],
+    ".obj/modules/src/input/+input/modules/src/input/AtEoIF.c/AtEoIF.o": [
+      "modules/src/input/AtEoIF.c",
+      10
+    ],
+    ".obj/modules/src/input/+input/modules/src/input/AtEoIT.c/AtEoIT.o": [
+      "modules/src/input/AtEoIT.c",
+      10
+    ],
+    ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/ch3.c/ch3.o": [
+      "lang/cem/cemcom.ansi/ch3.c",
+      11
+    ],
+    ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/proto.c/proto.o": [
+      "lang/cem/cemcom.ansi/proto.c",
+      11
+    ],
+    ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/decspecs.c/decspecs.o": [
+      "lang/cem/cemcom.ansi/decspecs.c",
+      11
+    ],
+    ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/main.c/main.o": [
+      "lang/cem/cemcom.ansi/main.c",
+      11
+    ],
+    ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/ch3bin.c/ch3bin.o": [
+      "lang/cem/cemcom.ansi/ch3bin.c",
+      11
+    ],
+    ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/l_outdef.c/l_outdef.o": [
+      "lang/cem/cemcom.ansi/l_outdef.c",
+      11
+    ],
+    ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/LLmessage.c/LLmessage.o": [
+      "lang/cem/cemcom.ansi/LLmessage.c",
+      11
+    ],
+    ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/l_states.c/l_states.o": [
+      "lang/cem/cemcom.ansi/l_states.c",
+      11
+    ],
+    ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/declarator.c/declarator.o": [
+      "lang/cem/cemcom.ansi/declarator.c",
+      11
+    ],
+    ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/stack.c/stack.o": [
+      "lang/cem/cemcom.ansi/stack.c",
+      11
+    ],
+    ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/label.c/label.o": [
+      "lang/cem/cemcom.ansi/label.c",
+      11
+    ],
+    ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/pragma.c/pragma.o": [
+      "lang/cem/cemcom.ansi/pragma.c",
+      11
+    ],
+    ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/l_lint.c/l_lint.o": [
+      "lang/cem/cemcom.ansi/l_lint.c",
+      11
+    ],
+    ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/error.c/error.o": [
+      "lang/cem/cemcom.ansi/error.c",
+      11
+    ],
+    ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/cstoper.c/cstoper.o": [
+      "lang/cem/cemcom.ansi/cstoper.c",
+      11
+    ],
+    ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/idf.c/idf.o": [
+      "lang/cem/cemcom.ansi/idf.c",
+      11
+    ],
+    ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/options.c/options.o": [
+      "lang/cem/cemcom.ansi/options.c",
+      11
+    ],
+    ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/l_ev_ord.c/l_ev_ord.o": [
+      "lang/cem/cemcom.ansi/l_ev_ord.c",
+      11
+    ],
+    ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/dataflow.c/dataflow.o": [
+      "lang/cem/cemcom.ansi/dataflow.c",
+      11
+    ],
+    ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/skip.c/skip.o": [
+      "lang/cem/cemcom.ansi/skip.c",
+      11
+    ],
+    ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/stb.c/stb.o": [
+      "lang/cem/cemcom.ansi/stb.c",
+      11
+    ],
+    ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/dumpidf.c/dumpidf.o": [
+      "lang/cem/cemcom.ansi/dumpidf.c",
+      11
+    ],
+    ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/tokenname.c/tokenname.o": [
+      "lang/cem/cemcom.ansi/tokenname.c",
+      11
+    ],
+    ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/fltcstoper.c/fltcstoper.o": [
+      "lang/cem/cemcom.ansi/fltcstoper.c",
+      11
+    ],
+    ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/arith.c/arith.o": [
+      "lang/cem/cemcom.ansi/arith.c",
+      11
+    ],
+    ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/eval.c/eval.o": [
+      "lang/cem/cemcom.ansi/eval.c",
+      11
+    ],
+    ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/blocks.c/blocks.o": [
+      "lang/cem/cemcom.ansi/blocks.c",
+      11
+    ],
+    ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/l_misc.c/l_misc.o": [
+      "lang/cem/cemcom.ansi/l_misc.c",
+      11
+    ],
+    ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/code.c/code.o": [
+      "lang/cem/cemcom.ansi/code.c",
+      11
+    ],
+    ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/stab.c/stab.o": [
+      "lang/cem/cemcom.ansi/stab.c",
+      11
+    ],
+    ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/input.c/input.o": [
+      "lang/cem/cemcom.ansi/input.c",
+      11
+    ],
+    ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/expr.c/expr.o": [
+      "lang/cem/cemcom.ansi/expr.c",
+      11
+    ],
+    ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/LLlex.c/LLlex.o": [
+      "lang/cem/cemcom.ansi/LLlex.c",
+      11
+    ],
+    ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/switch.c/switch.o": [
+      "lang/cem/cemcom.ansi/switch.c",
+      11
+    ],
+    ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/struct.c/struct.o": [
+      "lang/cem/cemcom.ansi/struct.c",
+      11
+    ],
+    ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/domacro.c/domacro.o": [
+      "lang/cem/cemcom.ansi/domacro.c",
+      11
+    ],
+    ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/conversion.c/conversion.o": [
+      "lang/cem/cemcom.ansi/conversion.c",
+      11
+    ],
+    ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/type.c/type.o": [
+      "lang/cem/cemcom.ansi/type.c",
+      11
+    ],
+    ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/field.c/field.o": [
+      "lang/cem/cemcom.ansi/field.c",
+      11
+    ],
+    ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/ch3mon.c/ch3mon.o": [
+      "lang/cem/cemcom.ansi/ch3mon.c",
+      11
+    ],
+    ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/util.c/util.o": [
+      "lang/cem/cemcom.ansi/util.c",
+      11
+    ],
+    ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/l_comment.c/l_comment.o": [
+      "lang/cem/cemcom.ansi/l_comment.c",
+      11
+    ],
+    ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/+llgen/Lpars.c/Lpars.o": [
+      ".obj/lang/cem/cemcom.ansi/+llgen/Lpars.c",
+      11
+    ],
+    ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/+llgen/tokenfile.c/tokenfile.o": [
+      ".obj/lang/cem/cemcom.ansi/+llgen/tokenfile.c",
+      11
+    ],
+    ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/+llgen/declar.c/declar.o": [
+      ".obj/lang/cem/cemcom.ansi/+llgen/declar.c",
+      11
+    ],
+    ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/+llgen/expression.c/expression.o": [
+      ".obj/lang/cem/cemcom.ansi/+llgen/expression.c",
+      11
+    ],
+    ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/+llgen/ival.c/ival.o": [
+      ".obj/lang/cem/cemcom.ansi/+llgen/ival.c",
+      11
+    ],
+    ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/+llgen/program.c/program.o": [
+      ".obj/lang/cem/cemcom.ansi/+llgen/program.c",
+      11
+    ],
+    ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/+llgen/statement.c/statement.o": [
+      ".obj/lang/cem/cemcom.ansi/+llgen/statement.c",
+      11
+    ],
+    ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/+next-c/next.c/next.o": [
+      ".obj/lang/cem/cemcom.ansi/+next-c/next.c",
+      11
+    ],
+    ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/+symbol2str-c/symbol2str.c/symbol2str.o": [
+      ".obj/lang/cem/cemcom.ansi/+symbol2str-c/symbol2str.c",
+      11
+    ],
+    ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/+tabgen/tabgen.c/tabgen.o": [
+      ".obj/lang/cem/cemcom.ansi/+tabgen/tabgen.c",
+      11
+    ],
+    ".obj/lang/cem/cpp.ansi/+cpp.ansi/lang/cem/cpp.ansi/main.c/main.o": [
+      "lang/cem/cpp.ansi/main.c",
+      12
+    ],
+    ".obj/lang/cem/cpp.ansi/+cpp.ansi/lang/cem/cpp.ansi/ch3bin.c/ch3bin.o": [
+      "lang/cem/cpp.ansi/ch3bin.c",
+      12
+    ],
+    ".obj/lang/cem/cpp.ansi/+cpp.ansi/lang/cem/cpp.ansi/LLmessage.c/LLmessage.o": [
+      "lang/cem/cpp.ansi/LLmessage.c",
+      12
+    ],
+    ".obj/lang/cem/cpp.ansi/+cpp.ansi/lang/cem/cpp.ansi/error.c/error.o": [
+      "lang/cem/cpp.ansi/error.c",
+      12
+    ],
+    ".obj/lang/cem/cpp.ansi/+cpp.ansi/lang/cem/cpp.ansi/idf.c/idf.o": [
+      "lang/cem/cpp.ansi/idf.c",
+      12
+    ],
+    ".obj/lang/cem/cpp.ansi/+cpp.ansi/lang/cem/cpp.ansi/options.c/options.o": [
+      "lang/cem/cpp.ansi/options.c",
+      12
+    ],
+    ".obj/lang/cem/cpp.ansi/+cpp.ansi/lang/cem/cpp.ansi/init.c/init.o": [
+      "lang/cem/cpp.ansi/init.c",
+      12
+    ],
+    ".obj/lang/cem/cpp.ansi/+cpp.ansi/lang/cem/cpp.ansi/skip.c/skip.o": [
+      "lang/cem/cpp.ansi/skip.c",
+      12
+    ],
+    ".obj/lang/cem/cpp.ansi/+cpp.ansi/lang/cem/cpp.ansi/tokenname.c/tokenname.o": [
+      "lang/cem/cpp.ansi/tokenname.c",
+      12
+    ],
+    ".obj/lang/cem/cpp.ansi/+cpp.ansi/lang/cem/cpp.ansi/input.c/input.o": [
+      "lang/cem/cpp.ansi/input.c",
+      12
+    ],
+    ".obj/lang/cem/cpp.ansi/+cpp.ansi/lang/cem/cpp.ansi/expr.c/expr.o": [
+      "lang/cem/cpp.ansi/expr.c",
+      12
+    ],
+    ".obj/lang/cem/cpp.ansi/+cpp.ansi/lang/cem/cpp.ansi/LLlex.c/LLlex.o": [
+      "lang/cem/cpp.ansi/LLlex.c",
+      12
+    ],
+    ".obj/lang/cem/cpp.ansi/+cpp.ansi/lang/cem/cpp.ansi/domacro.c/domacro.o": [
+      "lang/cem/cpp.ansi/domacro.c",
+      12
+    ],
+    ".obj/lang/cem/cpp.ansi/+cpp.ansi/lang/cem/cpp.ansi/preprocess.c/preprocess.o": [
+      "lang/cem/cpp.ansi/preprocess.c",
+      12
+    ],
+    ".obj/lang/cem/cpp.ansi/+cpp.ansi/lang/cem/cpp.ansi/ch3mon.c/ch3mon.o": [
+      "lang/cem/cpp.ansi/ch3mon.c",
+      12
+    ],
+    ".obj/lang/cem/cpp.ansi/+cpp.ansi/lang/cem/cpp.ansi/replace.c/replace.o": [
+      "lang/cem/cpp.ansi/replace.c",
+      12
+    ],
+    ".obj/lang/cem/cpp.ansi/+cpp.ansi/lang/cem/cpp.ansi/+llgen/Lpars.c/Lpars.o": [
+      ".obj/lang/cem/cpp.ansi/+llgen/Lpars.c",
+      12
+    ],
+    ".obj/lang/cem/cpp.ansi/+cpp.ansi/lang/cem/cpp.ansi/+llgen/tokenfile.c/tokenfile.o": [
+      ".obj/lang/cem/cpp.ansi/+llgen/tokenfile.c",
+      12
+    ],
+    ".obj/lang/cem/cpp.ansi/+cpp.ansi/lang/cem/cpp.ansi/+llgen/expression.c/expression.o": [
+      ".obj/lang/cem/cpp.ansi/+llgen/expression.c",
+      12
+    ],
+    ".obj/lang/cem/cpp.ansi/+cpp.ansi/lang/cem/cpp.ansi/+next-c/next.c/next.o": [
+      ".obj/lang/cem/cpp.ansi/+next-c/next.c",
+      12
+    ],
+    ".obj/lang/cem/cpp.ansi/+cpp.ansi/lang/cem/cpp.ansi/+symbol2str-c/symbol2str.c/symbol2str.o": [
+      ".obj/lang/cem/cpp.ansi/+symbol2str-c/symbol2str.c",
+      12
+    ],
+    ".obj/lang/cem/cpp.ansi/+cpp.ansi/lang/cem/cpp.ansi/+tabgen/tabgen.c/tabgen.o": [
+      ".obj/lang/cem/cpp.ansi/+tabgen/tabgen.c",
+      12
+    ],
+    ".obj/lang/basic/src/+em_bem/lang/basic/src/+llgen/Lpars.c/Lpars.o": [
+      ".obj/lang/basic/src/+llgen/Lpars.c",
+      13
+    ],
+    ".obj/lang/basic/src/+em_bem/lang/basic/src/+llgen/basic.c/basic.o": [
+      ".obj/lang/basic/src/+llgen/basic.c",
+      13
+    ],
+    ".obj/lang/basic/src/+em_bem/lang/basic/src/bem.c/bem.o": [
+      "lang/basic/src/bem.c",
+      13
+    ],
+    ".obj/lang/basic/src/+em_bem/lang/basic/src/compile.c/compile.o": [
+      "lang/basic/src/compile.c",
+      13
+    ],
+    ".obj/lang/basic/src/+em_bem/lang/basic/src/eval.c/eval.o": [
+      "lang/basic/src/eval.c",
+      13
+    ],
+    ".obj/lang/basic/src/+em_bem/lang/basic/src/func.c/func.o": [
+      "lang/basic/src/func.c",
+      13
+    ],
+    ".obj/lang/basic/src/+em_bem/lang/basic/src/gencode.c/gencode.o": [
+      "lang/basic/src/gencode.c",
+      13
+    ],
+    ".obj/lang/basic/src/+em_bem/lang/basic/src/graph.c/graph.o": [
+      "lang/basic/src/graph.c",
+      13
+    ],
+    ".obj/lang/basic/src/+em_bem/lang/basic/src/initialize.c/initialize.o": [
+      "lang/basic/src/initialize.c",
+      13
+    ],
+    ".obj/lang/basic/src/+em_bem/lang/basic/src/parsepar.c/parsepar.o": [
+      "lang/basic/src/parsepar.c",
+      13
+    ],
+    ".obj/lang/basic/src/+em_bem/lang/basic/src/symbols.c/symbols.o": [
+      "lang/basic/src/symbols.c",
+      13
+    ],
+    ".obj/lang/basic/src/+em_bem/lang/basic/src/util.c/util.o": [
+      "lang/basic/src/util.c",
+      13
+    ],
+    ".obj/lang/m2/comp/+em_m2/lang/m2/comp/typequiv.c/typequiv.o": [
+      "lang/m2/comp/typequiv.c",
+      14
+    ],
+    ".obj/lang/m2/comp/+em_m2/lang/m2/comp/main.c/main.o": [
+      "lang/m2/comp/main.c",
+      14
+    ],
+    ".obj/lang/m2/comp/+em_m2/lang/m2/comp/LLmessage.c/LLmessage.o": [
+      "lang/m2/comp/LLmessage.c",
+      14
+    ],
+    ".obj/lang/m2/comp/+em_m2/lang/m2/comp/casestat.c/casestat.o": [
+      "lang/m2/comp/casestat.c",
+      14
+    ],
+    ".obj/lang/m2/comp/+em_m2/lang/m2/comp/scope.c/scope.o": [
+      "lang/m2/comp/scope.c",
+      14
+    ],
+    ".obj/lang/m2/comp/+em_m2/lang/m2/comp/error.c/error.o": [
+      "lang/m2/comp/error.c",
+      14
+    ],
+    ".obj/lang/m2/comp/+em_m2/lang/m2/comp/cstoper.c/cstoper.o": [
+      "lang/m2/comp/cstoper.c",
+      14
+    ],
+    ".obj/lang/m2/comp/+em_m2/lang/m2/comp/idf.c/idf.o": [
+      "lang/m2/comp/idf.c",
+      14
+    ],
+    ".obj/lang/m2/comp/+em_m2/lang/m2/comp/options.c/options.o": [
+      "lang/m2/comp/options.c",
+      14
+    ],
+    ".obj/lang/m2/comp/+em_m2/lang/m2/comp/desig.c/desig.o": [
+      "lang/m2/comp/desig.c",
+      14
+    ],
+    ".obj/lang/m2/comp/+em_m2/lang/m2/comp/chk_expr.c/chk_expr.o": [
+      "lang/m2/comp/chk_expr.c",
+      14
+    ],
+    ".obj/lang/m2/comp/+em_m2/lang/m2/comp/defmodule.c/defmodule.o": [
+      "lang/m2/comp/defmodule.c",
+      14
+    ],
+    ".obj/lang/m2/comp/+em_m2/lang/m2/comp/walk.c/walk.o": [
+      "lang/m2/comp/walk.c",
+      14
+    ],
+    ".obj/lang/m2/comp/+em_m2/lang/m2/comp/tokenname.c/tokenname.o": [
+      "lang/m2/comp/tokenname.c",
+      14
+    ],
+    ".obj/lang/m2/comp/+em_m2/lang/m2/comp/enter.c/enter.o": [
+      "lang/m2/comp/enter.c",
+      14
+    ],
+    ".obj/lang/m2/comp/+em_m2/lang/m2/comp/code.c/code.o": [
+      "lang/m2/comp/code.c",
+      14
+    ],
+    ".obj/lang/m2/comp/+em_m2/lang/m2/comp/node.c/node.o": [
+      "lang/m2/comp/node.c",
+      14
+    ],
+    ".obj/lang/m2/comp/+em_m2/lang/m2/comp/stab.c/stab.o": [
+      "lang/m2/comp/stab.c",
+      14
+    ],
+    ".obj/lang/m2/comp/+em_m2/lang/m2/comp/tmpvar.c/tmpvar.o": [
+      "lang/m2/comp/tmpvar.c",
+      14
+    ],
+    ".obj/lang/m2/comp/+em_m2/lang/m2/comp/input.c/input.o": [
+      "lang/m2/comp/input.c",
+      14
+    ],
+    ".obj/lang/m2/comp/+em_m2/lang/m2/comp/LLlex.c/LLlex.o": [
+      "lang/m2/comp/LLlex.c",
+      14
+    ],
+    ".obj/lang/m2/comp/+em_m2/lang/m2/comp/lookup.c/lookup.o": [
+      "lang/m2/comp/lookup.c",
+      14
+    ],
+    ".obj/lang/m2/comp/+em_m2/lang/m2/comp/def.c/def.o": [
+      "lang/m2/comp/def.c",
+      14
+    ],
+    ".obj/lang/m2/comp/+em_m2/lang/m2/comp/type.c/type.o": [
+      "lang/m2/comp/type.c",
+      14
+    ],
+    ".obj/lang/m2/comp/+em_m2/lang/m2/comp/misc.c/misc.o": [
+      "lang/m2/comp/misc.c",
+      14
+    ],
+    ".obj/lang/m2/comp/+em_m2/lang/m2/comp/+llgen/Lpars.c/Lpars.o": [
+      ".obj/lang/m2/comp/+llgen/Lpars.c",
+      14
+    ],
+    ".obj/lang/m2/comp/+em_m2/lang/m2/comp/+llgen/tokenfile.c/tokenfile.o": [
+      ".obj/lang/m2/comp/+llgen/tokenfile.c",
+      14
+    ],
+    ".obj/lang/m2/comp/+em_m2/lang/m2/comp/+llgen/declar.c/declar.o": [
+      ".obj/lang/m2/comp/+llgen/declar.c",
+      14
+    ],
+    ".obj/lang/m2/comp/+em_m2/lang/m2/comp/+llgen/expression.c/expression.o": [
+      ".obj/lang/m2/comp/+llgen/expression.c",
+      14
+    ],
+    ".obj/lang/m2/comp/+em_m2/lang/m2/comp/+llgen/program.c/program.o": [
+      ".obj/lang/m2/comp/+llgen/program.c",
+      14
+    ],
+    ".obj/lang/m2/comp/+em_m2/lang/m2/comp/+llgen/statement.c/statement.o": [
+      ".obj/lang/m2/comp/+llgen/statement.c",
+      14
+    ],
+    ".obj/lang/m2/comp/+em_m2/lang/m2/comp/+symbol2str-c/symbol2str.c/symbol2str.o": [
+      ".obj/lang/m2/comp/+symbol2str-c/symbol2str.c",
+      14
+    ],
+    ".obj/lang/m2/comp/+em_m2/lang/m2/comp/+tabgen/tabgen.c/tabgen.o": [
+      ".obj/lang/m2/comp/+tabgen/tabgen.c",
+      14
+    ],
+    ".obj/lang/pc/comp/+em_pc/lang/pc/comp/typequiv.c/typequiv.o": [
+      "lang/pc/comp/typequiv.c",
+      15
+    ],
+    ".obj/lang/pc/comp/+em_pc/lang/pc/comp/main.c/main.o": [
+      "lang/pc/comp/main.c",
+      15
+    ],
+    ".obj/lang/pc/comp/+em_pc/lang/pc/comp/LLmessage.c/LLmessage.o": [
+      "lang/pc/comp/LLmessage.c",
+      15
+    ],
+    ".obj/lang/pc/comp/+em_pc/lang/pc/comp/readwrite.c/readwrite.o": [
+      "lang/pc/comp/readwrite.c",
+      15
+    ],
+    ".obj/lang/pc/comp/+em_pc/lang/pc/comp/label.c/label.o": [
+      "lang/pc/comp/label.c",
+      15
+    ],
+    ".obj/lang/pc/comp/+em_pc/lang/pc/comp/scope.c/scope.o": [
+      "lang/pc/comp/scope.c",
+      15
+    ],
+    ".obj/lang/pc/comp/+em_pc/lang/pc/comp/error.c/error.o": [
+      "lang/pc/comp/error.c",
+      15
+    ],
+    ".obj/lang/pc/comp/+em_pc/lang/pc/comp/cstoper.c/cstoper.o": [
+      "lang/pc/comp/cstoper.c",
+      15
+    ],
+    ".obj/lang/pc/comp/+em_pc/lang/pc/comp/idf.c/idf.o": [
+      "lang/pc/comp/idf.c",
+      15
+    ],
+    ".obj/lang/pc/comp/+em_pc/lang/pc/comp/options.c/options.o": [
+      "lang/pc/comp/options.c",
+      15
+    ],
+    ".obj/lang/pc/comp/+em_pc/lang/pc/comp/desig.c/desig.o": [
+      "lang/pc/comp/desig.c",
+      15
+    ],
+    ".obj/lang/pc/comp/+em_pc/lang/pc/comp/chk_expr.c/chk_expr.o": [
+      "lang/pc/comp/chk_expr.c",
+      15
+    ],
+    ".obj/lang/pc/comp/+em_pc/lang/pc/comp/body.c/body.o": [
+      "lang/pc/comp/body.c",
+      15
+    ],
+    ".obj/lang/pc/comp/+em_pc/lang/pc/comp/progs.c/progs.o": [
+      "lang/pc/comp/progs.c",
+      15
+    ],
+    ".obj/lang/pc/comp/+em_pc/lang/pc/comp/tokenname.c/tokenname.o": [
+      "lang/pc/comp/tokenname.c",
+      15
+    ],
+    ".obj/lang/pc/comp/+em_pc/lang/pc/comp/enter.c/enter.o": [
+      "lang/pc/comp/enter.c",
+      15
+    ],
+    ".obj/lang/pc/comp/+em_pc/lang/pc/comp/code.c/code.o": [
+      "lang/pc/comp/code.c",
+      15
+    ],
+    ".obj/lang/pc/comp/+em_pc/lang/pc/comp/node.c/node.o": [
+      "lang/pc/comp/node.c",
+      15
+    ],
+    ".obj/lang/pc/comp/+em_pc/lang/pc/comp/stab.c/stab.o": [
+      "lang/pc/comp/stab.c",
+      15
+    ],
+    ".obj/lang/pc/comp/+em_pc/lang/pc/comp/input.c/input.o": [
+      "lang/pc/comp/input.c",
+      15
+    ],
+    ".obj/lang/pc/comp/+em_pc/lang/pc/comp/LLlex.c/LLlex.o": [
+      "lang/pc/comp/LLlex.c",
+      15
+    ],
+    ".obj/lang/pc/comp/+em_pc/lang/pc/comp/lookup.c/lookup.o": [
+      "lang/pc/comp/lookup.c",
+      15
+    ],
+    ".obj/lang/pc/comp/+em_pc/lang/pc/comp/def.c/def.o": [
+      "lang/pc/comp/def.c",
+      15
+    ],
+    ".obj/lang/pc/comp/+em_pc/lang/pc/comp/type.c/type.o": [
+      "lang/pc/comp/type.c",
+      15
+    ],
+    ".obj/lang/pc/comp/+em_pc/lang/pc/comp/misc.c/misc.o": [
+      "lang/pc/comp/misc.c",
+      15
+    ],
+    ".obj/lang/pc/comp/+em_pc/lang/pc/comp/+llgen/Lpars.c/Lpars.o": [
+      ".obj/lang/pc/comp/+llgen/Lpars.c",
+      15
+    ],
+    ".obj/lang/pc/comp/+em_pc/lang/pc/comp/+llgen/tokenfile.c/tokenfile.o": [
+      ".obj/lang/pc/comp/+llgen/tokenfile.c",
+      15
+    ],
+    ".obj/lang/pc/comp/+em_pc/lang/pc/comp/+llgen/declar.c/declar.o": [
+      ".obj/lang/pc/comp/+llgen/declar.c",
+      15
+    ],
+    ".obj/lang/pc/comp/+em_pc/lang/pc/comp/+llgen/expression.c/expression.o": [
+      ".obj/lang/pc/comp/+llgen/expression.c",
+      15
+    ],
+    ".obj/lang/pc/comp/+em_pc/lang/pc/comp/+llgen/program.c/program.o": [
+      ".obj/lang/pc/comp/+llgen/program.c",
+      15
+    ],
+    ".obj/lang/pc/comp/+em_pc/lang/pc/comp/+llgen/statement.c/statement.o": [
+      ".obj/lang/pc/comp/+llgen/statement.c",
+      15
+    ],
+    ".obj/lang/pc/comp/+em_pc/lang/pc/comp/+next-c/next.c/next.o": [
+      ".obj/lang/pc/comp/+next-c/next.c",
+      15
+    ],
+    ".obj/lang/pc/comp/+em_pc/lang/pc/comp/+symbol2str-c/symbol2str.c/symbol2str.o": [
+      ".obj/lang/pc/comp/+symbol2str-c/symbol2str.c",
+      15
+    ],
+    ".obj/lang/pc/comp/+em_pc/lang/pc/comp/+tabgen/tabgen.c/tabgen.o": [
+      ".obj/lang/pc/comp/+tabgen/tabgen.c",
+      15
+    ],
+    ".obj/lang/pc/comp/+em_pc/lang/pc/comp/+casestat_c/casestat.c/casestat.o": [
+      ".obj/lang/pc/comp/+casestat_c/casestat.c",
+      15
+    ],
+    ".obj/lang/pc/comp/+em_pc/lang/pc/comp/+tmpvar_c/tmpvar.c/tmpvar.o": [
+      ".obj/lang/pc/comp/+tmpvar_c/tmpvar.c",
+      15
+    ],
+    ".obj/lang/occam/comp/+em_occam/lang/occam/comp/report.c/report.o": [
+      "lang/occam/comp/report.c",
+      16
+    ],
+    ".obj/lang/occam/comp/+em_occam/lang/occam/comp/keytab.c/keytab.o": [
+      "lang/occam/comp/keytab.c",
+      16
+    ],
+    ".obj/lang/occam/comp/+em_occam/lang/occam/comp/builtin.c/builtin.o": [
+      "lang/occam/comp/builtin.c",
+      16
+    ],
+    ".obj/lang/occam/comp/+em_occam/lang/occam/comp/code.c/code.o": [
+      "lang/occam/comp/code.c",
+      16
+    ],
+    ".obj/lang/occam/comp/+em_occam/lang/occam/comp/expr.c/expr.o": [
+      "lang/occam/comp/expr.c",
+      16
+    ],
+    ".obj/lang/occam/comp/+em_occam/lang/occam/comp/em.c/em.o": [
+      "lang/occam/comp/em.c",
+      16
+    ],
+    ".obj/lang/occam/comp/+em_occam/lang/occam/comp/symtab.c/symtab.o": [
+      "lang/occam/comp/symtab.c",
+      16
+    ],
+    ".obj/lang/occam/comp/+em_occam/lang/occam/comp/+llgen/Lpars.c/Lpars.o": [
+      ".obj/lang/occam/comp/+llgen/Lpars.c",
+      16
+    ],
+    ".obj/lang/occam/comp/+em_occam/lang/occam/comp/+llgen/occam.c/occam.o": [
+      ".obj/lang/occam/comp/+llgen/occam.c",
+      16
+    ],
+    ".obj/lang/occam/comp/+em_occam/lang/occam/comp/+lexer/lex.yy.c/lex.yy.o": [
+      ".obj/lang/occam/comp/+lexer/lex.yy.c",
+      16
+    ],
+    ".obj/modules/src/em_code/+lib_e/modules/src/em_code/C_out.c/C_out.o": [
+      "modules/src/em_code/C_out.c",
+      17
+    ],
+    ".obj/modules/src/em_code/+lib_e/modules/src/em_code/bhcst.c/bhcst.o": [
+      "modules/src/em_code/bhcst.c",
+      17
+    ],
+    ".obj/modules/src/em_code/+lib_e/modules/src/em_code/bhdlb.c/bhdlb.o": [
+      "modules/src/em_code/bhdlb.c",
+      17
+    ],
+    ".obj/modules/src/em_code/+lib_e/modules/src/em_code/bhdnam.c/bhdnam.o": [
+      "modules/src/em_code/bhdnam.c",
+      17
+    ],
+    ".obj/modules/src/em_code/+lib_e/modules/src/em_code/bhfcon.c/bhfcon.o": [
+      "modules/src/em_code/bhfcon.c",
+      17
+    ],
+    ".obj/modules/src/em_code/+lib_e/modules/src/em_code/bhicon.c/bhicon.o": [
+      "modules/src/em_code/bhicon.c",
+      17
+    ],
+    ".obj/modules/src/em_code/+lib_e/modules/src/em_code/bhilb.c/bhilb.o": [
+      "modules/src/em_code/bhilb.c",
+      17
+    ],
+    ".obj/modules/src/em_code/+lib_e/modules/src/em_code/bhpnam.c/bhpnam.o": [
+      "modules/src/em_code/bhpnam.c",
+      17
+    ],
+    ".obj/modules/src/em_code/+lib_e/modules/src/em_code/bhucon.c/bhucon.o": [
+      "modules/src/em_code/bhucon.c",
+      17
+    ],
+    ".obj/modules/src/em_code/+lib_e/modules/src/em_code/crcst.c/crcst.o": [
+      "modules/src/em_code/crcst.c",
+      17
+    ],
+    ".obj/modules/src/em_code/+lib_e/modules/src/em_code/crdlb.c/crdlb.o": [
+      "modules/src/em_code/crdlb.c",
+      17
+    ],
+    ".obj/modules/src/em_code/+lib_e/modules/src/em_code/crdnam.c/crdnam.o": [
+      "modules/src/em_code/crdnam.c",
+      17
+    ],
+    ".obj/modules/src/em_code/+lib_e/modules/src/em_code/crilb.c/crilb.o": [
+      "modules/src/em_code/crilb.c",
+      17
+    ],
+    ".obj/modules/src/em_code/+lib_e/modules/src/em_code/crpnam.c/crpnam.o": [
+      "modules/src/em_code/crpnam.c",
+      17
+    ],
+    ".obj/modules/src/em_code/+lib_e/modules/src/em_code/crscon.c/crscon.o": [
+      "modules/src/em_code/crscon.c",
+      17
+    ],
+    ".obj/modules/src/em_code/+lib_e/modules/src/em_code/crxcon.c/crxcon.o": [
+      "modules/src/em_code/crxcon.c",
+      17
+    ],
+    ".obj/modules/src/em_code/+lib_e/modules/src/em_code/cst.c/cst.o": [
+      "modules/src/em_code/cst.c",
+      17
+    ],
+    ".obj/modules/src/em_code/+lib_e/modules/src/em_code/dfdlb.c/dfdlb.o": [
+      "modules/src/em_code/dfdlb.c",
+      17
+    ],
+    ".obj/modules/src/em_code/+lib_e/modules/src/em_code/dfdnam.c/dfdnam.o": [
+      "modules/src/em_code/dfdnam.c",
+      17
+    ],
+    ".obj/modules/src/em_code/+lib_e/modules/src/em_code/dfilb.c/dfilb.o": [
+      "modules/src/em_code/dfilb.c",
+      17
+    ],
+    ".obj/modules/src/em_code/+lib_e/modules/src/em_code/dlb.c/dlb.o": [
+      "modules/src/em_code/dlb.c",
+      17
+    ],
+    ".obj/modules/src/em_code/+lib_e/modules/src/em_code/dnam.c/dnam.o": [
+      "modules/src/em_code/dnam.c",
+      17
+    ],
+    ".obj/modules/src/em_code/+lib_e/modules/src/em_code/em.c/em.o": [
+      "modules/src/em_code/em.c",
+      17
+    ],
+    ".obj/modules/src/em_code/+lib_e/modules/src/em_code/end.c/end.o": [
+      "modules/src/em_code/end.c",
+      17
+    ],
+    ".obj/modules/src/em_code/+lib_e/modules/src/em_code/endarg.c/endarg.o": [
+      "modules/src/em_code/endarg.c",
+      17
+    ],
+    ".obj/modules/src/em_code/+lib_e/modules/src/em_code/exc.c/exc.o": [
+      "modules/src/em_code/exc.c",
+      17
+    ],
+    ".obj/modules/src/em_code/+lib_e/modules/src/em_code/failed.c/failed.o": [
+      "modules/src/em_code/failed.c",
+      17
+    ],
+    ".obj/modules/src/em_code/+lib_e/modules/src/em_code/fcon.c/fcon.o": [
+      "modules/src/em_code/fcon.c",
+      17
+    ],
+    ".obj/modules/src/em_code/+lib_e/modules/src/em_code/getid.c/getid.o": [
+      "modules/src/em_code/getid.c",
+      17
+    ],
+    ".obj/modules/src/em_code/+lib_e/modules/src/em_code/icon.c/icon.o": [
+      "modules/src/em_code/icon.c",
+      17
+    ],
+    ".obj/modules/src/em_code/+lib_e/modules/src/em_code/ilb.c/ilb.o": [
+      "modules/src/em_code/ilb.c",
+      17
+    ],
+    ".obj/modules/src/em_code/+lib_e/modules/src/em_code/insert.c/insert.o": [
+      "modules/src/em_code/insert.c",
+      17
+    ],
+    ".obj/modules/src/em_code/+lib_e/modules/src/em_code/internerr.c/internerr.o": [
+      "modules/src/em_code/internerr.c",
+      17
+    ],
+    ".obj/modules/src/em_code/+lib_e/modules/src/em_code/msend.c/msend.o": [
+      "modules/src/em_code/msend.c",
+      17
+    ],
+    ".obj/modules/src/em_code/+lib_e/modules/src/em_code/msstart.c/msstart.o": [
+      "modules/src/em_code/msstart.c",
+      17
+    ],
+    ".obj/modules/src/em_code/+lib_e/modules/src/em_code/op.c/op.o": [
+      "modules/src/em_code/op.c",
+      17
+    ],
+    ".obj/modules/src/em_code/+lib_e/modules/src/em_code/opcst.c/opcst.o": [
+      "modules/src/em_code/opcst.c",
+      17
+    ],
+    ".obj/modules/src/em_code/+lib_e/modules/src/em_code/opdlb.c/opdlb.o": [
+      "modules/src/em_code/opdlb.c",
+      17
+    ],
+    ".obj/modules/src/em_code/+lib_e/modules/src/em_code/opdnam.c/opdnam.o": [
+      "modules/src/em_code/opdnam.c",
+      17
+    ],
+    ".obj/modules/src/em_code/+lib_e/modules/src/em_code/opilb.c/opilb.o": [
+      "modules/src/em_code/opilb.c",
+      17
+    ],
+    ".obj/modules/src/em_code/+lib_e/modules/src/em_code/opnarg.c/opnarg.o": [
+      "modules/src/em_code/opnarg.c",
+      17
+    ],
+    ".obj/modules/src/em_code/+lib_e/modules/src/em_code/oppnam.c/oppnam.o": [
+      "modules/src/em_code/oppnam.c",
+      17
+    ],
+    ".obj/modules/src/em_code/+lib_e/modules/src/em_code/pnam.c/pnam.o": [
+      "modules/src/em_code/pnam.c",
+      17
+    ],
+    ".obj/modules/src/em_code/+lib_e/modules/src/em_code/pro.c/pro.o": [
+      "modules/src/em_code/pro.c",
+      17
+    ],
+    ".obj/modules/src/em_code/+lib_e/modules/src/em_code/pronarg.c/pronarg.o": [
+      "modules/src/em_code/pronarg.c",
+      17
+    ],
+    ".obj/modules/src/em_code/+lib_e/modules/src/em_code/psdlb.c/psdlb.o": [
+      "modules/src/em_code/psdlb.c",
+      17
+    ],
+    ".obj/modules/src/em_code/+lib_e/modules/src/em_code/psdnam.c/psdnam.o": [
+      "modules/src/em_code/psdnam.c",
+      17
+    ],
+    ".obj/modules/src/em_code/+lib_e/modules/src/em_code/pspnam.c/pspnam.o": [
+      "modules/src/em_code/pspnam.c",
+      17
+    ],
+    ".obj/modules/src/em_code/+lib_e/modules/src/em_code/scon.c/scon.o": [
+      "modules/src/em_code/scon.c",
+      17
+    ],
+    ".obj/modules/src/em_code/+lib_e/modules/src/em_code/ucon.c/ucon.o": [
+      "modules/src/em_code/ucon.c",
+      17
+    ],
+    ".obj/modules/src/read_em/+lib_kv/modules/src/read_em/EM_vars.c/EM_vars.o": [
+      "modules/src/read_em/EM_vars.c",
+      18
+    ],
+    ".obj/modules/src/read_em/+lib_kv/modules/src/read_em/read_em.c/read_em.o": [
+      "modules/src/read_em/read_em.c",
+      18
+    ],
+    ".obj/modules/src/read_em/+lib_kv/modules/src/read_em/mkcalls.c/mkcalls.o": [
+      "modules/src/read_em/mkcalls.c",
+      18
+    ],
+    ".obj/util/misc/+em_decode/util/misc/convert.c/convert.o": [
+      "util/misc/convert.c",
+      19
+    ],
+    ".obj/util/opt/+mktab/util/opt/+bison/bison.c/bison.o": [
+      ".obj/util/opt/+bison/bison.c",
+      20
+    ],
+    ".obj/util/opt/+mktab/util/opt/+flex/flex.yy.c/flex.yy.o": [
+      ".obj/util/opt/+flex/flex.yy.c",
+      20
+    ],
+    ".obj/util/opt/+em_opt/util/opt/+pattern_c/pattern.c/pattern.o": [
+      ".obj/util/opt/+pattern_c/pattern.c",
+      21
+    ],
+    ".obj/util/opt/+em_opt/util/opt/+pop_push_c/pop_push.c/pop_push.o": [
+      ".obj/util/opt/+pop_push_c/pop_push.c",
+      21
+    ],
+    ".obj/util/opt/+em_opt/util/opt/alloc.c/alloc.o": [
+      "util/opt/alloc.c",
+      21
+    ],
+    ".obj/util/opt/+em_opt/util/opt/backward.c/backward.o": [
+      "util/opt/backward.c",
+      21
+    ],
+    ".obj/util/opt/+em_opt/util/opt/cleanup.c/cleanup.o": [
+      "util/opt/cleanup.c",
+      21
+    ],
+    ".obj/util/opt/+em_opt/util/opt/flow.c/flow.o": [
+      "util/opt/flow.c",
+      21
+    ],
+    ".obj/util/opt/+em_opt/util/opt/getline.c/getline.o": [
+      "util/opt/getline.c",
+      21
+    ],
+    ".obj/util/opt/+em_opt/util/opt/lookup.c/lookup.o": [
+      "util/opt/lookup.c",
+      21
+    ],
+    ".obj/util/opt/+em_opt/util/opt/main.c/main.o": [
+      "util/opt/main.c",
+      21
+    ],
+    ".obj/util/opt/+em_opt/util/opt/peephole.c/peephole.o": [
+      "util/opt/peephole.c",
+      21
+    ],
+    ".obj/util/opt/+em_opt/util/opt/process.c/process.o": [
+      "util/opt/process.c",
+      21
+    ],
+    ".obj/util/opt/+em_opt/util/opt/putline.c/putline.o": [
+      "util/opt/putline.c",
+      21
+    ],
+    ".obj/util/opt/+em_opt/util/opt/reg.c/reg.o": [
+      "util/opt/reg.c",
+      21
+    ],
+    ".obj/util/opt/+em_opt/util/opt/special.c/special.o": [
+      "util/opt/special.c",
+      21
+    ],
+    ".obj/util/opt/+em_opt/util/opt/tes.c/tes.o": [
+      "util/opt/tes.c",
+      21
+    ],
+    ".obj/util/opt/+em_opt/util/opt/util.c/util.o": [
+      "util/opt/util.c",
+      21
+    ],
+    ".obj/util/opt/+em_opt/util/opt/var.c/var.o": [
+      "util/opt/var.c",
+      21
+    ],
+    ".obj/util/opt/+em_opt2/util/opt/+pattern_c/pattern.c/pattern.o": [
+      ".obj/util/opt/+pattern_c/pattern.c",
+      22
+    ],
+    ".obj/util/opt/+em_opt2/util/opt/+pop_push_c/pop_push.c/pop_push.o": [
+      ".obj/util/opt/+pop_push_c/pop_push.c",
+      22
+    ],
+    ".obj/util/opt/+em_opt2/util/opt/alloc.c/alloc.o": [
+      "util/opt/alloc.c",
+      22
+    ],
+    ".obj/util/opt/+em_opt2/util/opt/backward.c/backward.o": [
+      "util/opt/backward.c",
+      22
+    ],
+    ".obj/util/opt/+em_opt2/util/opt/cleanup.c/cleanup.o": [
+      "util/opt/cleanup.c",
+      22
+    ],
+    ".obj/util/opt/+em_opt2/util/opt/flow.c/flow.o": [
+      "util/opt/flow.c",
+      22
+    ],
+    ".obj/util/opt/+em_opt2/util/opt/getline.c/getline.o": [
+      "util/opt/getline.c",
+      22
+    ],
+    ".obj/util/opt/+em_opt2/util/opt/lookup.c/lookup.o": [
+      "util/opt/lookup.c",
+      22
+    ],
+    ".obj/util/opt/+em_opt2/util/opt/main.c/main.o": [
+      "util/opt/main.c",
+      22
+    ],
+    ".obj/util/opt/+em_opt2/util/opt/peephole.c/peephole.o": [
+      "util/opt/peephole.c",
+      22
+    ],
+    ".obj/util/opt/+em_opt2/util/opt/process.c/process.o": [
+      "util/opt/process.c",
+      22
+    ],
+    ".obj/util/opt/+em_opt2/util/opt/putline.c/putline.o": [
+      "util/opt/putline.c",
+      22
+    ],
+    ".obj/util/opt/+em_opt2/util/opt/reg.c/reg.o": [
+      "util/opt/reg.c",
+      22
+    ],
+    ".obj/util/opt/+em_opt2/util/opt/special.c/special.o": [
+      "util/opt/special.c",
+      22
+    ],
+    ".obj/util/opt/+em_opt2/util/opt/tes.c/tes.o": [
+      "util/opt/tes.c",
+      22
+    ],
+    ".obj/util/opt/+em_opt2/util/opt/util.c/util.o": [
+      "util/opt/util.c",
+      22
+    ],
+    ".obj/util/opt/+em_opt2/util/opt/var.c/var.o": [
+      "util/opt/var.c",
+      22
+    ]
+  },
+  "libraries": {
+    ".obj/modules/src/alloc/+alloc_lib/alloc.a": [
+      ".obj/modules/src/alloc/+alloc/modules/src/alloc/st_alloc.c/st_alloc.o",
+      ".obj/modules/src/alloc/+alloc/modules/src/alloc/std_alloc.c/std_alloc.o"
+    ],
+    ".obj/modules/src/data/+data_lib/data.a": [
+      ".obj/modules/src/data/+data/modules/src/data/imap.c/imap.o",
+      ".obj/modules/src/data/+data/modules/src/data/pmap.c/pmap.o",
+      ".obj/modules/src/data/+data/modules/src/data/stringlist.c/stringlist.o",
+      ".obj/modules/src/data/+data/modules/src/data/smap.c/smap.o",
+      ".obj/modules/src/data/+data/modules/src/data/array.c/array.o",
+      ".obj/modules/src/data/+data/modules/src/data/warnings.c/warnings.o",
+      ".obj/modules/src/data/+data/modules/src/data/astring.c/astring.o"
+    ],
+    ".obj/modules/src/em_code/+lib_e_lib/lib_e.a": [
+      ".obj/modules/src/em_code/+lib_e/modules/src/em_code/em.c/em.o",
+      ".obj/modules/src/em_code/+lib_e/modules/src/em_code/bhdnam.c/bhdnam.o",
+      ".obj/modules/src/em_code/+lib_e/modules/src/em_code/crdnam.c/crdnam.o",
+      ".obj/modules/src/em_code/+lib_e/modules/src/em_code/pnam.c/pnam.o",
+      ".obj/modules/src/em_code/+lib_e/modules/src/em_code/crcst.c/crcst.o",
+      ".obj/modules/src/em_code/+lib_e/modules/src/em_code/bhilb.c/bhilb.o",
+      ".obj/modules/src/em_code/+lib_e/modules/src/em_code/end.c/end.o",
+      ".obj/modules/src/em_code/+lib_e/modules/src/em_code/ilb.c/ilb.o",
+      ".obj/modules/src/em_code/+lib_e/modules/src/em_code/bhcst.c/bhcst.o",
+      ".obj/modules/src/em_code/+lib_e/modules/src/em_code/bhicon.c/bhicon.o",
+      ".obj/modules/src/em_code/+lib_e/modules/src/em_code/msstart.c/msstart.o",
+      ".obj/modules/src/em_code/+lib_e/modules/src/em_code/insert.c/insert.o",
+      ".obj/modules/src/em_code/+lib_e/modules/src/em_code/crscon.c/crscon.o",
+      ".obj/modules/src/em_code/+lib_e/modules/src/em_code/msend.c/msend.o",
+      ".obj/modules/src/em_code/+lib_e/modules/src/em_code/bhfcon.c/bhfcon.o",
+      ".obj/modules/src/em_code/+lib_e/modules/src/em_code/bhpnam.c/bhpnam.o",
+      ".obj/modules/src/em_code/+lib_e/modules/src/em_code/dfilb.c/dfilb.o",
+      ".obj/modules/src/em_code/+lib_e/modules/src/em_code/dfdlb.c/dfdlb.o",
+      ".obj/modules/src/em_code/+lib_e/modules/src/em_code/crxcon.c/crxcon.o",
+      ".obj/modules/src/em_code/+lib_e/modules/src/em_code/opilb.c/opilb.o",
+      ".obj/modules/src/em_code/+lib_e/modules/src/em_code/scon.c/scon.o",
+      ".obj/modules/src/em_code/+lib_e/modules/src/em_code/icon.c/icon.o",
+      ".obj/modules/src/em_code/+lib_e/modules/src/em_code/dlb.c/dlb.o",
+      ".obj/modules/src/em_code/+lib_e/modules/src/em_code/op.c/op.o",
+      ".obj/modules/src/em_code/+lib_e/modules/src/em_code/fcon.c/fcon.o",
+      ".obj/modules/src/em_code/+lib_e/modules/src/em_code/crpnam.c/crpnam.o",
+      ".obj/modules/src/em_code/+lib_e/modules/src/em_code/opdlb.c/opdlb.o",
+      ".obj/modules/src/em_code/+lib_e/modules/src/em_code/psdlb.c/psdlb.o",
+      ".obj/modules/src/em_code/+lib_e/modules/src/em_code/failed.c/failed.o",
+      ".obj/modules/src/em_code/+lib_e/modules/src/em_code/internerr.c/internerr.o",
+      ".obj/modules/src/em_code/+lib_e/modules/src/em_code/dfdnam.c/dfdnam.o",
+      ".obj/modules/src/em_code/+lib_e/modules/src/em_code/endarg.c/endarg.o",
+      ".obj/modules/src/em_code/+lib_e/modules/src/em_code/pronarg.c/pronarg.o",
+      ".obj/modules/src/em_code/+lib_e/modules/src/em_code/crdlb.c/crdlb.o",
+      ".obj/modules/src/em_code/+lib_e/modules/src/em_code/opnarg.c/opnarg.o",
+      ".obj/modules/src/em_code/+lib_e/modules/src/em_code/opcst.c/opcst.o",
+      ".obj/modules/src/em_code/+lib_e/modules/src/em_code/oppnam.c/oppnam.o",
+      ".obj/modules/src/em_code/+lib_e/modules/src/em_code/psdnam.c/psdnam.o",
+      ".obj/modules/src/em_code/+lib_e/modules/src/em_code/getid.c/getid.o",
+      ".obj/modules/src/em_code/+lib_e/modules/src/em_code/pspnam.c/pspnam.o",
+      ".obj/modules/src/em_code/+lib_e/modules/src/em_code/ucon.c/ucon.o",
+      ".obj/modules/src/em_code/+lib_e/modules/src/em_code/crilb.c/crilb.o",
+      ".obj/modules/src/em_code/+lib_e/modules/src/em_code/cst.c/cst.o",
+      ".obj/modules/src/em_code/+lib_e/modules/src/em_code/opdnam.c/opdnam.o",
+      ".obj/modules/src/em_code/+lib_e/modules/src/em_code/C_out.c/C_out.o",
+      ".obj/modules/src/em_code/+lib_e/modules/src/em_code/dnam.c/dnam.o",
+      ".obj/modules/src/em_code/+lib_e/modules/src/em_code/pro.c/pro.o",
+      ".obj/modules/src/em_code/+lib_e/modules/src/em_code/exc.c/exc.o",
+      ".obj/modules/src/em_code/+lib_e/modules/src/em_code/bhdlb.c/bhdlb.o",
+      ".obj/modules/src/em_code/+lib_e/modules/src/em_code/bhucon.c/bhucon.o"
+    ],
+    ".obj/modules/src/em_code/+lib_k_lib/lib_k.a": [
+      ".obj/modules/src/em_code/+lib_k/modules/src/em_code/icon.c/icon.o",
+      ".obj/modules/src/em_code/+lib_k/modules/src/em_code/crcst.c/crcst.o",
+      ".obj/modules/src/em_code/+lib_k/modules/src/em_code/dnam.c/dnam.o",
+      ".obj/modules/src/em_code/+lib_k/modules/src/em_code/crilb.c/crilb.o",
+      ".obj/modules/src/em_code/+lib_k/modules/src/em_code/oppnam.c/oppnam.o",
+      ".obj/modules/src/em_code/+lib_k/modules/src/em_code/ilb.c/ilb.o",
+      ".obj/modules/src/em_code/+lib_k/modules/src/em_code/dfilb.c/dfilb.o",
+      ".obj/modules/src/em_code/+lib_k/modules/src/em_code/bhcst.c/bhcst.o",
+      ".obj/modules/src/em_code/+lib_k/modules/src/em_code/scon.c/scon.o",
+      ".obj/modules/src/em_code/+lib_k/modules/src/em_code/pro.c/pro.o",
+      ".obj/modules/src/em_code/+lib_k/modules/src/em_code/getid.c/getid.o",
+      ".obj/modules/src/em_code/+lib_k/modules/src/em_code/opilb.c/opilb.o",
+      ".obj/modules/src/em_code/+lib_k/modules/src/em_code/opcst.c/opcst.o",
+      ".obj/modules/src/em_code/+lib_k/modules/src/em_code/pnam.c/pnam.o",
+      ".obj/modules/src/em_code/+lib_k/modules/src/em_code/endarg.c/endarg.o",
+      ".obj/modules/src/em_code/+lib_k/modules/src/em_code/pronarg.c/pronarg.o",
+      ".obj/modules/src/em_code/+lib_k/modules/src/em_code/psdnam.c/psdnam.o",
+      ".obj/modules/src/em_code/+lib_k/modules/src/em_code/opdnam.c/opdnam.o",
+      ".obj/modules/src/em_code/+lib_k/modules/src/em_code/msend.c/msend.o",
+      ".obj/modules/src/em_code/+lib_k/modules/src/em_code/crpnam.c/crpnam.o",
+      ".obj/modules/src/em_code/+lib_k/modules/src/em_code/dfdnam.c/dfdnam.o",
+      ".obj/modules/src/em_code/+lib_k/modules/src/em_code/bhdlb.c/bhdlb.o",
+      ".obj/modules/src/em_code/+lib_k/modules/src/em_code/fcon.c/fcon.o",
+      ".obj/modules/src/em_code/+lib_k/modules/src/em_code/em.c/em.o",
+      ".obj/modules/src/em_code/+lib_k/modules/src/em_code/crdnam.c/crdnam.o",
+      ".obj/modules/src/em_code/+lib_k/modules/src/em_code/op.c/op.o",
+      ".obj/modules/src/em_code/+lib_k/modules/src/em_code/psdlb.c/psdlb.o",
+      ".obj/modules/src/em_code/+lib_k/modules/src/em_code/exc.c/exc.o",
+      ".obj/modules/src/em_code/+lib_k/modules/src/em_code/cst.c/cst.o",
+      ".obj/modules/src/em_code/+lib_k/modules/src/em_code/internerr.c/internerr.o",
+      ".obj/modules/src/em_code/+lib_k/modules/src/em_code/opnarg.c/opnarg.o",
+      ".obj/modules/src/em_code/+lib_k/modules/src/em_code/bhpnam.c/bhpnam.o",
+      ".obj/modules/src/em_code/+lib_k/modules/src/em_code/crxcon.c/crxcon.o",
+      ".obj/modules/src/em_code/+lib_k/modules/src/em_code/bhicon.c/bhicon.o",
+      ".obj/modules/src/em_code/+lib_k/modules/src/em_code/crdlb.c/crdlb.o",
+      ".obj/modules/src/em_code/+lib_k/modules/src/em_code/C_out.c/C_out.o",
+      ".obj/modules/src/em_code/+lib_k/modules/src/em_code/bhfcon.c/bhfcon.o",
+      ".obj/modules/src/em_code/+lib_k/modules/src/em_code/pspnam.c/pspnam.o",
+      ".obj/modules/src/em_code/+lib_k/modules/src/em_code/insert.c/insert.o",
+      ".obj/modules/src/em_code/+lib_k/modules/src/em_code/dfdlb.c/dfdlb.o",
+      ".obj/modules/src/em_code/+lib_k/modules/src/em_code/ucon.c/ucon.o",
+      ".obj/modules/src/em_code/+lib_k/modules/src/em_code/opdlb.c/opdlb.o",
+      ".obj/modules/src/em_code/+lib_k/modules/src/em_code/end.c/end.o",
+      ".obj/modules/src/em_code/+lib_k/modules/src/em_code/dlb.c/dlb.o",
+      ".obj/modules/src/em_code/+lib_k/modules/src/em_code/failed.c/failed.o",
+      ".obj/modules/src/em_code/+lib_k/modules/src/em_code/bhilb.c/bhilb.o",
+      ".obj/modules/src/em_code/+lib_k/modules/src/em_code/bhdnam.c/bhdnam.o",
+      ".obj/modules/src/em_code/+lib_k/modules/src/em_code/crscon.c/crscon.o",
+      ".obj/modules/src/em_code/+lib_k/modules/src/em_code/bhucon.c/bhucon.o",
+      ".obj/modules/src/em_code/+lib_k/modules/src/em_code/msstart.c/msstart.o"
+    ],
+    ".obj/modules/src/em_data/+em_data_lib/em_data.a": [
+      ".obj/modules/src/em_data/+em_data/modules/src/em_data/+em_pseu_c/pseu.c/pseu.o",
+      ".obj/modules/src/em_data/+em_data/modules/src/em_data/em_ptyp.c/em_ptyp.o",
+      ".obj/modules/src/em_data/+em_data/modules/src/em_data/+em_flag_c/flag.c/flag.o",
+      ".obj/modules/src/em_data/+em_data/modules/src/em_data/+em_mnem_c/mnem.c/mnem.o"
+    ],
+    ".obj/modules/src/em_mes/+em_mes_lib/em_mes.a": [
+      ".obj/modules/src/em_mes/+em_mes/modules/src/em_mes/C_ms_par.c/C_ms_par.o",
+      ".obj/modules/src/em_mes/+em_mes/modules/src/em_mes/C_ms_src.c/C_ms_src.o",
+      ".obj/modules/src/em_mes/+em_mes/modules/src/em_mes/C_ms_opt.c/C_ms_opt.o",
+      ".obj/modules/src/em_mes/+em_mes/modules/src/em_mes/C_ms_com.c/C_ms_com.o",
+      ".obj/modules/src/em_mes/+em_mes/modules/src/em_mes/C_ms_stb.c/C_ms_stb.o",
+      ".obj/modules/src/em_mes/+em_mes/modules/src/em_mes/C_ms_reg.c/C_ms_reg.o",
+      ".obj/modules/src/em_mes/+em_mes/modules/src/em_mes/C_ms_flt.c/C_ms_flt.o",
+      ".obj/modules/src/em_mes/+em_mes/modules/src/em_mes/C_ms_err.c/C_ms_err.o",
+      ".obj/modules/src/em_mes/+em_mes/modules/src/em_mes/C_ms_std.c/C_ms_std.o",
+      ".obj/modules/src/em_mes/+em_mes/modules/src/em_mes/C_ms_ego.c/C_ms_ego.o",
+      ".obj/modules/src/em_mes/+em_mes/modules/src/em_mes/C_ms_emx.c/C_ms_emx.o",
+      ".obj/modules/src/em_mes/+em_mes/modules/src/em_mes/C_ms_gto.c/C_ms_gto.o"
+    ],
+    ".obj/modules/src/flt_arith/+flt_arith_lib/flt_arith.a": [
+      ".obj/modules/src/flt_arith/+flt_arith/modules/src/flt_arith/flt_umin.c/flt_umin.o",
+      ".obj/modules/src/flt_arith/+flt_arith/modules/src/flt_arith/flt_nrm.c/flt_nrm.o",
+      ".obj/modules/src/flt_arith/+flt_arith/modules/src/flt_arith/flt_ar2flt.c/flt_ar2flt.o",
+      ".obj/modules/src/flt_arith/+flt_arith/modules/src/flt_arith/flt_div.c/flt_div.o",
+      ".obj/modules/src/flt_arith/+flt_arith/modules/src/flt_arith/flt_modf.c/flt_modf.o",
+      ".obj/modules/src/flt_arith/+flt_arith/modules/src/flt_arith/flt_chk.c/flt_chk.o",
+      ".obj/modules/src/flt_arith/+flt_arith/modules/src/flt_arith/flt_add.c/flt_add.o",
+      ".obj/modules/src/flt_arith/+flt_arith/modules/src/flt_arith/flt_str2fl.c/flt_str2fl.o",
+      ".obj/modules/src/flt_arith/+flt_arith/modules/src/flt_arith/split.c/split.o",
+      ".obj/modules/src/flt_arith/+flt_arith/modules/src/flt_arith/flt_cmp.c/flt_cmp.o",
+      ".obj/modules/src/flt_arith/+flt_arith/modules/src/flt_arith/flt_mul.c/flt_mul.o",
+      ".obj/modules/src/flt_arith/+flt_arith/modules/src/flt_arith/b64_add.c/b64_add.o",
+      ".obj/modules/src/flt_arith/+flt_arith/modules/src/flt_arith/flt_flt2ar.c/flt_flt2ar.o",
+      ".obj/modules/src/flt_arith/+flt_arith/modules/src/flt_arith/b64_sft.c/b64_sft.o"
+    ],
+    ".obj/modules/src/input/+input_lib/input.a": [
+      ".obj/modules/src/input/+input/modules/src/input/AtEoIF.c/AtEoIF.o",
+      ".obj/modules/src/input/+input/modules/src/input/AtEoIT.c/AtEoIT.o"
+    ],
+    ".obj/modules/src/read_em/+lib_kv_lib/lib_kv.a": [
+      ".obj/modules/src/read_em/+lib_kv/modules/src/read_em/read_em.c/read_em.o",
+      ".obj/modules/src/read_em/+lib_kv/modules/src/read_em/mkcalls.c/mkcalls.o",
+      ".obj/modules/src/read_em/+lib_kv/modules/src/read_em/EM_vars.c/EM_vars.o"
+    ],
+    ".obj/modules/src/string/+string_lib/string.a": [
+      ".obj/modules/src/string/+string/modules/src/string/bts2str.c/bts2str.o",
+      ".obj/modules/src/string/+string/modules/src/string/long2str.c/long2str.o"
+    ],
+    ".obj/modules/src/system/+system_lib/system.a": [
+      ".obj/modules/src/system/+system/modules/src/system/setbinarymode.c/setbinarymode.o",
+      ".obj/modules/src/system/+system/modules/src/system/filesize.c/filesize.o",
+      ".obj/modules/src/system/+system/modules/src/system/strndup.c/strndup.o",
+      ".obj/modules/src/system/+system/modules/src/system/basename.c/basename.o",
+      ".obj/modules/src/system/+system/modules/src/system/syssystem.c/syssystem.o",
+      ".obj/modules/src/system/+system/modules/src/system/maketempfile.c/maketempfile.o",
+      ".obj/modules/src/system/+system/modules/src/system/tmpdir.c/tmpdir.o"
+    ]
+  },
+  "programs": {
+    ".obj/lang/cem/cemcom.ansi/+cemcom/cemcom": [
+      ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/expr.c/expr.o",
+      ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/error.c/error.o",
+      ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/l_ev_ord.c/l_ev_ord.o",
+      ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/field.c/field.o",
+      ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/decspecs.c/decspecs.o",
+      ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/conversion.c/conversion.o",
+      ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/util.c/util.o",
+      ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/+tabgen/tabgen.c/tabgen.o",
+      ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/proto.c/proto.o",
+      ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/main.c/main.o",
+      ".obj/modules/src/alloc/+alloc_lib/alloc.a",
+      ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/l_states.c/l_states.o",
+      ".obj/modules/src/input/+input_lib/input.a",
+      ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/blocks.c/blocks.o",
+      ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/dataflow.c/dataflow.o",
+      ".obj/modules/src/em_mes/+em_mes_lib/em_mes.a",
+      ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/+next-c/next.c/next.o",
+      ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/skip.c/skip.o",
+      ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/idf.c/idf.o",
+      ".obj/modules/src/string/+string_lib/string.a",
+      ".obj/modules/src/flt_arith/+flt_arith_lib/flt_arith.a",
+      ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/+llgen/expression.c/expression.o",
+      ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/+llgen/Lpars.c/Lpars.o",
+      ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/cstoper.c/cstoper.o",
+      ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/ch3bin.c/ch3bin.o",
+      ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/+llgen/statement.c/statement.o",
+      ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/input.c/input.o",
+      ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/declarator.c/declarator.o",
+      ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/type.c/type.o",
+      ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/fltcstoper.c/fltcstoper.o",
+      ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/l_lint.c/l_lint.o",
+      ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/dumpidf.c/dumpidf.o",
+      ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/domacro.c/domacro.o",
+      ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/l_comment.c/l_comment.o",
+      ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/ch3mon.c/ch3mon.o",
+      ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/l_outdef.c/l_outdef.o",
+      ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/ch3.c/ch3.o",
+      ".obj/modules/src/data/+data_lib/data.a",
+      ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/+llgen/ival.c/ival.o",
+      ".obj/modules/src/system/+system_lib/system.a",
+      ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/stab.c/stab.o",
+      ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/stack.c/stack.o",
+      ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/stb.c/stb.o",
+      ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/options.c/options.o",
+      ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/tokenname.c/tokenname.o",
+      ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/label.c/label.o",
+      ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/+symbol2str-c/symbol2str.c/symbol2str.o",
+      ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/eval.c/eval.o",
+      ".obj/modules/src/em_data/+em_data_lib/em_data.a",
+      ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/struct.c/struct.o",
+      ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/pragma.c/pragma.o",
+      ".obj/modules/src/em_code/+lib_k_lib/lib_k.a",
+      ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/code.c/code.o",
+      ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/switch.c/switch.o",
+      ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/+llgen/declar.c/declar.o",
+      ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/LLlex.c/LLlex.o",
+      ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/LLmessage.c/LLmessage.o",
+      ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/arith.c/arith.o",
+      ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/+llgen/program.c/program.o",
+      ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/+llgen/tokenfile.c/tokenfile.o",
+      ".obj/lang/cem/cemcom.ansi/+cemcom/lang/cem/cemcom.ansi/l_misc.c/l_misc.o"
+    ],
+    ".obj/lang/cem/cpp.ansi/+cpp.ansi/cpp.ansi": [
+      ".obj/lang/cem/cpp.ansi/+cpp.ansi/lang/cem/cpp.ansi/domacro.c/domacro.o",
+      ".obj/lang/cem/cpp.ansi/+cpp.ansi/lang/cem/cpp.ansi/+llgen/tokenfile.c/tokenfile.o",
+      ".obj/lang/cem/cpp.ansi/+cpp.ansi/lang/cem/cpp.ansi/+next-c/next.c/next.o",
+      ".obj/lang/cem/cpp.ansi/+cpp.ansi/lang/cem/cpp.ansi/replace.c/replace.o",
+      ".obj/lang/cem/cpp.ansi/+cpp.ansi/lang/cem/cpp.ansi/options.c/options.o",
+      ".obj/lang/cem/cpp.ansi/+cpp.ansi/lang/cem/cpp.ansi/tokenname.c/tokenname.o",
+      ".obj/modules/src/em_data/+em_data_lib/em_data.a",
+      ".obj/lang/cem/cpp.ansi/+cpp.ansi/lang/cem/cpp.ansi/expr.c/expr.o",
+      ".obj/lang/cem/cpp.ansi/+cpp.ansi/lang/cem/cpp.ansi/init.c/init.o",
+      ".obj/lang/cem/cpp.ansi/+cpp.ansi/lang/cem/cpp.ansi/skip.c/skip.o",
+      ".obj/lang/cem/cpp.ansi/+cpp.ansi/lang/cem/cpp.ansi/LLmessage.c/LLmessage.o",
+      ".obj/modules/src/string/+string_lib/string.a",
+      ".obj/modules/src/em_code/+lib_k_lib/lib_k.a",
+      ".obj/lang/cem/cpp.ansi/+cpp.ansi/lang/cem/cpp.ansi/+tabgen/tabgen.c/tabgen.o",
+      ".obj/modules/src/data/+data_lib/data.a",
+      ".obj/modules/src/alloc/+alloc_lib/alloc.a",
+      ".obj/lang/cem/cpp.ansi/+cpp.ansi/lang/cem/cpp.ansi/idf.c/idf.o",
+      ".obj/lang/cem/cpp.ansi/+cpp.ansi/lang/cem/cpp.ansi/ch3mon.c/ch3mon.o",
+      ".obj/modules/src/flt_arith/+flt_arith_lib/flt_arith.a",
+      ".obj/lang/cem/cpp.ansi/+cpp.ansi/lang/cem/cpp.ansi/input.c/input.o",
+      ".obj/modules/src/system/+system_lib/system.a",
+      ".obj/lang/cem/cpp.ansi/+cpp.ansi/lang/cem/cpp.ansi/+llgen/expression.c/expression.o",
+      ".obj/lang/cem/cpp.ansi/+cpp.ansi/lang/cem/cpp.ansi/LLlex.c/LLlex.o",
+      ".obj/lang/cem/cpp.ansi/+cpp.ansi/lang/cem/cpp.ansi/error.c/error.o",
+      ".obj/lang/cem/cpp.ansi/+cpp.ansi/lang/cem/cpp.ansi/main.c/main.o",
+      ".obj/modules/src/input/+input_lib/input.a",
+      ".obj/lang/cem/cpp.ansi/+cpp.ansi/lang/cem/cpp.ansi/+llgen/Lpars.c/Lpars.o",
+      ".obj/lang/cem/cpp.ansi/+cpp.ansi/lang/cem/cpp.ansi/ch3bin.c/ch3bin.o",
+      ".obj/lang/cem/cpp.ansi/+cpp.ansi/lang/cem/cpp.ansi/preprocess.c/preprocess.o",
+      ".obj/lang/cem/cpp.ansi/+cpp.ansi/lang/cem/cpp.ansi/+symbol2str-c/symbol2str.c/symbol2str.o",
+      ".obj/modules/src/em_mes/+em_mes_lib/em_mes.a"
+    ],
+    ".obj/util/opt/+em_opt/em_opt": [
+      ".obj/util/opt/+em_opt/util/opt/lookup.c/lookup.o",
+      ".obj/util/opt/+em_opt/util/opt/special.c/special.o",
+      ".obj/util/opt/+em_opt/util/opt/+pattern_c/pattern.c/pattern.o",
+      ".obj/util/opt/+em_opt/util/opt/backward.c/backward.o",
+      ".obj/modules/src/em_data/+em_data_lib/em_data.a",
+      ".obj/util/opt/+em_opt/util/opt/var.c/var.o",
+      ".obj/modules/src/string/+string_lib/string.a",
+      ".obj/util/opt/+em_opt/util/opt/main.c/main.o",
+      ".obj/modules/src/data/+data_lib/data.a",
+      ".obj/util/opt/+em_opt/util/opt/cleanup.c/cleanup.o",
+      ".obj/util/opt/+em_opt/util/opt/+pop_push_c/pop_push.c/pop_push.o",
+      ".obj/util/opt/+em_opt/util/opt/util.c/util.o",
+      ".obj/util/opt/+em_opt/util/opt/peephole.c/peephole.o",
+      ".obj/util/opt/+em_opt/util/opt/flow.c/flow.o",
+      ".obj/util/opt/+em_opt/util/opt/reg.c/reg.o",
+      ".obj/util/opt/+em_opt/util/opt/getline.c/getline.o",
+      ".obj/modules/src/system/+system_lib/system.a",
+      ".obj/util/opt/+em_opt/util/opt/alloc.c/alloc.o",
+      ".obj/util/opt/+em_opt/util/opt/process.c/process.o",
+      ".obj/util/opt/+em_opt/util/opt/tes.c/tes.o",
+      ".obj/util/opt/+em_opt/util/opt/putline.c/putline.o"
+    ],
+    ".obj/util/opt/+em_opt2/em_opt2": [
+      ".obj/util/opt/+em_opt2/util/opt/main.c/main.o",
+      ".obj/util/opt/+em_opt2/util/opt/util.c/util.o",
+      ".obj/util/opt/+em_opt2/util/opt/process.c/process.o",
+      ".obj/util/opt/+em_opt2/util/opt/reg.c/reg.o",
+      ".obj/util/opt/+em_opt2/util/opt/cleanup.c/cleanup.o",
+      ".obj/util/opt/+em_opt2/util/opt/var.c/var.o",
+      ".obj/util/opt/+em_opt2/util/opt/lookup.c/lookup.o",
+      ".obj/modules/src/em_data/+em_data_lib/em_data.a",
+      ".obj/modules/src/string/+string_lib/string.a",
+      ".obj/modules/src/data/+data_lib/data.a",
+      ".obj/util/opt/+em_opt2/util/opt/peephole.c/peephole.o",
+      ".obj/util/opt/+em_opt2/util/opt/flow.c/flow.o",
+      ".obj/util/opt/+em_opt2/util/opt/backward.c/backward.o",
+      ".obj/util/opt/+em_opt2/util/opt/getline.c/getline.o",
+      ".obj/util/opt/+em_opt2/util/opt/special.c/special.o",
+      ".obj/modules/src/system/+system_lib/system.a",
+      ".obj/util/opt/+em_opt2/util/opt/putline.c/putline.o",
+      ".obj/util/opt/+em_opt2/util/opt/tes.c/tes.o",
+      ".obj/util/opt/+em_opt2/util/opt/alloc.c/alloc.o",
+      ".obj/util/opt/+em_opt2/util/opt/+pop_push_c/pop_push.c/pop_push.o",
+      ".obj/util/opt/+em_opt2/util/opt/+pattern_c/pattern.c/pattern.o"
+    ],
+    ".obj/util/misc/+em_decode/em_decode": [
+      ".obj/modules/src/em_code/+lib_e_lib/lib_e.a",
+      ".obj/modules/src/read_em/+lib_kv_lib/lib_kv.a",
+      ".obj/modules/src/em_data/+em_data_lib/em_data.a",
+      ".obj/modules/src/string/+string_lib/string.a",
+      ".obj/modules/src/data/+data_lib/data.a",
+      ".obj/modules/src/alloc/+alloc_lib/alloc.a",
+      ".obj/modules/src/system/+system_lib/system.a",
+      ".obj/util/misc/+em_decode/util/misc/convert.c/convert.o"
+    ],
+    ".obj/lang/pc/comp/+em_pc/em_pc": [
+      ".obj/lang/pc/comp/+em_pc/lang/pc/comp/scope.c/scope.o",
+      ".obj/lang/pc/comp/+em_pc/lang/pc/comp/input.c/input.o",
+      ".obj/lang/pc/comp/+em_pc/lang/pc/comp/lookup.c/lookup.o",
+      ".obj/lang/pc/comp/+em_pc/lang/pc/comp/body.c/body.o",
+      ".obj/lang/pc/comp/+em_pc/lang/pc/comp/+tmpvar_c/tmpvar.c/tmpvar.o",
+      ".obj/lang/pc/comp/+em_pc/lang/pc/comp/main.c/main.o",
+      ".obj/modules/src/alloc/+alloc_lib/alloc.a",
+      ".obj/lang/pc/comp/+em_pc/lang/pc/comp/+symbol2str-c/symbol2str.c/symbol2str.o",
+      ".obj/lang/pc/comp/+em_pc/lang/pc/comp/tokenname.c/tokenname.o",
+      ".obj/modules/src/input/+input_lib/input.a",
+      ".obj/lang/pc/comp/+em_pc/lang/pc/comp/options.c/options.o",
+      ".obj/lang/pc/comp/+em_pc/lang/pc/comp/type.c/type.o",
+      ".obj/modules/src/em_mes/+em_mes_lib/em_mes.a",
+      ".obj/lang/pc/comp/+em_pc/lang/pc/comp/+llgen/expression.c/expression.o",
+      ".obj/lang/pc/comp/+em_pc/lang/pc/comp/idf.c/idf.o",
+      ".obj/lang/pc/comp/+em_pc/lang/pc/comp/def.c/def.o",
+      ".obj/modules/src/string/+string_lib/string.a",
+      ".obj/lang/pc/comp/+em_pc/lang/pc/comp/code.c/code.o",
+      ".obj/lang/pc/comp/+em_pc/lang/pc/comp/LLlex.c/LLlex.o",
+      ".obj/modules/src/flt_arith/+flt_arith_lib/flt_arith.a",
+      ".obj/lang/pc/comp/+em_pc/lang/pc/comp/enter.c/enter.o",
+      ".obj/lang/pc/comp/+em_pc/lang/pc/comp/chk_expr.c/chk_expr.o",
+      ".obj/lang/pc/comp/+em_pc/lang/pc/comp/stab.c/stab.o",
+      ".obj/lang/pc/comp/+em_pc/lang/pc/comp/readwrite.c/readwrite.o",
+      ".obj/lang/pc/comp/+em_pc/lang/pc/comp/+casestat_c/casestat.c/casestat.o",
+      ".obj/lang/pc/comp/+em_pc/lang/pc/comp/+tabgen/tabgen.c/tabgen.o",
+      ".obj/lang/pc/comp/+em_pc/lang/pc/comp/+llgen/declar.c/declar.o",
+      ".obj/lang/pc/comp/+em_pc/lang/pc/comp/typequiv.c/typequiv.o",
+      ".obj/lang/pc/comp/+em_pc/lang/pc/comp/node.c/node.o",
+      ".obj/modules/src/data/+data_lib/data.a",
+      ".obj/lang/pc/comp/+em_pc/lang/pc/comp/label.c/label.o",
+      ".obj/modules/src/system/+system_lib/system.a",
+      ".obj/lang/pc/comp/+em_pc/lang/pc/comp/cstoper.c/cstoper.o",
+      ".obj/lang/pc/comp/+em_pc/lang/pc/comp/progs.c/progs.o",
+      ".obj/lang/pc/comp/+em_pc/lang/pc/comp/+llgen/tokenfile.c/tokenfile.o",
+      ".obj/lang/pc/comp/+em_pc/lang/pc/comp/LLmessage.c/LLmessage.o",
+      ".obj/lang/pc/comp/+em_pc/lang/pc/comp/desig.c/desig.o",
+      ".obj/modules/src/em_data/+em_data_lib/em_data.a",
+      ".obj/lang/pc/comp/+em_pc/lang/pc/comp/+llgen/program.c/program.o",
+      ".obj/modules/src/em_code/+lib_k_lib/lib_k.a",
+      ".obj/lang/pc/comp/+em_pc/lang/pc/comp/error.c/error.o",
+      ".obj/lang/pc/comp/+em_pc/lang/pc/comp/+llgen/statement.c/statement.o",
+      ".obj/lang/pc/comp/+em_pc/lang/pc/comp/misc.c/misc.o",
+      ".obj/lang/pc/comp/+em_pc/lang/pc/comp/+next-c/next.c/next.o",
+      ".obj/lang/pc/comp/+em_pc/lang/pc/comp/+llgen/Lpars.c/Lpars.o"
+    ],
+    ".obj/lang/m2/comp/+em_m2/em_m2": [
+      ".obj/lang/m2/comp/+em_m2/lang/m2/comp/+llgen/statement.c/statement.o",
+      ".obj/lang/m2/comp/+em_m2/lang/m2/comp/options.c/options.o",
+      ".obj/lang/m2/comp/+em_m2/lang/m2/comp/casestat.c/casestat.o",
+      ".obj/lang/m2/comp/+em_m2/lang/m2/comp/type.c/type.o",
+      ".obj/modules/src/alloc/+alloc_lib/alloc.a",
+      ".obj/lang/m2/comp/+em_m2/lang/m2/comp/input.c/input.o",
+      ".obj/lang/m2/comp/+em_m2/lang/m2/comp/+tabgen/tabgen.c/tabgen.o",
+      ".obj/lang/m2/comp/+em_m2/lang/m2/comp/typequiv.c/typequiv.o",
+      ".obj/lang/m2/comp/+em_m2/lang/m2/comp/+llgen/expression.c/expression.o",
+      ".obj/lang/m2/comp/+em_m2/lang/m2/comp/defmodule.c/defmodule.o",
+      ".obj/modules/src/input/+input_lib/input.a",
+      ".obj/modules/src/em_mes/+em_mes_lib/em_mes.a",
+      ".obj/lang/m2/comp/+em_m2/lang/m2/comp/cstoper.c/cstoper.o",
+      ".obj/lang/m2/comp/+em_m2/lang/m2/comp/walk.c/walk.o",
+      ".obj/lang/m2/comp/+em_m2/lang/m2/comp/def.c/def.o",
+      ".obj/lang/m2/comp/+em_m2/lang/m2/comp/+llgen/program.c/program.o",
+      ".obj/lang/m2/comp/+em_m2/lang/m2/comp/code.c/code.o",
+      ".obj/modules/src/string/+string_lib/string.a",
+      ".obj/lang/m2/comp/+em_m2/lang/m2/comp/tmpvar.c/tmpvar.o",
+      ".obj/modules/src/flt_arith/+flt_arith_lib/flt_arith.a",
+      ".obj/lang/m2/comp/+em_m2/lang/m2/comp/LLlex.c/LLlex.o",
+      ".obj/lang/m2/comp/+em_m2/lang/m2/comp/node.c/node.o",
+      ".obj/lang/m2/comp/+em_m2/lang/m2/comp/+symbol2str-c/symbol2str.c/symbol2str.o",
+      ".obj/lang/m2/comp/+em_m2/lang/m2/comp/+llgen/tokenfile.c/tokenfile.o",
+      ".obj/lang/m2/comp/+em_m2/lang/m2/comp/LLmessage.c/LLmessage.o",
+      ".obj/lang/m2/comp/+em_m2/lang/m2/comp/scope.c/scope.o",
+      ".obj/lang/m2/comp/+em_m2/lang/m2/comp/tokenname.c/tokenname.o",
+      ".obj/modules/src/data/+data_lib/data.a",
+      ".obj/lang/m2/comp/+em_m2/lang/m2/comp/misc.c/misc.o",
+      ".obj/modules/src/system/+system_lib/system.a",
+      ".obj/lang/m2/comp/+em_m2/lang/m2/comp/error.c/error.o",
+      ".obj/lang/m2/comp/+em_m2/lang/m2/comp/chk_expr.c/chk_expr.o",
+      ".obj/lang/m2/comp/+em_m2/lang/m2/comp/lookup.c/lookup.o",
+      ".obj/modules/src/em_data/+em_data_lib/em_data.a",
+      ".obj/lang/m2/comp/+em_m2/lang/m2/comp/enter.c/enter.o",
+      ".obj/modules/src/em_code/+lib_k_lib/lib_k.a",
+      ".obj/lang/m2/comp/+em_m2/lang/m2/comp/main.c/main.o",
+      ".obj/lang/m2/comp/+em_m2/lang/m2/comp/desig.c/desig.o",
+      ".obj/lang/m2/comp/+em_m2/lang/m2/comp/idf.c/idf.o",
+      ".obj/lang/m2/comp/+em_m2/lang/m2/comp/stab.c/stab.o",
+      ".obj/lang/m2/comp/+em_m2/lang/m2/comp/+llgen/declar.c/declar.o",
+      ".obj/lang/m2/comp/+em_m2/lang/m2/comp/+llgen/Lpars.c/Lpars.o"
+    ],
+    ".obj/lang/basic/src/+em_bem/em_bem": [
+      ".obj/lang/basic/src/+em_bem/lang/basic/src/+llgen/basic.c/basic.o",
+      ".obj/lang/basic/src/+em_bem/lang/basic/src/+llgen/Lpars.c/Lpars.o",
+      ".obj/lang/basic/src/+em_bem/lang/basic/src/gencode.c/gencode.o",
+      ".obj/modules/src/em_data/+em_data_lib/em_data.a",
+      ".obj/lang/basic/src/+em_bem/lang/basic/src/graph.c/graph.o",
+      ".obj/modules/src/string/+string_lib/string.a",
+      ".obj/modules/src/em_code/+lib_k_lib/lib_k.a",
+      ".obj/modules/src/data/+data_lib/data.a",
+      ".obj/modules/src/alloc/+alloc_lib/alloc.a",
+      ".obj/lang/basic/src/+em_bem/lang/basic/src/symbols.c/symbols.o",
+      ".obj/lang/basic/src/+em_bem/lang/basic/src/eval.c/eval.o",
+      ".obj/lang/basic/src/+em_bem/lang/basic/src/initialize.c/initialize.o",
+      ".obj/lang/basic/src/+em_bem/lang/basic/src/compile.c/compile.o",
+      ".obj/modules/src/system/+system_lib/system.a",
+      ".obj/lang/basic/src/+em_bem/lang/basic/src/func.c/func.o",
+      ".obj/lang/basic/src/+em_bem/lang/basic/src/util.c/util.o",
+      ".obj/lang/basic/src/+em_bem/lang/basic/src/bem.c/bem.o",
+      ".obj/modules/src/em_mes/+em_mes_lib/em_mes.a",
+      ".obj/lang/basic/src/+em_bem/lang/basic/src/parsepar.c/parsepar.o"
+    ],
+    ".obj/lang/occam/comp/+em_occam/em_occam": [
+      ".obj/lang/occam/comp/+em_occam/lang/occam/comp/+lexer/lex.yy.c/lex.yy.o",
+      ".obj/lang/occam/comp/+em_occam/lang/occam/comp/expr.c/expr.o",
+      ".obj/lang/occam/comp/+em_occam/lang/occam/comp/report.c/report.o",
+      ".obj/modules/src/em_data/+em_data_lib/em_data.a",
+      ".obj/modules/src/string/+string_lib/string.a",
+      ".obj/lang/occam/comp/+em_occam/lang/occam/comp/symtab.c/symtab.o",
+      ".obj/modules/src/em_code/+lib_k_lib/lib_k.a",
+      ".obj/lang/occam/comp/+em_occam/lang/occam/comp/+llgen/occam.c/occam.o",
+      ".obj/modules/src/data/+data_lib/data.a",
+      ".obj/modules/src/alloc/+alloc_lib/alloc.a",
+      ".obj/lang/occam/comp/+em_occam/lang/occam/comp/keytab.c/keytab.o",
+      ".obj/lang/occam/comp/+em_occam/lang/occam/comp/code.c/code.o",
+      ".obj/lang/occam/comp/+em_occam/lang/occam/comp/+llgen/Lpars.c/Lpars.o",
+      ".obj/modules/src/system/+system_lib/system.a",
+      ".obj/lang/occam/comp/+em_occam/lang/occam/comp/builtin.c/builtin.o",
+      ".obj/lang/occam/comp/+em_occam/lang/occam/comp/em.c/em.o",
+      ".obj/modules/src/em_mes/+em_mes_lib/em_mes.a"
+    ],
+    ".obj/util/LLgen/+LLgen/LLgen": [
+      ".obj/util/LLgen/+LLgen/util/LLgen/src/compute.c/compute.o",
+      ".obj/util/LLgen/+LLgen/util/LLgen/src/gencode.c/gencode.o",
+      ".obj/util/LLgen/+LLgen/util/LLgen/src/global.c/global.o",
+      ".obj/util/LLgen/+LLgen/util/LLgen/src/name.c/name.o",
+      ".obj/util/LLgen/+LLgen/util/LLgen/src/check.c/check.o",
+      ".obj/util/LLgen/+LLgen/util/LLgen/src/Lpars.c/Lpars.o",
+      ".obj/util/LLgen/+LLgen/util/LLgen/src/utils.c/utils.o",
+      ".obj/util/LLgen/+LLgen/util/LLgen/src/savegram.c/savegram.o",
+      ".obj/util/LLgen/+LLgen/util/LLgen/src/sets.c/sets.o",
+      ".obj/util/LLgen/+LLgen/util/LLgen/src/alloc.c/alloc.o",
+      ".obj/util/LLgen/+LLgen/util/LLgen/src/LLgen.c/LLgen.o",
+      ".obj/util/LLgen/+LLgen/util/LLgen/src/cclass.c/cclass.o",
+      ".obj/util/LLgen/+LLgen/util/LLgen/src/main.c/main.o",
+      ".obj/util/LLgen/+LLgen/util/LLgen/src/tokens.c/tokens.o",
+      ".obj/util/LLgen/+LLgen/util/LLgen/src/reach.c/reach.o",
+      ".obj/util/LLgen/+LLgen/util/LLgen/src/machdep.c/machdep.o"
+    ],
+    ".obj/util/cmisc/+tabgen/tabgen": [
+      ".obj/util/cmisc/+tabgen/util/cmisc/tabgen.c/tabgen.o"
+    ],
+    ".obj/util/opt/+mktab/mktab": [
+      ".obj/modules/src/em_data/+em_data_lib/em_data.a",
+      ".obj/util/opt/+mktab/util/opt/+bison/bison.c/bison.o",
+      ".obj/util/opt/+mktab/util/opt/+flex/flex.yy.c/flex.yy.o"
+    ]
+  },
+  "targets": {
+    "em_cemcom.ansi": ".obj/lang/cem/cemcom.ansi/+cemcom/cemcom",
+    "cpp.ansi": ".obj/lang/cem/cpp.ansi/+cpp.ansi/cpp.ansi",
+    "em_opt": ".obj/util/opt/+em_opt/em_opt",
+    "em_opt2": ".obj/util/opt/+em_opt2/em_opt2",
+    "em_decode": ".obj/util/misc/+em_decode/em_decode",
+    "em_pc": ".obj/lang/pc/comp/+em_pc/em_pc",
+    "em_m2": ".obj/lang/m2/comp/+em_m2/em_m2",
+    "em_bem": ".obj/lang/basic/src/+em_bem/em_bem",
+    "em_occam": ".obj/lang/occam/comp/+em_occam/em_occam",
+    "LLgen": ".obj/util/LLgen/+LLgen/LLgen",
+    "tabgen": ".obj/util/cmisc/+tabgen/tabgen",
+    "mktab": ".obj/util/opt/+mktab/mktab"
+  },
+  "rules": [
+    {
+      "outs": [
+        ".obj/lang/cem/cemcom.ansi/+allocd_code/code.h"
+      ],
+      "deps": [
+        "lang/cem/cemcom.ansi/make.allocd",
+        "lang/cem/cemcom.ansi/code.str"
+      ],
+      "commands": [
+        "lang/cem/cemcom.ansi/make.allocd < lang/cem/cemcom.ansi/code.str > .obj/lang/cem/cemcom.ansi/+allocd_code/code.h"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/lang/cem/cemcom.ansi/+allocd_declar/declar.h"
+      ],
+      "deps": [
+        "lang/cem/cemcom.ansi/declar.str",
+        "lang/cem/cemcom.ansi/make.allocd"
+      ],
+      "commands": [
+        "lang/cem/cemcom.ansi/make.allocd < lang/cem/cemcom.ansi/declar.str > .obj/lang/cem/cemcom.ansi/+allocd_declar/declar.h"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/lang/cem/cemcom.ansi/+allocd_def/def.h"
+      ],
+      "deps": [
+        "lang/cem/cemcom.ansi/make.allocd",
+        "lang/cem/cemcom.ansi/def.str"
+      ],
+      "commands": [
+        "lang/cem/cemcom.ansi/make.allocd < lang/cem/cemcom.ansi/def.str > .obj/lang/cem/cemcom.ansi/+allocd_def/def.h"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/lang/cem/cemcom.ansi/+allocd_estack/estack.h"
+      ],
+      "deps": [
+        "lang/cem/cemcom.ansi/estack.str",
+        "lang/cem/cemcom.ansi/make.allocd"
+      ],
+      "commands": [
+        "lang/cem/cemcom.ansi/make.allocd < lang/cem/cemcom.ansi/estack.str > .obj/lang/cem/cemcom.ansi/+allocd_estack/estack.h"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/lang/cem/cemcom.ansi/+allocd_expr/expr.h"
+      ],
+      "deps": [
+        "lang/cem/cemcom.ansi/expr.str",
+        "lang/cem/cemcom.ansi/make.allocd"
+      ],
+      "commands": [
+        "lang/cem/cemcom.ansi/make.allocd < lang/cem/cemcom.ansi/expr.str > .obj/lang/cem/cemcom.ansi/+allocd_expr/expr.h"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/lang/cem/cemcom.ansi/+allocd_field/field.h"
+      ],
+      "deps": [
+        "lang/cem/cemcom.ansi/field.str",
+        "lang/cem/cemcom.ansi/make.allocd"
+      ],
+      "commands": [
+        "lang/cem/cemcom.ansi/make.allocd < lang/cem/cemcom.ansi/field.str > .obj/lang/cem/cemcom.ansi/+allocd_field/field.h"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/lang/cem/cemcom.ansi/+allocd_idf/idf.h"
+      ],
+      "deps": [
+        "lang/cem/cemcom.ansi/make.allocd",
+        "lang/cem/cemcom.ansi/idf.str"
+      ],
+      "commands": [
+        "lang/cem/cemcom.ansi/make.allocd < lang/cem/cemcom.ansi/idf.str > .obj/lang/cem/cemcom.ansi/+allocd_idf/idf.h"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/lang/cem/cemcom.ansi/+allocd_l_brace/l_brace.h"
+      ],
+      "deps": [
+        "lang/cem/cemcom.ansi/make.allocd",
+        "lang/cem/cemcom.ansi/l_brace.str"
+      ],
+      "commands": [
+        "lang/cem/cemcom.ansi/make.allocd < lang/cem/cemcom.ansi/l_brace.str > .obj/lang/cem/cemcom.ansi/+allocd_l_brace/l_brace.h"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/lang/cem/cemcom.ansi/+allocd_l_outdef/l_outdef.h"
+      ],
+      "deps": [
+        "lang/cem/cemcom.ansi/l_outdef.str",
+        "lang/cem/cemcom.ansi/make.allocd"
+      ],
+      "commands": [
+        "lang/cem/cemcom.ansi/make.allocd < lang/cem/cemcom.ansi/l_outdef.str > .obj/lang/cem/cemcom.ansi/+allocd_l_outdef/l_outdef.h"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/lang/cem/cemcom.ansi/+allocd_l_state/l_state.h"
+      ],
+      "deps": [
+        "lang/cem/cemcom.ansi/make.allocd",
+        "lang/cem/cemcom.ansi/l_state.str"
+      ],
+      "commands": [
+        "lang/cem/cemcom.ansi/make.allocd < lang/cem/cemcom.ansi/l_state.str > .obj/lang/cem/cemcom.ansi/+allocd_l_state/l_state.h"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/lang/cem/cemcom.ansi/+allocd_macro/macro.h"
+      ],
+      "deps": [
+        "lang/cem/cemcom.ansi/make.allocd",
+        "lang/cem/cemcom.ansi/macro.str"
+      ],
+      "commands": [
+        "lang/cem/cemcom.ansi/make.allocd < lang/cem/cemcom.ansi/macro.str > .obj/lang/cem/cemcom.ansi/+allocd_macro/macro.h"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/lang/cem/cemcom.ansi/+allocd_next/next.h"
+      ],
+      "deps": [
+        "lang/cem/cemcom.ansi/make.allocd",
+        "lang/cem/cemcom.ansi/next.str"
+      ],
+      "commands": [
+        "lang/cem/cemcom.ansi/make.allocd < lang/cem/cemcom.ansi/next.str > .obj/lang/cem/cemcom.ansi/+allocd_next/next.h"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/lang/cem/cemcom.ansi/+allocd_proto/proto.h"
+      ],
+      "deps": [
+        "lang/cem/cemcom.ansi/make.allocd",
+        "lang/cem/cemcom.ansi/proto.str"
+      ],
+      "commands": [
+        "lang/cem/cemcom.ansi/make.allocd < lang/cem/cemcom.ansi/proto.str > .obj/lang/cem/cemcom.ansi/+allocd_proto/proto.h"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/lang/cem/cemcom.ansi/+allocd_stack/stack.h"
+      ],
+      "deps": [
+        "lang/cem/cemcom.ansi/stack.str",
+        "lang/cem/cemcom.ansi/make.allocd"
+      ],
+      "commands": [
+        "lang/cem/cemcom.ansi/make.allocd < lang/cem/cemcom.ansi/stack.str > .obj/lang/cem/cemcom.ansi/+allocd_stack/stack.h"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/lang/cem/cemcom.ansi/+allocd_stmt/stmt.h"
+      ],
+      "deps": [
+        "lang/cem/cemcom.ansi/stmt.str",
+        "lang/cem/cemcom.ansi/make.allocd"
+      ],
+      "commands": [
+        "lang/cem/cemcom.ansi/make.allocd < lang/cem/cemcom.ansi/stmt.str > .obj/lang/cem/cemcom.ansi/+allocd_stmt/stmt.h"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/lang/cem/cemcom.ansi/+allocd_struct/struct.h"
+      ],
+      "deps": [
+        "lang/cem/cemcom.ansi/struct.str",
+        "lang/cem/cemcom.ansi/make.allocd"
+      ],
+      "commands": [
+        "lang/cem/cemcom.ansi/make.allocd < lang/cem/cemcom.ansi/struct.str > .obj/lang/cem/cemcom.ansi/+allocd_struct/struct.h"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/lang/cem/cemcom.ansi/+allocd_switch/switch.h"
+      ],
+      "deps": [
+        "lang/cem/cemcom.ansi/make.allocd",
+        "lang/cem/cemcom.ansi/switch.str"
+      ],
+      "commands": [
+        "lang/cem/cemcom.ansi/make.allocd < lang/cem/cemcom.ansi/switch.str > .obj/lang/cem/cemcom.ansi/+allocd_switch/switch.h"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/lang/cem/cemcom.ansi/+allocd_type/type.h"
+      ],
+      "deps": [
+        "lang/cem/cemcom.ansi/type.str",
+        "lang/cem/cemcom.ansi/make.allocd"
+      ],
+      "commands": [
+        "lang/cem/cemcom.ansi/make.allocd < lang/cem/cemcom.ansi/type.str > .obj/lang/cem/cemcom.ansi/+allocd_type/type.h"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/lang/cem/cemcom.ansi/+allocd_util/util.h"
+      ],
+      "deps": [
+        "lang/cem/cemcom.ansi/util.str",
+        "lang/cem/cemcom.ansi/make.allocd"
+      ],
+      "commands": [
+        "lang/cem/cemcom.ansi/make.allocd < lang/cem/cemcom.ansi/util.str > .obj/lang/cem/cemcom.ansi/+allocd_util/util.h"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/lang/cem/cemcom.ansi/+parameters/parameters.h"
+      ],
+      "deps": [
+        "lang/cem/cemcom.ansi/BigPars"
+      ],
+      "commands": [
+        "echo '#ifndef PARAMETERS_H' > .obj/lang/cem/cemcom.ansi/+parameters/parameters.h",
+        "echo '#define PARAMETERS_H' >> .obj/lang/cem/cemcom.ansi/+parameters/parameters.h",
+        "grep -v '^!' < lang/cem/cemcom.ansi/BigPars >> .obj/lang/cem/cemcom.ansi/+parameters/parameters.h",
+        "echo '#endif' >> .obj/lang/cem/cemcom.ansi/+parameters/parameters.h"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/lang/cem/cemcom.ansi/+tokenfile-g/tokenfile.g"
+      ],
+      "deps": [
+        "lang/cem/cemcom.ansi/make.tokfile",
+        "lang/cem/cemcom.ansi/tokenname.c"
+      ],
+      "commands": [
+        "sh lang/cem/cemcom.ansi/make.tokfile < lang/cem/cemcom.ansi/tokenname.c > .obj/lang/cem/cemcom.ansi/+tokenfile-g/tokenfile.g"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/lang/cem/cemcom.ansi/+llgen/Lpars.c",
+        ".obj/lang/cem/cemcom.ansi/+llgen/Lpars.h",
+        ".obj/lang/cem/cemcom.ansi/+llgen/tokenfile.c",
+        ".obj/lang/cem/cemcom.ansi/+llgen/declar.c",
+        ".obj/lang/cem/cemcom.ansi/+llgen/expression.c",
+        ".obj/lang/cem/cemcom.ansi/+llgen/ival.c",
+        ".obj/lang/cem/cemcom.ansi/+llgen/program.c",
+        ".obj/lang/cem/cemcom.ansi/+llgen/statement.c"
+      ],
+      "deps": [
+        ".obj/util/LLgen/+LLgen/LLgen",
+        "util/LLgen/lib/rec",
+        "lang/cem/cemcom.ansi/ival.g",
+        "util/LLgen/lib/incl",
+        "lang/cem/cemcom.ansi/declar.g",
+        ".obj/lang/cem/cemcom.ansi/+tokenfile-g/tokenfile.g",
+        "lang/cem/cemcom.ansi/statement.g",
+        "lang/cem/cemcom.ansi/program.g",
+        "lang/cem/cemcom.ansi/expression.g"
+      ],
+      "commands": [
+        ".obj/util/LLgen/+LLgen/LLgen .obj/lang/cem/cemcom.ansi/+tokenfile-g/tokenfile.g lang/cem/cemcom.ansi/declar.g lang/cem/cemcom.ansi/expression.g lang/cem/cemcom.ansi/ival.g lang/cem/cemcom.ansi/program.g lang/cem/cemcom.ansi/statement.g",
+        "mv *.[ch] .obj/lang/cem/cemcom.ansi/+llgen"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/lang/cem/cemcom.ansi/+next-c/next.c"
+      ],
+      "deps": [
+        "lang/cem/cemcom.ansi/estack.str",
+        "lang/cem/cemcom.ansi/declar.str",
+        "lang/cem/cemcom.ansi/stmt.str",
+        "lang/cem/cemcom.ansi/struct.str",
+        "lang/cem/cemcom.ansi/l_outdef.str",
+        "lang/cem/cemcom.ansi/type.str",
+        "lang/cem/cemcom.ansi/def.str",
+        "lang/cem/cemcom.ansi/field.str",
+        "lang/cem/cemcom.ansi/switch.str",
+        "lang/cem/cemcom.ansi/proto.str",
+        "lang/cem/cemcom.ansi/next.str",
+        "lang/cem/cemcom.ansi/idf.str",
+        "lang/cem/cemcom.ansi/util.str",
+        "lang/cem/cemcom.ansi/expr.str",
+        "lang/cem/cemcom.ansi/code.str",
+        "lang/cem/cemcom.ansi/macro.str",
+        "lang/cem/cemcom.ansi/l_brace.str",
+        "lang/cem/cemcom.ansi/stack.str",
+        "lang/cem/cemcom.ansi/l_state.str",
+        "lang/cem/cemcom.ansi/make.next"
+      ],
+      "commands": [
+        "lang/cem/cemcom.ansi/make.next lang/cem/cemcom.ansi/code.str lang/cem/cemcom.ansi/declar.str lang/cem/cemcom.ansi/def.str lang/cem/cemcom.ansi/estack.str lang/cem/cemcom.ansi/expr.str lang/cem/cemcom.ansi/field.str lang/cem/cemcom.ansi/idf.str lang/cem/cemcom.ansi/l_brace.str lang/cem/cemcom.ansi/l_outdef.str lang/cem/cemcom.ansi/l_state.str lang/cem/cemcom.ansi/macro.str lang/cem/cemcom.ansi/next.str lang/cem/cemcom.ansi/proto.str lang/cem/cemcom.ansi/stack.str lang/cem/cemcom.ansi/stmt.str lang/cem/cemcom.ansi/struct.str lang/cem/cemcom.ansi/switch.str lang/cem/cemcom.ansi/type.str lang/cem/cemcom.ansi/util.str > .obj/lang/cem/cemcom.ansi/+next-c/next.c"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/lang/cem/cemcom.ansi/+symbol2str-c/symbol2str.c"
+      ],
+      "deps": [
+        "lang/cem/cemcom.ansi/tokenname.c",
+        "lang/cem/cemcom.ansi/make.tokcase"
+      ],
+      "commands": [
+        "sh lang/cem/cemcom.ansi/make.tokcase < lang/cem/cemcom.ansi/tokenname.c > .obj/lang/cem/cemcom.ansi/+symbol2str-c/symbol2str.c"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/lang/cem/cemcom.ansi/+tabgen/tabgen.c"
+      ],
+      "deps": [
+        ".obj/util/cmisc/+tabgen/tabgen",
+        "lang/cem/cemcom.ansi/char.tab"
+      ],
+      "commands": [
+        ".obj/util/cmisc/+tabgen/tabgen -flang/cem/cemcom.ansi/char.tab > .obj/lang/cem/cemcom.ansi/+tabgen/tabgen.c"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/h/+local/local.h"
+      ],
+      "deps": [],
+      "commands": [
+        "echo '#define VERSION 3' > .obj/h/+local/local.h",
+        "echo '#define ACKM \"pc86\"' >> .obj/h/+local/local.h",
+        "echo '#define BIGMACHINE 1' >> .obj/h/+local/local.h",
+        "echo '#define SYS_5' >> .obj/h/+local/local.h"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/h/+em_path/em_path.h"
+      ],
+      "deps": [],
+      "commands": [
+        "echo '#define EM_DIR \"/opt/pkg/ack\"' > .obj/h/+em_path/em_path.h",
+        "echo '#define ACK_PATH \"share/ack/descr\"' >> .obj/h/+em_path/em_path.h"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/modules/src/data/+data_hdr/array.h",
+        ".obj/modules/src/data/+data_hdr/astring.h",
+        ".obj/modules/src/data/+data_hdr/warnings.h",
+        ".obj/modules/src/data/+data_hdr/imap.h",
+        ".obj/modules/src/data/+data_hdr/pmap.h",
+        ".obj/modules/src/data/+data_hdr/smap.h",
+        ".obj/modules/src/data/+data_hdr/stringlist.h"
+      ],
+      "deps": [
+        "modules/src/data/array.h",
+        "modules/src/data/warnings.h",
+        "modules/src/data/astring.h",
+        "modules/src/data/pmap.h",
+        "modules/src/data/stringlist.h",
+        "modules/src/data/smap.h",
+        "modules/src/data/imap.h"
+      ],
+      "commands": [
+        "cp modules/src/data/array.h .obj/modules/src/data/+data_hdr/./array.h",
+        "cp modules/src/data/astring.h .obj/modules/src/data/+data_hdr/./astring.h",
+        "cp modules/src/data/warnings.h .obj/modules/src/data/+data_hdr/./warnings.h",
+        "cp modules/src/data/imap.h .obj/modules/src/data/+data_hdr/./imap.h",
+        "cp modules/src/data/pmap.h .obj/modules/src/data/+data_hdr/./pmap.h",
+        "cp modules/src/data/smap.h .obj/modules/src/data/+data_hdr/./smap.h",
+        "cp modules/src/data/stringlist.h .obj/modules/src/data/+data_hdr/./stringlist.h"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/modules/src/string/+string_hdr/ack_string.h"
+      ],
+      "deps": [
+        "modules/src/string/ack_string.h"
+      ],
+      "commands": [
+        "cp modules/src/string/ack_string.h .obj/modules/src/string/+string_hdr/ack_string.h"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/modules/src/system/+system_hdr/system.h"
+      ],
+      "deps": [
+        "modules/src/system/system.h"
+      ],
+      "commands": [
+        "cp modules/src/system/system.h .obj/modules/src/system/+system_hdr/system.h"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/modules/src/alloc/+alloc_hdr/alloc.h"
+      ],
+      "deps": [
+        "modules/src/alloc/alloc.h"
+      ],
+      "commands": [
+        "cp modules/src/alloc/alloc.h .obj/modules/src/alloc/+alloc_hdr/alloc.h"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/modules/h/+h_hdr/em_arith.h",
+        ".obj/modules/h/+h_hdr/em_label.h",
+        ".obj/modules/h/+h_hdr/em_mesX.h",
+        ".obj/modules/h/+h_hdr/em.h",
+        ".obj/modules/h/+h_hdr/emO_code.h"
+      ],
+      "deps": [
+        "modules/h/em_label.h",
+        "modules/h/em_mesX.h",
+        "modules/h/em.h",
+        "modules/h/em_arith.h",
+        "modules/h/emO_code.h"
+      ],
+      "commands": [
+        "cp modules/h/em_arith.h .obj/modules/h/+h_hdr/em_arith.h",
+        "cp modules/h/em_label.h .obj/modules/h/+h_hdr/em_label.h",
+        "cp modules/h/em_mesX.h .obj/modules/h/+h_hdr/em_mesX.h",
+        "cp modules/h/em.h .obj/modules/h/+h_hdr/em.h",
+        "cp modules/h/emO_code.h .obj/modules/h/+h_hdr/emO_code.h"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/modules/src/em_code/+em_codeek_h/em_codeEK.h"
+      ],
+      "deps": [
+        "h/em_table",
+        "modules/src/em_code/em.nogen",
+        "h/em_table_lib.lua",
+        "modules/src/em_code/make_codeek_h.lua"
+      ],
+      "commands": [
+        "lua modules/src/em_code/make_codeek_h.lua < h/em_table > .obj/modules/src/em_code/+em_codeek_h/em_codeEK.h",
+        "cat modules/src/em_code/em.nogen >> .obj/modules/src/em_code/+em_codeek_h/em_codeEK.h"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/h/+h_hdr/arch.h",
+        ".obj/h/+h_hdr/as_spec.h",
+        ".obj/h/+h_hdr/ip_spec.h",
+        ".obj/h/+h_hdr/cg_pattern.h",
+        ".obj/h/+h_hdr/cgg_cg.h",
+        ".obj/h/+h_hdr/con_float",
+        ".obj/h/+h_hdr/em_abs.h",
+        ".obj/h/+h_hdr/em_ego.h",
+        ".obj/h/+h_hdr/em_flag.h",
+        ".obj/h/+h_hdr/em_mes.h",
+        ".obj/h/+h_hdr/em_ptyp.h",
+        ".obj/h/+h_hdr/em_reg.h",
+        ".obj/h/+h_hdr/out.h",
+        ".obj/h/+h_hdr/ranlib.h",
+        ".obj/h/+h_hdr/stb.h",
+        ".obj/h/+h_hdr/local.h",
+        ".obj/h/+h_hdr/em_path.h"
+      ],
+      "deps": [
+        "h/ranlib.h",
+        "h/out.h",
+        "h/em_flag.h",
+        "h/stb.h",
+        "h/em_abs.h",
+        "h/cgg_cg.h",
+        "h/em_reg.h",
+        "h/arch.h",
+        ".obj/h/+local/local.h",
+        "h/cg_pattern.h",
+        "h/as_spec.h",
+        "h/con_float",
+        "h/em_ptyp.h",
+        "h/em_mes.h",
+        "h/ip_spec.h",
+        ".obj/h/+em_path/em_path.h",
+        "h/em_ego.h"
+      ],
+      "commands": [
+        "cp h/arch.h .obj/h/+h_hdr/arch.h",
+        "cp h/as_spec.h .obj/h/+h_hdr/as_spec.h",
+        "cp h/ip_spec.h .obj/h/+h_hdr/ip_spec.h",
+        "cp h/cg_pattern.h .obj/h/+h_hdr/cg_pattern.h",
+        "cp h/cgg_cg.h .obj/h/+h_hdr/cgg_cg.h",
+        "cp h/con_float .obj/h/+h_hdr/con_float",
+        "cp h/em_abs.h .obj/h/+h_hdr/em_abs.h",
+        "cp h/em_ego.h .obj/h/+h_hdr/em_ego.h",
+        "cp h/em_flag.h .obj/h/+h_hdr/em_flag.h",
+        "cp h/em_mes.h .obj/h/+h_hdr/em_mes.h",
+        "cp h/em_ptyp.h .obj/h/+h_hdr/em_ptyp.h",
+        "cp h/em_reg.h .obj/h/+h_hdr/em_reg.h",
+        "cp h/out.h .obj/h/+h_hdr/out.h",
+        "cp h/ranlib.h .obj/h/+h_hdr/ranlib.h",
+        "cp h/stb.h .obj/h/+h_hdr/stb.h",
+        "cp .obj/h/+local/local.h .obj/h/+h_hdr/local.h",
+        "cp .obj/h/+em_path/em_path.h .obj/h/+h_hdr/em_path.h"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/modules/src/em_data/+em_flag_c/flag.c"
+      ],
+      "deps": [
+        ".obj/h/+h_hdr/em_ptyp.h",
+        ".obj/h/+h_hdr/em_ego.h",
+        ".obj/h/+h_hdr/con_float",
+        "modules/src/em_data/make_flag_c.lua",
+        ".obj/h/+h_hdr/local.h",
+        ".obj/h/+h_hdr/out.h",
+        "h/em_table_lib.lua",
+        ".obj/h/+h_hdr/em_flag.h",
+        ".obj/h/+h_hdr/cg_pattern.h",
+        ".obj/h/+h_hdr/stb.h",
+        "h/em_table",
+        ".obj/h/+h_hdr/as_spec.h",
+        ".obj/h/+h_hdr/em_abs.h",
+        ".obj/h/+h_hdr/ip_spec.h",
+        ".obj/h/+h_hdr/ranlib.h",
+        ".obj/h/+h_hdr/arch.h",
+        ".obj/h/+h_hdr/cgg_cg.h",
+        ".obj/h/+h_hdr/em_path.h",
+        ".obj/h/+h_hdr/em_reg.h",
+        ".obj/h/+h_hdr/em_mes.h"
+      ],
+      "commands": [
+        "lua modules/src/em_data/make_flag_c.lua < h/em_table > .obj/modules/src/em_data/+em_flag_c/flag.c"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/modules/src/em_data/+em_mnem_c/mnem.c"
+      ],
+      "deps": [
+        ".obj/h/+h_hdr/em_ptyp.h",
+        ".obj/h/+h_hdr/em_ego.h",
+        ".obj/h/+h_hdr/con_float",
+        ".obj/h/+h_hdr/local.h",
+        ".obj/h/+h_hdr/out.h",
+        "modules/src/em_data/make_mnem_c.lua",
+        "h/em_table_lib.lua",
+        ".obj/h/+h_hdr/em_flag.h",
+        ".obj/h/+h_hdr/cg_pattern.h",
+        ".obj/h/+h_hdr/stb.h",
+        "h/em_table",
+        ".obj/h/+h_hdr/as_spec.h",
+        ".obj/h/+h_hdr/em_abs.h",
+        ".obj/h/+h_hdr/ip_spec.h",
+        ".obj/h/+h_hdr/ranlib.h",
+        ".obj/h/+h_hdr/arch.h",
+        ".obj/h/+h_hdr/cgg_cg.h",
+        ".obj/h/+h_hdr/em_path.h",
+        ".obj/h/+h_hdr/em_reg.h",
+        ".obj/h/+h_hdr/em_mes.h"
+      ],
+      "commands": [
+        "lua modules/src/em_data/make_mnem_c.lua < h/em_table > .obj/modules/src/em_data/+em_mnem_c/mnem.c"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/modules/src/em_data/+em_pseu_c/pseu.c"
+      ],
+      "deps": [
+        ".obj/h/+h_hdr/em_ptyp.h",
+        ".obj/h/+h_hdr/em_ego.h",
+        ".obj/h/+h_hdr/con_float",
+        ".obj/h/+h_hdr/local.h",
+        ".obj/h/+h_hdr/out.h",
+        "h/em_table_lib.lua",
+        ".obj/h/+h_hdr/em_flag.h",
+        ".obj/h/+h_hdr/cg_pattern.h",
+        ".obj/h/+h_hdr/stb.h",
+        "h/em_table",
+        ".obj/h/+h_hdr/as_spec.h",
+        "modules/src/em_data/make_pseu_c.lua",
+        ".obj/h/+h_hdr/em_abs.h",
+        ".obj/h/+h_hdr/ip_spec.h",
+        ".obj/h/+h_hdr/ranlib.h",
+        ".obj/h/+h_hdr/arch.h",
+        ".obj/h/+h_hdr/cgg_cg.h",
+        ".obj/h/+h_hdr/em_path.h",
+        ".obj/h/+h_hdr/em_reg.h",
+        ".obj/h/+h_hdr/em_mes.h"
+      ],
+      "commands": [
+        "lua modules/src/em_data/make_pseu_c.lua < h/em_table > .obj/modules/src/em_data/+em_pseu_c/pseu.c"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/modules/src/em_data/+em_spec_h/spec.h"
+      ],
+      "deps": [
+        ".obj/h/+h_hdr/em_ptyp.h",
+        ".obj/h/+h_hdr/em_ego.h",
+        ".obj/h/+h_hdr/con_float",
+        ".obj/h/+h_hdr/local.h",
+        ".obj/h/+h_hdr/out.h",
+        "h/em_table_lib.lua",
+        ".obj/h/+h_hdr/em_flag.h",
+        ".obj/h/+h_hdr/cg_pattern.h",
+        ".obj/h/+h_hdr/stb.h",
+        "h/em_table",
+        ".obj/h/+h_hdr/as_spec.h",
+        ".obj/h/+h_hdr/em_abs.h",
+        ".obj/h/+h_hdr/ip_spec.h",
+        ".obj/h/+h_hdr/ranlib.h",
+        ".obj/h/+h_hdr/arch.h",
+        ".obj/h/+h_hdr/cgg_cg.h",
+        ".obj/h/+h_hdr/em_path.h",
+        ".obj/h/+h_hdr/em_reg.h",
+        "modules/src/em_data/make_spec_h.lua",
+        ".obj/h/+h_hdr/em_mes.h"
+      ],
+      "commands": [
+        "lua modules/src/em_data/make_spec_h.lua < h/em_table > .obj/modules/src/em_data/+em_spec_h/spec.h"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/modules/src/em_data/+em_mnem_h/mnem.h"
+      ],
+      "deps": [
+        ".obj/h/+h_hdr/em_ptyp.h",
+        ".obj/h/+h_hdr/em_ego.h",
+        ".obj/h/+h_hdr/con_float",
+        ".obj/h/+h_hdr/local.h",
+        ".obj/h/+h_hdr/out.h",
+        "h/em_table_lib.lua",
+        ".obj/h/+h_hdr/em_flag.h",
+        ".obj/h/+h_hdr/cg_pattern.h",
+        ".obj/h/+h_hdr/stb.h",
+        "h/em_table",
+        ".obj/h/+h_hdr/as_spec.h",
+        ".obj/h/+h_hdr/em_abs.h",
+        ".obj/h/+h_hdr/ip_spec.h",
+        ".obj/h/+h_hdr/ranlib.h",
+        ".obj/h/+h_hdr/arch.h",
+        ".obj/h/+h_hdr/cgg_cg.h",
+        ".obj/h/+h_hdr/em_path.h",
+        ".obj/h/+h_hdr/em_reg.h",
+        ".obj/h/+h_hdr/em_mes.h",
+        "modules/src/em_data/make_mnem_h.lua"
+      ],
+      "commands": [
+        "lua modules/src/em_data/make_mnem_h.lua < h/em_table > .obj/modules/src/em_data/+em_mnem_h/mnem.h"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/modules/src/em_data/+em_pseu_h/pseu.h"
+      ],
+      "deps": [
+        ".obj/h/+h_hdr/em_ptyp.h",
+        "modules/src/em_data/make_pseu_h.lua",
+        ".obj/h/+h_hdr/em_ego.h",
+        ".obj/h/+h_hdr/con_float",
+        ".obj/h/+h_hdr/local.h",
+        ".obj/h/+h_hdr/out.h",
+        "h/em_table_lib.lua",
+        ".obj/h/+h_hdr/em_flag.h",
+        ".obj/h/+h_hdr/cg_pattern.h",
+        ".obj/h/+h_hdr/stb.h",
+        "h/em_table",
+        ".obj/h/+h_hdr/as_spec.h",
+        ".obj/h/+h_hdr/em_abs.h",
+        ".obj/h/+h_hdr/ip_spec.h",
+        ".obj/h/+h_hdr/ranlib.h",
+        ".obj/h/+h_hdr/arch.h",
+        ".obj/h/+h_hdr/cgg_cg.h",
+        ".obj/h/+h_hdr/em_path.h",
+        ".obj/h/+h_hdr/em_reg.h",
+        ".obj/h/+h_hdr/em_mes.h"
+      ],
+      "commands": [
+        "lua modules/src/em_data/make_pseu_h.lua < h/em_table > .obj/modules/src/em_data/+em_pseu_h/pseu.h"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/modules/src/em_data/+em_data_hdr/em_spec.h",
+        ".obj/modules/src/em_data/+em_data_hdr/em_mnem.h",
+        ".obj/modules/src/em_data/+em_data_hdr/em_pseu.h"
+      ],
+      "deps": [
+        ".obj/modules/src/em_data/+em_pseu_h/pseu.h",
+        ".obj/modules/src/em_data/+em_spec_h/spec.h",
+        ".obj/modules/src/em_data/+em_mnem_h/mnem.h"
+      ],
+      "commands": [
+        "cp .obj/modules/src/em_data/+em_spec_h/spec.h .obj/modules/src/em_data/+em_data_hdr/em_spec.h",
+        "cp .obj/modules/src/em_data/+em_mnem_h/mnem.h .obj/modules/src/em_data/+em_data_hdr/em_mnem.h",
+        "cp .obj/modules/src/em_data/+em_pseu_h/pseu.h .obj/modules/src/em_data/+em_data_hdr/em_pseu.h"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/modules/src/em_code/+headers_hdr/em_private.h",
+        ".obj/modules/src/em_code/+headers_hdr/em_code.h",
+        ".obj/modules/src/em_code/+headers_hdr/em_codeCE.h",
+        ".obj/modules/src/em_code/+headers_hdr/em_codeO.h",
+        ".obj/modules/src/em_code/+headers_hdr/em_codeEK.h"
+      ],
+      "deps": [
+        "modules/src/em_code/em_codeO.h",
+        "modules/src/em_code/em_codeCE.h",
+        ".obj/modules/src/em_code/+em_codeek_h/em_codeEK.h",
+        "modules/src/em_code/em_code.h",
+        "modules/src/em_code/em_private.h"
+      ],
+      "commands": [
+        "cp modules/src/em_code/em_private.h .obj/modules/src/em_code/+headers_hdr/em_private.h",
+        "cp modules/src/em_code/em_code.h .obj/modules/src/em_code/+headers_hdr/em_code.h",
+        "cp modules/src/em_code/em_codeCE.h .obj/modules/src/em_code/+headers_hdr/em_codeCE.h",
+        "cp modules/src/em_code/em_codeO.h .obj/modules/src/em_code/+headers_hdr/em_codeO.h",
+        "cp .obj/modules/src/em_code/+em_codeek_h/em_codeEK.h .obj/modules/src/em_code/+headers_hdr/em_codeEK.h"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/modules/src/flt_arith/+flt_arith_hdr/flt_arith.h",
+        ".obj/modules/src/flt_arith/+flt_arith_hdr/flt_misc.h"
+      ],
+      "deps": [
+        "modules/src/flt_arith/flt_misc.h",
+        "modules/src/flt_arith/flt_arith.h"
+      ],
+      "commands": [
+        "cp modules/src/flt_arith/flt_arith.h .obj/modules/src/flt_arith/+flt_arith_hdr/flt_arith.h",
+        "cp modules/src/flt_arith/flt_misc.h .obj/modules/src/flt_arith/+flt_arith_hdr/flt_misc.h"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/modules/src/input/+input_hdr/inp_pkg.body",
+        ".obj/modules/src/input/+input_hdr/inp_pkg.spec"
+      ],
+      "deps": [
+        "modules/src/input/inp_pkg.spec",
+        "modules/src/input/inp_pkg.body"
+      ],
+      "commands": [
+        "cp modules/src/input/inp_pkg.body .obj/modules/src/input/+input_hdr/inp_pkg.body",
+        "cp modules/src/input/inp_pkg.spec .obj/modules/src/input/+input_hdr/inp_pkg.spec"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/modules/src/idf/+idf_hdr/idf_pkg.body",
+        ".obj/modules/src/idf/+idf_hdr/idf_pkg.spec"
+      ],
+      "deps": [
+        "modules/src/idf/idf_pkg.body",
+        "modules/src/idf/idf_pkg.spec"
+      ],
+      "commands": [
+        "cp modules/src/idf/idf_pkg.body .obj/modules/src/idf/+idf_hdr/idf_pkg.body",
+        "cp modules/src/idf/idf_pkg.spec .obj/modules/src/idf/+idf_hdr/idf_pkg.spec"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/lang/cem/cpp.ansi/+allocd_macro/macro.h"
+      ],
+      "deps": [
+        "lang/cem/cpp.ansi/macro.str",
+        "lang/cem/cpp.ansi/make.allocd"
+      ],
+      "commands": [
+        "lang/cem/cpp.ansi/make.allocd < lang/cem/cpp.ansi/macro.str > .obj/lang/cem/cpp.ansi/+allocd_macro/macro.h"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/lang/cem/cpp.ansi/+allocd_replace/replace.h"
+      ],
+      "deps": [
+        "lang/cem/cpp.ansi/replace.str",
+        "lang/cem/cpp.ansi/make.allocd"
+      ],
+      "commands": [
+        "lang/cem/cpp.ansi/make.allocd < lang/cem/cpp.ansi/replace.str > .obj/lang/cem/cpp.ansi/+allocd_replace/replace.h"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/lang/cem/cpp.ansi/+tokenfile-g/tokenfile.g"
+      ],
+      "deps": [
+        "lang/cem/cpp.ansi/tokenname.c",
+        "lang/cem/cpp.ansi/make.tokfile"
+      ],
+      "commands": [
+        "sh lang/cem/cpp.ansi/make.tokfile < lang/cem/cpp.ansi/tokenname.c > .obj/lang/cem/cpp.ansi/+tokenfile-g/tokenfile.g"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/lang/cem/cpp.ansi/+llgen/Lpars.c",
+        ".obj/lang/cem/cpp.ansi/+llgen/Lpars.h",
+        ".obj/lang/cem/cpp.ansi/+llgen/tokenfile.c",
+        ".obj/lang/cem/cpp.ansi/+llgen/expression.c"
+      ],
+      "deps": [
+        "lang/cem/cpp.ansi/expression.g",
+        ".obj/util/LLgen/+LLgen/LLgen",
+        "util/LLgen/lib/rec",
+        ".obj/lang/cem/cpp.ansi/+tokenfile-g/tokenfile.g",
+        "util/LLgen/lib/incl"
+      ],
+      "commands": [
+        ".obj/util/LLgen/+LLgen/LLgen .obj/lang/cem/cpp.ansi/+tokenfile-g/tokenfile.g lang/cem/cpp.ansi/expression.g",
+        "mv *.[ch] .obj/lang/cem/cpp.ansi/+llgen"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/lang/cem/cpp.ansi/+next-c/next.c"
+      ],
+      "deps": [
+        "lang/cem/cpp.ansi/replace.str",
+        "lang/cem/cpp.ansi/make.next",
+        "lang/cem/cpp.ansi/macro.str"
+      ],
+      "commands": [
+        "lang/cem/cpp.ansi/make.next lang/cem/cpp.ansi/macro.str lang/cem/cpp.ansi/replace.str > .obj/lang/cem/cpp.ansi/+next-c/next.c"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/lang/cem/cpp.ansi/+symbol2str-c/symbol2str.c"
+      ],
+      "deps": [
+        "lang/cem/cpp.ansi/tokenname.c",
+        "lang/cem/cpp.ansi/make.tokcase"
+      ],
+      "commands": [
+        "sh lang/cem/cpp.ansi/make.tokcase < lang/cem/cpp.ansi/tokenname.c > .obj/lang/cem/cpp.ansi/+symbol2str-c/symbol2str.c"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/lang/cem/cpp.ansi/+tabgen/tabgen.c"
+      ],
+      "deps": [
+        ".obj/util/cmisc/+tabgen/tabgen",
+        "lang/cem/cpp.ansi/char.tab"
+      ],
+      "commands": [
+        ".obj/util/cmisc/+tabgen/tabgen -flang/cem/cpp.ansi/char.tab > .obj/lang/cem/cpp.ansi/+tabgen/tabgen.c"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/lang/basic/src/+llgen/Lpars.c",
+        ".obj/lang/basic/src/+llgen/Lpars.h",
+        ".obj/lang/basic/src/+llgen/basic.c"
+      ],
+      "deps": [
+        "lang/basic/src/basic.g",
+        "util/LLgen/lib/incl",
+        "util/LLgen/lib/rec",
+        ".obj/util/LLgen/+LLgen/LLgen"
+      ],
+      "commands": [
+        ".obj/util/LLgen/+LLgen/LLgen lang/basic/src/basic.g",
+        "mv *.[ch] .obj/lang/basic/src/+llgen"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/lang/basic/src/+tokentab_h/tokentab.h"
+      ],
+      "deps": [
+        "lang/basic/src/maketokentab",
+        ".obj/lang/basic/src/+llgen/Lpars.h"
+      ],
+      "commands": [
+        "lang/basic/src/maketokentab < .obj/lang/basic/src/+llgen/Lpars.h > .obj/lang/basic/src/+tokentab_h/tokentab.h"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/lang/m2/comp/+parameters/parameters.h"
+      ],
+      "deps": [
+        "lang/m2/comp/BigPars"
+      ],
+      "commands": [
+        "echo '#ifndef PARAMETERS_H' > .obj/lang/m2/comp/+parameters/parameters.h",
+        "echo '#define PARAMETERS_H' >> .obj/lang/m2/comp/+parameters/parameters.h",
+        "grep -v '^!' < lang/m2/comp/BigPars >> .obj/lang/m2/comp/+parameters/parameters.h",
+        "echo '#endif' >> .obj/lang/m2/comp/+parameters/parameters.h"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/lang/m2/comp/+tokenfile-g/tokenfile.g"
+      ],
+      "deps": [
+        "lang/m2/comp/tokenname.c",
+        "lang/m2/comp/make.tokfile"
+      ],
+      "commands": [
+        "sh lang/m2/comp/make.tokfile < lang/m2/comp/tokenname.c > .obj/lang/m2/comp/+tokenfile-g/tokenfile.g"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/lang/m2/comp/+llgen/Lpars.c",
+        ".obj/lang/m2/comp/+llgen/Lpars.h",
+        ".obj/lang/m2/comp/+llgen/tokenfile.c",
+        ".obj/lang/m2/comp/+llgen/declar.c",
+        ".obj/lang/m2/comp/+llgen/expression.c",
+        ".obj/lang/m2/comp/+llgen/program.c",
+        ".obj/lang/m2/comp/+llgen/statement.c"
+      ],
+      "deps": [
+        "lang/m2/comp/expression.g",
+        "lang/m2/comp/program.g",
+        ".obj/util/LLgen/+LLgen/LLgen",
+        "util/LLgen/lib/rec",
+        "util/LLgen/lib/incl",
+        "lang/m2/comp/declar.g",
+        "lang/m2/comp/statement.g",
+        ".obj/lang/m2/comp/+tokenfile-g/tokenfile.g"
+      ],
+      "commands": [
+        ".obj/util/LLgen/+LLgen/LLgen .obj/lang/m2/comp/+tokenfile-g/tokenfile.g lang/m2/comp/declar.g lang/m2/comp/expression.g lang/m2/comp/program.g lang/m2/comp/statement.g",
+        "mv *.[ch] .obj/lang/m2/comp/+llgen"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/lang/m2/comp/+symbol2str-c/symbol2str.c"
+      ],
+      "deps": [
+        "lang/m2/comp/make.tokcase",
+        "lang/m2/comp/tokenname.c"
+      ],
+      "commands": [
+        "sh lang/m2/comp/make.tokcase < lang/m2/comp/tokenname.c > .obj/lang/m2/comp/+symbol2str-c/symbol2str.c"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/lang/m2/comp/+tabgen/tabgen.c"
+      ],
+      "deps": [
+        ".obj/util/cmisc/+tabgen/tabgen",
+        "lang/m2/comp/char.tab"
+      ],
+      "commands": [
+        ".obj/util/cmisc/+tabgen/tabgen -flang/m2/comp/char.tab > .obj/lang/m2/comp/+tabgen/tabgen.c"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/lang/m2/include/+include_hdr/libm2.h",
+        ".obj/lang/m2/include/+include_hdr/m2_traps.h"
+      ],
+      "deps": [
+        "lang/m2/include/libm2.h",
+        "lang/m2/include/m2_traps.h"
+      ],
+      "commands": [
+        "cp lang/m2/include/libm2.h .obj/lang/m2/include/+include_hdr/libm2.h",
+        "cp lang/m2/include/m2_traps.h .obj/lang/m2/include/+include_hdr/m2_traps.h"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/lang/pc/comp/+parameters/parameters.h"
+      ],
+      "deps": [
+        "lang/pc/comp/Parameters",
+        "lang/pc/comp/make.parameters"
+      ],
+      "commands": [
+        "sh lang/pc/comp/make.parameters < lang/pc/comp/Parameters > .obj/lang/pc/comp/+parameters/parameters.h"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/lang/pc/comp/+tokenfile-g/tokenfile.g"
+      ],
+      "deps": [
+        "lang/pc/comp/tokenname.c",
+        "lang/pc/comp/make.tokfile"
+      ],
+      "commands": [
+        "sh lang/pc/comp/make.tokfile < lang/pc/comp/tokenname.c > .obj/lang/pc/comp/+tokenfile-g/tokenfile.g"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/lang/pc/comp/+llgen/Lpars.c",
+        ".obj/lang/pc/comp/+llgen/Lpars.h",
+        ".obj/lang/pc/comp/+llgen/tokenfile.c",
+        ".obj/lang/pc/comp/+llgen/declar.c",
+        ".obj/lang/pc/comp/+llgen/expression.c",
+        ".obj/lang/pc/comp/+llgen/program.c",
+        ".obj/lang/pc/comp/+llgen/statement.c"
+      ],
+      "deps": [
+        ".obj/util/LLgen/+LLgen/LLgen",
+        "util/LLgen/lib/rec",
+        "util/LLgen/lib/incl",
+        "lang/pc/comp/program.g",
+        ".obj/lang/pc/comp/+tokenfile-g/tokenfile.g",
+        "lang/pc/comp/declar.g",
+        "lang/pc/comp/expression.g",
+        "lang/pc/comp/statement.g"
+      ],
+      "commands": [
+        ".obj/util/LLgen/+LLgen/LLgen .obj/lang/pc/comp/+tokenfile-g/tokenfile.g lang/pc/comp/declar.g lang/pc/comp/expression.g lang/pc/comp/program.g lang/pc/comp/statement.g",
+        "mv *.[ch] .obj/lang/pc/comp/+llgen"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/lang/pc/comp/+next-c/next.c"
+      ],
+      "deps": [
+        "lang/pc/comp/node.xh",
+        "lang/pc/comp/tmpvar.xc",
+        "lang/pc/comp/type.xh",
+        "lang/pc/comp/desig.xh",
+        "lang/pc/comp/make.next",
+        "lang/pc/comp/scope.xh",
+        "lang/pc/comp/casestat.xc",
+        "lang/pc/comp/def.xh"
+      ],
+      "commands": [
+        "sh lang/pc/comp/make.next lang/pc/comp/type.xh lang/pc/comp/desig.xh lang/pc/comp/scope.xh lang/pc/comp/def.xh lang/pc/comp/node.xh lang/pc/comp/casestat.xc lang/pc/comp/tmpvar.xc > .obj/lang/pc/comp/+next-c/next.c"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/lang/pc/comp/+symbol2str-c/symbol2str.c"
+      ],
+      "deps": [
+        "lang/pc/comp/tokenname.c",
+        "lang/pc/comp/make.tokcase"
+      ],
+      "commands": [
+        "sh lang/pc/comp/make.tokcase < lang/pc/comp/tokenname.c > .obj/lang/pc/comp/+symbol2str-c/symbol2str.c"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/lang/pc/comp/+tabgen/tabgen.c"
+      ],
+      "deps": [
+        ".obj/util/cmisc/+tabgen/tabgen",
+        "lang/pc/comp/char.tab"
+      ],
+      "commands": [
+        ".obj/util/cmisc/+tabgen/tabgen -flang/pc/comp/char.tab > .obj/lang/pc/comp/+tabgen/tabgen.c"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/lang/pc/comp/+def_h/def.h"
+      ],
+      "deps": [
+        "lang/pc/comp/make.allocd",
+        "lang/pc/comp/def.xh"
+      ],
+      "commands": [
+        "lang/pc/comp/make.allocd < lang/pc/comp/def.xh > .obj/lang/pc/comp/+def_h/def.h"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/lang/pc/comp/+desig_h/desig.h"
+      ],
+      "deps": [
+        "lang/pc/comp/desig.xh",
+        "lang/pc/comp/make.allocd"
+      ],
+      "commands": [
+        "lang/pc/comp/make.allocd < lang/pc/comp/desig.xh > .obj/lang/pc/comp/+desig_h/desig.h"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/lang/pc/comp/+node_h/node.h"
+      ],
+      "deps": [
+        "lang/pc/comp/make.allocd",
+        "lang/pc/comp/node.xh"
+      ],
+      "commands": [
+        "lang/pc/comp/make.allocd < lang/pc/comp/node.xh > .obj/lang/pc/comp/+node_h/node.h"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/lang/pc/comp/+scope_h/scope.h"
+      ],
+      "deps": [
+        "lang/pc/comp/scope.xh",
+        "lang/pc/comp/make.allocd"
+      ],
+      "commands": [
+        "lang/pc/comp/make.allocd < lang/pc/comp/scope.xh > .obj/lang/pc/comp/+scope_h/scope.h"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/lang/pc/comp/+type_h/type.h"
+      ],
+      "deps": [
+        "lang/pc/comp/type.xh",
+        "lang/pc/comp/make.allocd"
+      ],
+      "commands": [
+        "lang/pc/comp/make.allocd < lang/pc/comp/type.xh > .obj/lang/pc/comp/+type_h/type.h"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/lang/pc/comp/+casestat_c/casestat.c"
+      ],
+      "deps": [
+        "lang/pc/comp/make.allocd",
+        "lang/pc/comp/casestat.xc"
+      ],
+      "commands": [
+        "lang/pc/comp/make.allocd < lang/pc/comp/casestat.xc > .obj/lang/pc/comp/+casestat_c/casestat.c"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/lang/pc/comp/+tmpvar_c/tmpvar.c"
+      ],
+      "deps": [
+        "lang/pc/comp/make.allocd",
+        "lang/pc/comp/tmpvar.xc"
+      ],
+      "commands": [
+        "lang/pc/comp/make.allocd < lang/pc/comp/tmpvar.xc > .obj/lang/pc/comp/+tmpvar_c/tmpvar.c"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/lang/pc/include/+include_hdr/pc_err.h",
+        ".obj/lang/pc/include/+include_hdr/pc_file.h",
+        ".obj/lang/pc/include/+include_hdr/pc_math.h",
+        ".obj/lang/pc/include/+include_hdr/pc.h"
+      ],
+      "deps": [
+        "lang/pc/include/pc_err.h",
+        "lang/pc/include/pc.h",
+        "lang/pc/include/pc_file.h",
+        "lang/pc/include/pc_math.h"
+      ],
+      "commands": [
+        "cp lang/pc/include/pc_err.h .obj/lang/pc/include/+include_hdr/pc_err.h",
+        "cp lang/pc/include/pc_file.h .obj/lang/pc/include/+include_hdr/pc_file.h",
+        "cp lang/pc/include/pc_math.h .obj/lang/pc/include/+include_hdr/pc_math.h",
+        "cp lang/pc/include/pc.h .obj/lang/pc/include/+include_hdr/pc.h"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/lang/occam/comp/+llgen/Lpars.c",
+        ".obj/lang/occam/comp/+llgen/Lpars.h",
+        ".obj/lang/occam/comp/+llgen/occam.c"
+      ],
+      "deps": [
+        "util/LLgen/lib/rec",
+        "util/LLgen/lib/incl",
+        "lang/occam/comp/occam.g",
+        ".obj/util/LLgen/+LLgen/LLgen"
+      ],
+      "commands": [
+        ".obj/util/LLgen/+LLgen/LLgen lang/occam/comp/occam.g",
+        "mv *.[ch] .obj/lang/occam/comp/+llgen"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/lang/occam/comp/+lexer/lex.yy.c"
+      ],
+      "deps": [
+        "lang/occam/comp/lex.l"
+      ],
+      "commands": [
+        "flex --noyywrap -t lang/occam/comp/lex.l > .obj/lang/occam/comp/+lexer/lex.yy.c"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/modules/src/read_em/+c_mnem_narg_h/C_mnem_narg.h"
+      ],
+      "deps": [
+        "h/em_table",
+        "modules/src/read_em/make_C_mnem_narg_h.lua",
+        "h/em_table_lib.lua"
+      ],
+      "commands": [
+        "lua modules/src/read_em/make_C_mnem_narg_h.lua < h/em_table > .obj/modules/src/read_em/+c_mnem_narg_h/C_mnem_narg.h"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/modules/src/read_em/+c_mnem_h/C_mnem.h"
+      ],
+      "deps": [
+        "h/em_table",
+        "h/em_table_lib.lua",
+        "modules/src/read_em/make_C_mnem_h.lua"
+      ],
+      "commands": [
+        "lua modules/src/read_em/make_C_mnem_h.lua < h/em_table > .obj/modules/src/read_em/+c_mnem_h/C_mnem.h"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/modules/src/read_em/+lib_kv_hdr/em_comp.h"
+      ],
+      "deps": [
+        "modules/src/read_em/em_comp.h"
+      ],
+      "commands": [
+        "cp modules/src/read_em/em_comp.h .obj/modules/src/read_em/+lib_kv_hdr/em_comp.h"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/util/opt/+bison/bison.c",
+        ".obj/util/opt/+bison/bison.h"
+      ],
+      "deps": [
+        "util/opt/mktab.y"
+      ],
+      "commands": [
+        "bison --defines=.obj/util/opt/+bison/bison.h --output=.obj/util/opt/+bison/bison.c util/opt/mktab.y"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/util/opt/+flex/flex.yy.c"
+      ],
+      "deps": [
+        "util/opt/scan.l"
+      ],
+      "commands": [
+        "flex -s -t util/opt/scan.l > .obj/util/opt/+flex/flex.yy.c"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/util/opt/+pattern_c/pattern.c"
+      ],
+      "deps": [
+        ".obj/util/opt/+mktab/mktab",
+        "util/opt/patterns",
+        ".obj/lang/cem/cpp.ansi/+cpp.ansi/cpp.ansi"
+      ],
+      "commands": [
+        ".obj/lang/cem/cpp.ansi/+cpp.ansi/cpp.ansi < util/opt/patterns | .obj/util/opt/+mktab/mktab > .obj/util/opt/+pattern_c/pattern.c"
+      ]
+    },
+    {
+      "outs": [
+        ".obj/util/opt/+pop_push_c/pop_push.c"
+      ],
+      "deps": [
+        "util/opt/pop_push.awk",
+        "h/em_table"
+      ],
+      "commands": [
+        "awk -f util/opt/pop_push.awk < h/em_table > .obj/util/opt/+pop_push_c/pop_push.c"
+      ]
+    }
+  ]
+}

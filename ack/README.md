@@ -33,13 +33,16 @@ python3 ack/compile.py ack/examples/hello.c
 This prints `HELLO, ACK C!`. `build.sh` downloads pinned ACK and Lua source
 archives, verifies their SHA-256 hashes, builds Lua and the required ACK host
 tools locally, and builds A08. It does not install anything system-wide.
-The native build is tested on Linux. On Windows, use WSL for the compiler build;
-the generated HEX files also run in the ordinary Windows `ntv8008.exe`.
-A native MSYS2/MinGW build of this integration has not been validated.
+The host tools build on Linux and native Windows. In a Visual Studio 2022
+developer command prompt, use `setup.bat --ack` or `setup.bat --all`. The
+[Python/MSVC bootstrap](MSVC.md) builds its bundled generators and generates all
+parser/table inputs locally; no Linux/WSL preparation is required.
+This product includes software developed by the University of California,
+Berkeley and its contributors.
 
 ACK sources, dependencies, and build products stay in ignored `ack/build/`.
-The script builds only the preprocessor, C frontend, EM optimizer, and EM
-format converters, rather than ACK's other languages or machine backends.
+The scripts build the preprocessor, five language frontends, EM optimizers and
+format converters, rather than upstream machine backends or target libraries.
 Lua is needed by upstream's build-time code generation; it is not needed
 when invoking the finished compiler or running an application.
 
@@ -70,8 +73,8 @@ for inspection. The default output is the first source's name with `.hex`.
 Compilation occurs in a temporary directory; a failed build leaves an existing
 HEX output intact. No network access is needed after building the host tools.
 `PYTHON` selects Python for the shell scripts. `rebuild.bat` is also supplied
-for users who already have compatible **native Windows** ACK tools, selected
-with `ACK_TOOLS`; it cannot execute the Linux tools produced by WSL.
+for native Windows builds after setup; `ACK_TOOLS` can select another compatible
+Windows toolchain. A Windows process cannot execute Linux tools produced by WSL.
 
 | Example | Result | Workload |
 | --- | --- | --- |

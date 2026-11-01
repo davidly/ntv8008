@@ -22,10 +22,12 @@ python3 ack/basic.py program.bas -o program.hex \
 ./ntv8008 program.hex
 ```
 
-The checked-in HEX files run on Linux, macOS, and Windows. `rebuild.bat` can
-use native ACK tools through `ACK_TOOLS`; building the frontend is validated on
-Linux, with WSL the supported compiler-build route on Windows. On Windows use
-`ntv8008.exe` and `py -3 tests\ack_basic.py` to run/validate the existing images.
+Native Windows host tools now build with `setup.bat --ack` (or `--all`) in a
+Visual Studio 2022 developer command prompt, using Python/MSVC and bundled
+parser generators. No WSL is required. After setup, the local `rebuild.bat`
+script and `tests/ack_basic.py --compile` use the native tools. `ACK_TOOLS` can
+select an alternative compatible tool directory. See the [MSVC guide](../MSVC.md).
+
 
 ## Supported subset
 

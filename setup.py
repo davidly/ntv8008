@@ -61,18 +61,13 @@ def main():
         for name in ('hello','arithmetic','sieve','e','ttt','snake'):
             python('smallc/compile.py',ROOT/f'smallc/examples/{name}.c')
     if args.ack or args.all:
-        if os.name=='nt' and not os.environ.get('ACK_TOOLS'):
-            if args.ack:
-                parser.error('ACK host tools require Linux/WSL, or native tools selected with ACK_TOOLS; see ack/README.md')
-            print('ACK host build skipped on Windows; supplied ACK application HEX files remain runnable. Use WSL to rebuild.')
-        else:
-            if not os.environ.get('ACK_TOOLS'):
-                python('ack/bootstrap.py')
-            for driver,folder,extension in (('compile','examples','c'),('pascal','pascal/examples','p'),
-                                             ('modula2','modula2/examples','mod'),('basic','basic/examples','bas'),
-                                             ('occam','occam/examples','ocm')):
-                for name in ('hello','arithmetic','sieve','e','ttt'):
-                    python('ack/'+driver+'.py',ROOT/f'ack/{folder}/{name}.{extension}')
+        if not os.environ.get('ACK_TOOLS'):
+            python('ack/msvc.py' if os.name=='nt' else 'ack/bootstrap.py')
+        for driver,folder,extension in (('compile','examples','c'),('pascal','pascal/examples','p'),
+                                         ('modula2','modula2/examples','mod'),('basic','basic/examples','bas'),
+                                         ('occam','occam/examples','ocm')):
+            for name in ('hello','arithmetic','sieve','e','ttt'):
+                python('ack/'+driver+'.py',ROOT/f'ack/{folder}/{name}.{extension}')
     if args.scelbal:
         fetch(SCELBAL_URL,ROOT/'scelbal/upstream/sc1fast.asm',SCELBAL_SHA256,
               os.environ.get('SCELBAL_SOURCE'))

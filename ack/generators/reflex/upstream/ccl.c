@@ -1,0 +1,164 @@
+/* ccl - routines for character classes */
+
+/*-
+ * Copyright 2008-2025,2026  Thomas E. Dickey
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to
+ * deal in the Software without restriction, including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, distribute with
+ * modifications, sublicense, and/or sell copies of the Software, and to permit
+ * persons to whom the Software is furnished to do so, subject to the following
+ * conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * ABOVE COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+ * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
+ * IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ *
+ * Copyright (c) 1990 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Vern Paxson.
+ *
+ * The United States Government has rights in this work pursuant
+ * to contract no. DE-AC03-76SF00098 between the United States
+ * Department of Energy and the University of California.
+ *
+ * Redistribution and use in source and binary forms with or without
+ * modification are permitted provided that: (1) source distributions retain
+ * this entire copyright notice and comment, and (2) distributions including
+ * binaries display the following acknowledgement:  ``This product includes
+ * software developed by the University of California, Berkeley and its
+ * contributors'' in the documentation or other materials provided with the
+ * distribution and in all advertising materials mentioning features or use
+ * of this software.  Neither the name of the University nor the names of
+ * its contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR IMPLIED
+ * WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ */
+
+/* @Header: /home/daffy/u0/vern/flex/RCS/ccl.c,v 2.9 93/09/16 20:32:14 vern Exp @ */
+
+#include "flexdef.h"
+
+/* ccladd - add a single character to a ccl */
+
+void
+ccladd(int cclp, int ch, CCLWHY why)
+{
+    int ind, len, newpos, i;
+
+    check_char(ch);
+
+    len = ccllen[cclp];
+    ind = cclmap[cclp];
+
+    /* check to see if the character is already in the ccl */
+
+    for (i = 0; i < len; ++i) {
+	if (ccltbl[ind + i].ch == ch) {
+	    ccltbl[ind + i].why = (CCLWHY) ((unsigned) ccltbl[ind + i].why | (unsigned) why);
+	    return;
+	}
+    }
+
+    newpos = ind + len;
+
+    if (newpos >= current_max_ccl_tbl_size) {
+	current_max_ccl_tbl_size += MAX_CCL_TBL_SIZE_INCREMENT;
+
+	++num_reallocs;
+
+	ccltbl = reallocate_CCLTBL_array(ccltbl, current_max_ccl_tbl_size);
+    }
+
+    ccllen[cclp] = len + 1;
+    ccltbl[newpos].ch = (Char) ch;
+    ccltbl[newpos].why = why;
+}
+
+/* cclinit - return an empty ccl */
+
+int
+cclinit(void)
+{
+    if (++lastccl >= current_maxccls) {
+	current_maxccls += MAX_CCLS_INCREMENT;
+
+	++num_reallocs;
+
+	cclmap = reallocate_integer_array(cclmap, current_maxccls);
+	ccllen = reallocate_integer_array(ccllen, current_maxccls);
+	cclng = reallocate_integer_array(cclng, current_maxccls);
+    }
+
+    if (lastccl == 1)
+	/* we're making the first ccl */
+	cclmap[lastccl] = 0;
+
+    else
+	/* The new pointer is just past the end of the last ccl.
+	 * Since the cclmap points to the \first/ character of a
+	 * ccl, adding the length of the ccl to the cclmap pointer
+	 * will produce a cursor to the first free space.
+	 */
+	cclmap[lastccl] = cclmap[lastccl - 1] + ccllen[lastccl - 1];
+
+    ccllen[lastccl] = 0;
+    cclng[lastccl] = 0;		/* ccl's start out life un-negated */
+
+    return lastccl;
+}
+
+/* cclnegate - negate the given ccl */
+
+void
+cclnegate(int cclp)
+{
+    cclng[cclp] = 1;
+}
+
+/* list_character_set - list the members of a set of characters in CCL form
+ *
+ * Writes to the given file a character-class representation of those
+ * characters present in the given CCL.  A character is present if it
+ * has a non-zero value in the cset array.
+ */
+
+void
+list_character_set(FILE *file, const int cset[])
+{
+    int i;
+
+    putc('[', file);
+
+    for (i = 0; i < csize; ++i) {
+	if (cset[i]) {
+	    int start_char = i;
+
+	    putc(' ', file);
+
+	    fputs(readable_form(i), file);
+
+	    while (++i < csize && cset[i]) ;
+
+	    if (i - 1 > start_char)
+		/* this was a run */
+		fprintf(file, "-%s", readable_form(i - 1));
+
+	    putc(' ', file);
+	}
+    }
+
+    putc(']', file);
+}

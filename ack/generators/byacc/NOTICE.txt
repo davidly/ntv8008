@@ -1,0 +1,10 @@
+Berkeley Yacc 20260126, maintained by Thomas E. Dickey.
+Official project: https://invisible-island.net/byacc/
+Source archive: https://invisible-island.net/archives/byacc/byacc-20260126.tgz
+Archive SHA-256: b618c5fb44c2f5f048843db90f7d1b24f78f47b07913c8c7ba8c942d3eb24b00
+Terms: public domain, as stated in upstream/LICENSE and upstream/README.
+
+Selected unmodified C sources, headers, bootstrap parser skeleton and notices
+are retained in upstream/. No configure scripts, binaries or build objects are
+included. Native configuration/build code is original project code outside
+upstream/. Original author: Robert Corbett; maintenance: Thomas E. Dickey.

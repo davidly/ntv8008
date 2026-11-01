@@ -4,3 +4,5 @@
 /robson/upstream/** -text
 /ack/ACK-COPYRIGHT -text
 /licenses/CC0-1.0.txt -text
+/ack/generators/byacc/upstream/** -text
+/ack/generators/reflex/upstream/** -text

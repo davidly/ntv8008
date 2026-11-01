@@ -64,14 +64,7 @@ def unpack(name, url, digest, variable):
     return directory
 
 
-def main():
-    for tool in ('make', 'ninja', 'gcc', 'flex', 'yacc'):
-        if not shutil.which(tool):
-            raise SystemExit('Missing build tool: ' + tool)
-    BUILD.mkdir(exist_ok=True)
-    lua = unpack('lua', 'https://www.lua.org/ftp/lua-5.4.7.tar.gz', LUA_SHA256, 'LUA_ARCHIVE')
-    ack = unpack('ack', 'https://codeload.github.com/davidgiven/ack/tar.gz/' + REVISION,
-                 ACK_SHA256, 'ACK_ARCHIVE')
+def patch_sources(ack):
     # Match Pascal's runtime/ISO MOD semantics during constant folding too.
     # Upstream used C's negative remainder, producing a different constant.
     folding = ack / 'lang/pc/comp/cstoper.c'
@@ -91,6 +84,17 @@ def main():
     import runpy
     runpy.run_path(str(HERE/'basic/patch.py'))['apply'](ack)
     runpy.run_path(str(HERE/'occam/patch.py'))['apply'](ack)
+
+
+def main():
+    for tool in ('make', 'ninja', 'gcc', 'flex', 'yacc'):
+        if not shutil.which(tool):
+            raise SystemExit('Missing build tool: ' + tool)
+    BUILD.mkdir(exist_ok=True)
+    lua = unpack('lua', 'https://www.lua.org/ftp/lua-5.4.7.tar.gz', LUA_SHA256, 'LUA_ARCHIVE')
+    ack = unpack('ack', 'https://codeload.github.com/davidgiven/ack/tar.gz/' + REVISION,
+                 ACK_SHA256, 'ACK_ARCHIVE')
+    patch_sources(ack)
     jobs = str(min(os.cpu_count() or 2, 8))
     subprocess.run(['make', '-j' + jobs, 'posix'], cwd=lua, check=True)
     makefile = ack / 'Makefile'

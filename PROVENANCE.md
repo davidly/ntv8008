@@ -66,3 +66,13 @@ and HEX image, are original project code under BSD-3-Clause. Palo Alto Tiny
 BASIC was considered as a design reference for a compact integer dialect; no
 Palo Alto, Apple, Microsoft, or other historical BASIC implementation code is
 incorporated. Its examples reuse this project's existing benchmark algorithms.
+
+Native Windows ACK bootstrap uses selected verbatim source from Berkeley Yacc
+20260126 and Reflex 20260131, pinned in `ack/generators/*/NOTICE.txt`. Their
+upstream notices remain in place; the Python/MSVC build driver, POSIX compatibility
+shims, and replacements for ACK's small shell transformations are project code.
+`ack/msvc/recipe.json` records the pinned ACK build graph as data, not generated
+parser/table C. Lua and ACK sources remain verified, ignored downloads. All
+frontend parsers and optimizer/scanner tables are regenerated on Windows.
+This product includes software developed by the University of California,
+Berkeley and its contributors.
