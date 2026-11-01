@@ -185,7 +185,9 @@ building ntv8008:
 python3 tests/plm8.py
 ```
 
-Tests compile and execute the examples, compare e against Python Decimal and
+Tests compile and execute the examples and refresh their generated HEX files,
+so a separate rebuild is unnecessary after updating the sources. They compare
+e against Python Decimal and
 TTT against an independent minimax search, exercise multi-buffer intermediate
 files and `DO CASE`, reject invalid source/object records, and check CLI paths
 with spaces and preservation of existing HEX output after a compile error.

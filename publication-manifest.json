@@ -743,7 +743,7 @@
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "plm8/README.md": {
-      "sha256": "8f2e1106bd8e41ee6186859e7d9dcc30ff267a01ab2e955311943da48e2285eb",
+      "sha256": "ecccd983613230ece32ea4b356dc43bf52b3f44351c4ce2acdc0aa0cb8e0cff3",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
@@ -1203,7 +1203,7 @@
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "tests/plm8.py": {
-      "sha256": "0a539654f3c4433d97ed3e48422c187006c64d9c149eb5a35f0ae7cf1ec20082",
+      "sha256": "f40ccaf30da3e8960600eea62e88cc839a5c7597b0b191b3b62d80f895099a29",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
