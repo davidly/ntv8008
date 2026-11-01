@@ -719,6 +719,44 @@ CLOBBER:
                 self.assertIn('>A='+expression+'\n'+chr(count)+'>',output)
             self.assertIn('>A=1/2\n>',output)
 
+    def test_fast_array_destinations_and_types(self):
+        statements=['I=1:J=1']
+        expected=[]
+        for number,name in enumerate('ABCDEFGHIJKLMNOPQRSTUVWXYZ'):
+            byte=number%2==0
+            value=number*257+300 if byte else -1234-number
+            statements += [f'DIM {"BYTE " if byte else ""}{name}(3)',
+                           f'{name}(I+1)={value}',f'PRINT "@";{name}(2)']
+            expected.append(value&255 if byte else value)
+        output=self.execute('\n'.join(statements)+'\n')
+        self.assertEqual([int(n) for n in re.findall(r'^@(-?\d+)$',output,re.M)],expected)
+        source=('DIM A(20),BYTE B(20)\nI=3:J=2:B(1)=2\n'
+                'A(I+1)=1234:B(I-1)=257\nA(I+J)=2345:B(B(1))=258\n'
+                'A(I+1*J)=3456\nPRINT "@";A(4);",";A(5);",";B(2)\n')
+        self.assertIn('@1234,3456,2\n',self.execute(source))
+        for target,error in [('A(21)','BOUNDS'),('A(0-1)','BOUNDS'),
+                             ('C(1)','BOUNDS'),('A(I+)','SYNTAX'),
+                             ('A(I+1','SYNTAX')]:
+            output=self.execute('DIM A(20)\nI=2\n'+target+'=7\nPRINT "RECOVERED"\n',errors=True)
+            self.assertIn('?'+error,output)
+            self.assertTrue(output.endswith('RECOVERED\n>'))
+
+    def test_simple_destinations_skip_recursive_index_path(self):
+        asm=(ROOT/'a08/b8008.asm').read_text().replace(
+            'INDEXSLOW:', 'INDEXSLOW:\n        LAI 33D\n        OUT 10D',1)
+        with tempfile.TemporaryDirectory() as directory:
+            path=Path(directory)/'destination.asm'
+            image=path.with_suffix('.hex')
+            path.write_text(asm)
+            result=subprocess.run([str(ASSEMBLER),str(path),'-o'+str(image)],capture_output=True,timeout=15)
+            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+            output=self.execute('DIM BYTE B(8)\nI=2:J=1\nB(I)=7\nB(I+1)=8\n'
+                                'B(I+J)=9\nPRINT "@";B(2);",";B(3)\n',image=image)
+            self.assertIn('>B(I)=7\n>',output)
+            self.assertIn('>B(I+1)=8\n>',output)
+            self.assertIn('>B(I+J)=9\n!>',output)
+            self.assertIn('@7,9\n',output)
+
     def test_errors_recover(self):
         cases = [('PRINT 1/0','DIVIDE BY ZERO'), ('PRINT (2+3','SYNTAX'),
                  ('DIM A(3):PRINT A(4)','BOUNDS'), ('PRINT B(0)','BOUNDS'),

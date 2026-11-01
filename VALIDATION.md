@@ -575,3 +575,43 @@ are unchanged, including the full 192-digit spigot calculation.
 Low code ends at 18f3h, thirteen bytes smaller than 1900h. The fixed 84-byte
 workspace-code ranges are unchanged. Full sieve free RAM increases from 281
 to 294 bytes, and the conservative size guard has thirteen bytes to spare.
+
+## b8008 descriptor lookup and fast array destinations (2026-11-01)
+
+ARRAYADDR checks the descriptor count and width through one retained pointer,
+instead of saving/reloading width and reconstructing the descriptor repeatedly.
+After adding the base address, it returns width directly from the descriptor.
+Zero width, unallocated arrays, and unsigned/signed-negative out-of-range indices
+still produce BOUNDS. Width remains the caller's byte/word store/load selector.
+
+The smaller lookup funds shared FASTINDEX decoding for array reads and LVALUE
+array destinations. Simple indices and constant offset chains return address
+and width without parser value/return frames; complex indices restore BC and
+the array identifier before the software-recursive expression path. ATOM uses
+the same helper before loading the value. FASTINDEX explicitly distinguishes
+success (NZ, A=nonzero width) from fallback (Z). Variable offsets remain valid
+through the recursive fallback; no nested hardware parser recursion is added.
+Small zero-initialization sequences were shortened to retain the size guard.
+
+All 40 tests pass on Linux and native Windows. Added tests exercise mixed byte
+and signed word arrays across every descriptor slot A..Z, constant/scalar/
+offset destinations, nested/variable/product-index fallback, and bounds/syntax
+error recovery. A native INDEXSLOW marker proves simple destinations skip the
+recursive path while variable offsets enter it. Existing array-read, signed
+math, fixed workspace-code preservation, HEX overlap/range, forced page-boundary,
+stack, division-cache, full benchmark and reproducibility tests still pass.
+
+| Benchmark | Before cycles | After cycles | Fewer cycles |
+| --- | ---: | ---: | ---: |
+| Sieve, ten passes | 3,027,983,170 | 2,740,693,158 | 9.5% |
+| E, 192 digits | 731,149,004 | 704,888,582 | 3.6% |
+| TTT, one iteration | 1,484,209,968 | 1,420,460,512 | 4.3% |
+
+Descriptor cleanup alone yielded 2,977,773,606 / 724,763,734 / 1,465,536,704
+cycles (sieve/e/TTT). Sharing the index path supplies the remaining gains.
+Counts include native loading/tokenization and execution, excluding I/O waits.
+Benchmark programs and workloads are unchanged.
+
+Low code ends at 18feh, eleven bytes above 18f3h, and the fixed 84-byte workspace
+code ranges are unchanged. Full sieve HEAP=14821 leaves 283 bytes before 3b00h;
+the unchanged conservative RAM-size guard passes with two bytes to spare.

@@ -109,7 +109,7 @@ TCHR    EQU 0A9H
         JMP START
         ORG 40H
 START:
-        LAI 0D
+        XRA
 ; ST STKP
         LHI HIGH STKP
         LLI LOW STKP
@@ -132,7 +132,7 @@ START:
         JMP NEW
 PROMPT:
         CAL UNBIND
-        LAI 0D
+        XRA
 ; ST STKP
         LHI HIGH STKP
         LLI LOW STKP
@@ -182,7 +182,7 @@ DIRECT:
         LCI LOW TOKBUF
         JMP DISPATCH
 NEW:
-        LAI 0D
+        XRA
 ; ST LINKED
         LHI HIGH LINKED
         LLI LOW LINKED
@@ -194,8 +194,8 @@ NEW:
         LME
         INL
         LMD
-        LDI 0D
-        LEI 0D
+        LDA
+        LEA
 ; STW LAST
         LLI LOW LAST
         LME
@@ -1785,11 +1785,33 @@ LVALUE:
         LAI 2D
 ; RETURN
         JMP SRET
+; Try the same bounded index decoder used by array reads before recursion.
 INDEXED:
+        LAE
+; ST ARID
+        LHI HIGH ARID
+        LLI LOW ARID
+        LMA
+        LEC
+        LDB
+; STW IXSTART
+        LLI LOW IXSTART
+        LME
+        INL
+        LMD
+        CAL FASTINDEX
+        JTZ INDEXSLOW
+; RETURN
+        JMP SRET
+INDEXSLOW:
+        CAL IXFAIL
+; LD ARID
+        LHI HIGH ARID
+        LLI LOW ARID
+        LAM
+        LEA
         CAL VPUSH
         CAL GET
-        CAL SIMPLEVALUE
-        JTZ INDEXCLOSE
 ; CALL EXPR
         LHI HIGH STKP
         LLI LOW STKP
@@ -1919,13 +1941,20 @@ ARRAYATOM:
         LHI HIGH ARID
         LLI LOW ARID
         LMA
+        CAL FASTINDEX
+        JTZ IXFAIL
+        CAL LOADVALUE
+        JMP IXOK
+; ARID holds the array number; NZ returns DE address and A width.
+; Z leaves BC for the caller to restore before recursive fallback.
+FASTINDEX:
         CAL GET
         CAL GET
         CPI TNUM
         JTZ ARNUMBER
         SUI 65D
         CPI 26D
-        JFC IXFAIL
+        JFC ARFAIL
         ADA
         LLA
         LHI HIGH VARS
@@ -1942,7 +1971,7 @@ ARPOST:
         CPI 43D
         JTZ AROFFSET
         CPI 45D
-        JFZ IXFAIL
+        JFZ ARFAIL
 AROFFSET:
 ; ST AROP
         LHI HIGH AROP
@@ -1955,7 +1984,7 @@ AROFFSET:
         LMD
         CAL GET
         CPI TNUM
-        JFZ IXFAIL
+        JFZ ARFAIL
         CAL GETWORD
 ; LD AROP
         LHI HIGH AROP
@@ -1980,9 +2009,10 @@ ARDONE:
         LHI HIGH ARID
         LLI LOW ARID
         LAM
-        CAL ARRAYADDR
-        CAL LOADVALUE
-        JMP IXOK
+        JMP ARRAYADDR
+ARFAIL:
+        XRA
+        RET
 ; Parse sums/differences of scalar/constant atoms for indices and assignments.
 ; Only accept a full expression; other operators use the precedence parser.
 ; Z means success; NZ restores BC so EXPR can apply its full precedence rules.
@@ -2048,7 +2078,7 @@ IXOK:
         XRA
         RET
 ARRAYADDR:
-        ; A = array number; DE = zero-based index. Descriptor stride is 8.
+        ; Descriptor count precedes width; retain its pointer for both checks.
         RLC
         RLC
         RLC
@@ -2056,19 +2086,6 @@ ARRAYADDR:
         LHI HIGH ASLOT
         LLI LOW ASLOT
         LMA
-        ADI 4D
-        LLA
-        LHI HIGH DESC
-        LAM
-        NDA
-        JTZ BOUNDS
-; ST WIDTH
-        LHI HIGH WIDTH
-        LLI LOW WIDTH
-        LMA
-; LD ASLOT
-        LLI LOW ASLOT
-        LAM
         ADI 2D
         LLA
         LHI HIGH DESC
@@ -2078,10 +2095,10 @@ ARRAYADDR:
         LAD
         SBM
         JFC BOUNDS
-; LD WIDTH
-        LHI HIGH WIDTH
-        LLI LOW WIDTH
+        INL
         LAM
+        NDA
+        JTZ BOUNDS
         CPI 2D
         JFZ ARRAYBYTE
         LAE
@@ -2104,10 +2121,12 @@ ARRAYBYTE:
         LAD
         ACM
         LDA
-; LD WIDTH
-        LHI HIGH WIDTH
-        LLI LOW WIDTH
+        ; Width is three bytes beyond the high base byte, on the same page.
+        INL
+        INL
+        INL
         LAM
+        ORA
         RET
 COMPARE:
         ; Signed comparison biases high bytes, avoiding subtraction overflow.

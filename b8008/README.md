@@ -130,7 +130,10 @@ expression restores the token pointer and uses the full parser, retaining
 precedence, signed wraparound, and array bounds checks. No new program tokens
 or source edits are needed. Simple array reads such as `A(2)`, `A(I)`, and
 `A(S+10)` also use a bounded leaf, with full descriptor/bounds checks. Nested
-or complex indices restore the token pointer and use recursive parsing.
+or complex indices restore the token pointer and use recursive parsing. Simple
+array destinations share this decoder, avoiding index value/return frames.
+Descriptor lookup retains its pointer for count/width checks and returns the
+width directly, avoiding temporary saves/reloads.
 
 Multiplication keeps its accumulator in registers, stops when the multiplier
 becomes zero, and uses shifts/adds for a left operand of 10. Division handles a
@@ -164,9 +167,9 @@ Measured at 500 kHz on 2026-11-01:
 
 | Benchmark | b8008 cycles | b8008 seconds | SCELBAL seconds | Speedup |
 | --- | ---: | ---: | ---: | ---: |
-| Sieve, ten passes | 3,027,983,170 | 6,056.0 | 286,415.9 | 47.3x |
-| E, 192 digits | 731,149,004 | 1,462.3 | 16,176.1 | 11.1x |
-| TTT, one iteration | 1,484,209,968 | 2,968.4 | 118,046.0 | 39.8x |
+| Sieve, ten passes | 2,740,693,158 | 5,481.4 | 286,415.9 | 52.3x |
+| E, 192 digits | 704,888,582 | 1,409.8 | 16,176.1 | 11.5x |
+| TTT, one iteration | 1,420,460,512 | 2,840.9 | 118,046.0 | 41.6x |
 
 Literal branch resolution first reduced total cycles by 4.7% for sieve, 0.1%
 for e, and 12.7% for TTT. Streamlined software calls/returns, operand parsing,
@@ -185,7 +188,9 @@ Sharing atom decoding and using 84 bytes of unused reserved workspace for fixed
 helpers make room for simple array operands. They reduce cycles by another
 11.0%, 7.1%, and 25.4%. Register multiplication, a times-ten path, shorter
 division alignment, and leaner cache hits then reduce E cycles by another 8.7%.
-The full sieve leaves 294 bytes below workspace; no benchmark workload was reduced.
+Smaller descriptor lookup and shared fast array destinations reduce cycles by a
+further 9.5%, 3.6%, and 4.3%. The full sieve leaves 283 bytes below workspace;
+no benchmark workload was reduced.
 
 Timings include session loading/tokenization and execution, excluding host I/O
 waits. Use `-p` or `perfrun` for cycle counts and estimated 500 kHz runtime.
