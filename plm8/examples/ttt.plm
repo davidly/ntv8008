@@ -14,81 +14,6 @@ PRINT: PROCEDURE(N);
     END;
 END PRINT;
 DECLARE BOARD(9) BYTE;
-WINNER2: PROCEDURE( MOVE ) BYTE;
-    DECLARE MOVE BYTE;
-    DECLARE X BYTE;
-
-    X=BOARD(MOVE);
-    DO CASE MOVE;
-        DO; /* 0 */
-            IF X=BOARD(1) THEN
-                IF X=BOARD(2) THEN RETURN X;
-            IF X=BOARD(3) THEN
-                IF X=BOARD(6) THEN RETURN X;
-            IF X=BOARD(4) THEN
-                IF X=BOARD(8) THEN RETURN X;
-        END;
-        DO; /* 1 */
-            IF X=BOARD(0) THEN
-                IF X=BOARD(2) THEN RETURN X;
-            IF X=BOARD(4) THEN
-                IF X=BOARD(7) THEN RETURN X;
-        END;
-        DO; /* 2 */
-            IF X=BOARD(0) THEN
-                IF X=BOARD(1) THEN RETURN X;
-            IF X=BOARD(5) THEN
-                IF X=BOARD(8) THEN RETURN X;
-            IF X=BOARD(4) THEN
-                IF X=BOARD(6) THEN RETURN X;
-        END;
-        DO; /* 3 */
-            IF X=BOARD(4) THEN
-                IF X=BOARD(5) THEN RETURN X;
-            IF X=BOARD(0) THEN
-                IF X=BOARD(6) THEN RETURN X;
-        END;
-        DO; /* 4 */
-            IF X=BOARD(0) THEN
-                IF X=BOARD(8) THEN RETURN X;
-            IF X=BOARD(2) THEN
-                IF X=BOARD(6) THEN RETURN X;
-            IF X=BOARD(1) THEN
-                IF X=BOARD(7) THEN RETURN X;
-            IF X=BOARD(3) THEN
-                IF X=BOARD(5) THEN RETURN X;
-        END;
-        DO; /* 5 */
-            IF X=BOARD(3) THEN
-                IF X=BOARD(4) THEN RETURN X;
-            IF X=BOARD(2) THEN
-                IF X=BOARD(8) THEN RETURN X;
-        END;
-        DO; /* 6 */
-            IF X=BOARD(7) THEN
-                IF X=BOARD(8) THEN RETURN X;
-            IF X=BOARD(0) THEN
-                IF X=BOARD(3) THEN RETURN X;
-            IF X=BOARD(4) THEN
-                IF X=BOARD(2) THEN RETURN X;
-        END;
-        DO; /* 7 */
-            IF X=BOARD(6) THEN
-                IF X=BOARD(8) THEN RETURN X;
-            IF X=BOARD(1) THEN
-                IF X=BOARD(4) THEN RETURN X;
-        END;
-        DO; /* 8 */
-            IF X=BOARD(6) THEN
-                IF X=BOARD(7) THEN RETURN X;
-            IF X=BOARD(2) THEN
-                IF X=BOARD(5) THEN RETURN X;
-            IF X=BOARD(0) THEN
-                IF X=BOARD(4) THEN RETURN X;
-        END;
-    END;
-    RETURN 0;
-END WINNER2;
 
 DECLARE (ALPHA,BETA,VALUE,POS)(9) BYTE;
 DECLARE (DEPTH,MOVE,SCORE,PIECE,ROOT,I,ITERATION) BYTE;
@@ -108,14 +33,84 @@ DO ITERATION=1 TO 10;
         END;
         BOARD(MOVE)=1;
         DEPTH=0; AV=2; BV=9;
+        /* Root setup skips the shared winning-score handler. */
+        GO TO ENTER;
+WINFOUND:
+        SCORE=4;
+        IF PIECE=1 THEN SCORE=6;
+        GO TO RETURNING;
 ENTER:
         COUNT=COUNT+1;
         IF DEPTH>=4 THEN DO;
-            PIECE=WINNER2(MOVE);
-            IF PIECE<>0 THEN DO;
-                SCORE=4;
-                IF PIECE=1 THEN SCORE=6;
-                GO TO RETURNING;
+            /* Inline the last-move winner dispatch. */
+            PIECE=BOARD(MOVE);
+            DO CASE MOVE;
+                DO; /* 0 */
+                    IF PIECE=BOARD(1) THEN
+                        IF PIECE=BOARD(2) THEN GO TO WINFOUND;
+                    IF PIECE=BOARD(3) THEN
+                        IF PIECE=BOARD(6) THEN GO TO WINFOUND;
+                    IF PIECE=BOARD(4) THEN
+                        IF PIECE=BOARD(8) THEN GO TO WINFOUND;
+                END;
+                DO; /* 1 */
+                    IF PIECE=BOARD(0) THEN
+                        IF PIECE=BOARD(2) THEN GO TO WINFOUND;
+                    IF PIECE=BOARD(4) THEN
+                        IF PIECE=BOARD(7) THEN GO TO WINFOUND;
+                END;
+                DO; /* 2 */
+                    IF PIECE=BOARD(0) THEN
+                        IF PIECE=BOARD(1) THEN GO TO WINFOUND;
+                    IF PIECE=BOARD(5) THEN
+                        IF PIECE=BOARD(8) THEN GO TO WINFOUND;
+                    IF PIECE=BOARD(4) THEN
+                        IF PIECE=BOARD(6) THEN GO TO WINFOUND;
+                END;
+                DO; /* 3 */
+                    IF PIECE=BOARD(4) THEN
+                        IF PIECE=BOARD(5) THEN GO TO WINFOUND;
+                    IF PIECE=BOARD(0) THEN
+                        IF PIECE=BOARD(6) THEN GO TO WINFOUND;
+                END;
+                DO; /* 4 */
+                    IF PIECE=BOARD(0) THEN
+                        IF PIECE=BOARD(8) THEN GO TO WINFOUND;
+                    IF PIECE=BOARD(2) THEN
+                        IF PIECE=BOARD(6) THEN GO TO WINFOUND;
+                    IF PIECE=BOARD(1) THEN
+                        IF PIECE=BOARD(7) THEN GO TO WINFOUND;
+                    IF PIECE=BOARD(3) THEN
+                        IF PIECE=BOARD(5) THEN GO TO WINFOUND;
+                END;
+                DO; /* 5 */
+                    IF PIECE=BOARD(3) THEN
+                        IF PIECE=BOARD(4) THEN GO TO WINFOUND;
+                    IF PIECE=BOARD(2) THEN
+                        IF PIECE=BOARD(8) THEN GO TO WINFOUND;
+                END;
+                DO; /* 6 */
+                    IF PIECE=BOARD(7) THEN
+                        IF PIECE=BOARD(8) THEN GO TO WINFOUND;
+                    IF PIECE=BOARD(0) THEN
+                        IF PIECE=BOARD(3) THEN GO TO WINFOUND;
+                    IF PIECE=BOARD(4) THEN
+                        IF PIECE=BOARD(2) THEN GO TO WINFOUND;
+                END;
+                DO; /* 7 */
+                    IF PIECE=BOARD(6) THEN
+                        IF PIECE=BOARD(8) THEN GO TO WINFOUND;
+                    IF PIECE=BOARD(1) THEN
+                        IF PIECE=BOARD(4) THEN GO TO WINFOUND;
+                END;
+                DO; /* 8 */
+                    IF PIECE=BOARD(6) THEN
+                        IF PIECE=BOARD(7) THEN GO TO WINFOUND;
+                    IF PIECE=BOARD(2) THEN
+                        IF PIECE=BOARD(5) THEN GO TO WINFOUND;
+                    IF PIECE=BOARD(0) THEN
+                        IF PIECE=BOARD(4) THEN GO TO WINFOUND;
+                END;
             END;
             IF DEPTH=8 THEN DO;
                 SCORE=5; GO TO RETURNING;

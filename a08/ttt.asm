@@ -3,7 +3,8 @@
 ; Every root must score 5 (tie); one iteration visits 6493 nodes.
 ; Recursion is replaced by nine explicit 16-byte RAM frames. The 8008's
 ; hardware address stack is used only for short, nonrecursive helpers.
-; B = frame offset (00H..80H), C = returned score, D/E = scratch.
+; B = frame offset (00H..80H), C = returned score, D = scratch.
+; E holds the candidate/last move until WINNER, which may clobber it.
 ; Offset bit 4 is depth parity; offsets 40H/80H are depths 4/8.
 ; Frame fields: next move, value, alpha, beta, last move, current player.
 ; Even depths minimize (O to move); odd depths maximize (X to move).
@@ -65,7 +66,7 @@ COUNTED:
         LAB
         CPI 40H
         JTC INITFRAME
-        CAL WINNER
+        CAL WINNER             ; E survived frame setup and node counting
         LAC
         NDA
         JTZ NOWIN
@@ -93,20 +94,25 @@ SETVALUE:
 NEXTMOVE:
         LLB
         LHI HIGH FRAMES
-        LEM                    ; next candidate cell
+        LEM                    ; restore the next candidate once
+        LHI HIGH BOARD
+SCANMOVE:
         LAE
         CPI 9D
         JTZ EXHAUSTED
-        ADI 1
-        LMA                    ; resume at the following cell after the child
-        LHI HIGH BOARD
         LLE
         LAM
         NDA
-        JFZ NEXTMOVE
-        ; Get parent's player and bounds before replacing HL with child frame.
+        JTZ FOUND
+        INE
+        JMP SCANMOVE
+FOUND:
         LLB
         LHI HIGH FRAMES
+        LAE
+        ADI 1
+        LMA                    ; save resume position only before descent
+        ; HL still addresses the parent; get player and inherited bounds.
         INL
         INL
         LCM                    ; inherited alpha
@@ -267,17 +273,11 @@ FAIL:   LHI HIGH FAILMSG
         HLT
 
 ; WINNER checks only lines through the last move, as in the 8080 source.
-; B is preserved; C returns the winning piece or zero. D/E/HL/A are scratch.
+; E supplies the last move (0..8); B is preserved.
+; C returns the winning piece or zero. D/E/HL/A are scratch.
 ; The 8008 has no indirect jump. Copy the selected JMP's two address bytes
 ; into a RAM trampoline; its RET uses WINNER's existing hardware return slot.
-WINNER: LLB
-        LHI HIGH FRAMES
-        INL
-        INL
-        INL
-        INL
-        LEM                    ; most recent move, 0..8
-        LHI HIGH BOARD
+WINNER: LHI HIGH BOARD      ; E already holds the most recent move
         LLE
         LCM                    ; piece placed by that move (always nonzero)
         LAE

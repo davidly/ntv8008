@@ -168,3 +168,22 @@ in ENTER and bounds failures; and SmallC returns at odd/even page boundaries.
 The Linux compiler/runtime suite reports 207 tests (with historical-component
 skips in the isolated validation tree), including all prior language, alias,
 recursive-call and Snake tests.
+
+PL/M winner inlining (2026-10-31): WINNER2's DO CASE and short-circuit checks
+are inside the explicit-frame search, with one shared winning-score handler.
+TTT falls from 475,999,642 to 465,342,822 clocks (2.2% fewer), retaining ten
+iterations, three drawn openings and 6493 nodes per iteration. The existing
+PL/M suite checks independent minimax results and exact image regeneration.
+The generated PL/M HEX remains a local ignored output and is not published.
+
+Assembly TTT frame-access refinements (2026-10-31): WINNER receives the last
+move in E instead of reloading it; occupied-cell scans retain their cursor in
+E and save the parent's resume position only before descent. A redundant
+frame-address reload at the descent point is also removed. The nine 16-byte
+frames, search order and node workload are unchanged.
+
+TTT falls from 16,111,346 to 14,457,102 clocks (10.3% fewer), or 32.22 to 28.91
+seconds at 500 kHz. The independent minimax reference checks three drawn
+openings and 6493 nodes. Existing repeated-iteration/rebuild tests exercise
+frame reuse; the exhaustive winner test now passes E and poisons the old RAM
+argument, while continuing to check that B is preserved.

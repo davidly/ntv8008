@@ -82,7 +82,7 @@ E prints 192 digits of e without a decimal point, followed by `DONE`.
 It uses 322,904,266 clock periods. TTT runs ten iterations of ascending-move
 alpha-beta search from corner, edge, and center openings, verifies that each
 score is a tie, and prints `6493 MOVES` (the final iteration's node count).
-It uses 475,999,642 clock periods. Explicit arrays hold the search frames:
+It uses 465,342,822 clock periods. Explicit arrays hold the search frames:
 PL/M-8 procedure locals are static, and recursive calls would overflow the
 8008 return stack. Both examples need no keyboard input.
 
@@ -100,7 +100,7 @@ Measured optimization comparisons, including program initialization and output:
 | --- | ---: | ---: | ---: |
 | Sieve | 175,896,306 | 167,529,328 | 4.8% |
 | E | 396,084,892 | 322,904,266 | 18.5% |
-| TTT | 510,968,730 | 475,999,642 | 6.8% |
+| TTT | 510,968,730 | 465,342,822 | 8.9% |
 
 Using a pointer only for sieve marking took 171,412,308 cycles; pointer traversal
 for filling and scanning improved that further. Based pointers for all four TTT
@@ -189,3 +189,18 @@ Tests compile and execute the examples, compare e against Python Decimal and
 TTT against an independent minimax search, exercise multi-buffer intermediate
 files and `DO CASE`, reject invalid source/object records, and check CLI paths
 with spaces and preservation of existing HEX output after a compile error.
+
+### Inlined TTT win dispatch
+
+The last-move DO CASE and its short-circuit comparisons now live in the
+explicit-frame search. Winning checks jump to a shared score handler and then
+the existing return path, avoiding WINNER2's static parameter transfer and
+hardware call/return. Root setup skips the shared handler before entering the
+search. Search frames, byte state, ascending moves, three drawn openings and
+ten iterations of 6493 nodes are unchanged.
+
+Inlining reduces TTT from 475,999,642 to 465,342,822 clocks (2.2% fewer), or
+95.2 to 93.1 simulated seconds per iteration at 500 kHz. A duplicated-handler
+layout measured 464,937,262 clocks, but its additional code was not retained
+for a further 0.09% saving. The shared-handler source is smaller and keeps
+winning-score handling in one place.

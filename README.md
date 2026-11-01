@@ -203,7 +203,7 @@ Measured from the included images on 2026-10-31. Values below are estimated
 
 | Implementation | Sieve | E | TTT per iteration |
 | --- | ---: | ---: | ---: |
-| A08 assembly | 78.1 | 36.5 | 32.2 |
+| A08 assembly | 78.1 | 36.5 | 28.9 |
 | ACK C | 321.3 | 343.6 | 145.3 |
 | SmallC-85 C | 349.0 | 251.8 | 127.2 |
 | ACK Pascal | 639.2 | 575.7 | 475.2 |
@@ -240,6 +240,11 @@ ACK C TTT from 152.3 to 145.3 seconds per iteration (4.6% fewer cycles), and
 SmallC from 131.2 to 127.2 (3.1%). It fuses unsigned byte increments, uses
 direct-memory byte comparisons and shorter zero-offset pointer loads, and
 specializes ACK frame entry/exit and SmallC returns.
+
+Assembly TTT retains its nine 16-byte RAM frames, passes the last move to the
+winner checker in E, and scans occupied cells in that register. It saves the
+resume position only before descending. This reduces one iteration from
+16,111,346 to 14,457,102 clocks (10.3% fewer), with the same 6493-node search.
 
 Sieve includes all ten passes; E produces 192 digits. TTT is normalized to one
 iteration (6493 search nodes): compiled images run ten iterations, while the

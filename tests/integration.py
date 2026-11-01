@@ -137,7 +137,7 @@ class Integration(unittest.TestCase):
         visit(1)
         self.assertGreater(len(cases), 10000)
         original = (ROOT / 'a08/ttt.asm').read_text().rsplit('        END', 1)[0]
-        # TREAD preserves B/C; WINNER must preserve the frame offset in B.
+        # TREAD preserves B/C; WINNER takes the last move in E and preserves B.
         # Fixtures start above the jump table and fit in the remaining RAM.
         harness = """
         ORG 0040H
@@ -159,9 +159,10 @@ TLOAD:  CAL TREAD
         CAL TREAD
         CPI 255D
         JTZ TDONE
+        LEA                    ; last move is now a register argument
         LHI HIGH FRAMES
         LLI 44H
-        LMA
+        LMI 255D               ; poison the old argument location
         CAL WINNER
         LHI HIGH VARS
         LLI 10D

@@ -44,3 +44,16 @@ not extract the official ZIP's sample programs or assume A08's terms license
 those distinct historical works. `echo.asm` is an original keyboard demo;
 `hello`, `count`, `sieve`, `e` and `ttt` are project examples; `robson` is an MIT
 interpreter derivative. Rebuild these with `./a08/rebuild.sh` or `rebuild.bat`.
+
+The assembly TTT benchmark uses nine explicit 16-byte frames in one page,
+with B encoding the frame offset and depth parity. E carries the candidate
+move through occupied-cell scans and supplies WINNER's last-move argument;
+node counting and child-frame setup preserve it until that call. The parent
+resume position is written only before descent. The return path still reads
+the child's saved last move to undo its board placement.
+
+One iteration takes 14,457,102 clocks (28.9 seconds at 500 kHz), versus
+16,111,346 before these frame-access refinements (10.3% fewer). Ascending moves,
+the three drawn openings and 6493 nodes are unchanged. The integration suite
+checks repeated iterations and the winner against every reachable board/last
+move, poisoning the old frame argument to verify the register interface.
