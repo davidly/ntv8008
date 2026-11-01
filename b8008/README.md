@@ -151,20 +151,27 @@ program growth are checked against `3b00h`. The full sieve program and its
 * `ttt.bas`: ascending-move alpha-beta minimax, byte board/saved frames, root
   moves 0, 1, and 4; checks three draws and prints 6493 positions, one iteration.
 
-Measured at 500 kHz on 2026-10-31:
+Measured at 500 kHz on 2026-11-01:
 
 | Benchmark | b8008 cycles | b8008 seconds | SCELBAL seconds | Speedup |
 | --- | ---: | ---: | ---: | ---: |
-| Sieve, ten passes | 4,199,466,844 | 8,398.9 | 286,415.9 | 34.1x |
-| E, 192 digits | 939,516,764 | 1,879.0 | 16,176.1 | 8.6x |
-| TTT, one iteration | 2,789,402,456 | 5,578.8 | 118,046.0 | 21.2x |
+| Sieve, ten passes | 3,840,704,110 | 7,681.4 | 286,415.9 | 37.3x |
+| E, 192 digits | 885,172,030 | 1,770.3 | 16,176.1 | 9.1x |
+| TTT, one iteration | 2,412,522,654 | 4,825.0 | 118,046.0 | 24.5x |
 
 Literal branch resolution first reduced total cycles by 4.7% for sieve, 0.1%
 for e, and 12.7% for TTT. Streamlined software calls/returns, operand parsing,
 and positive unit-step loops then reduced cycles by another 42.4%, 32.6%, and
 46.0%, respectively. Simple indices/assignments, shorter arithmetic, division
 reuse, and address-load cleanup now reduce cycles by a further 27.0%, 34.1%,
-and 24.0%. The full sieve array still fits; no benchmark workload was reduced.
+and 24.0%. Earlier assignment dispatch, simple comparison RHSs, and a descending
+unit-step loop path further reduce cycles by 6.6%, 2.5%, and 12.2%.
+A shared native word reader and smaller output/array/division sequences save
+another 120 bytes and about 0.6% of cycles. Atomic arithmetic RHSs now skip
+operator-stack saves and recursive parser calls, saving another 1.6%, 2.8%,
+and 0.9% of cycles. Multiplicative precedence and array/complex operands retain
+the full parser. The full sieve leaves 294 bytes below workspace; no benchmark
+workload was reduced.
 
 Timings include session loading/tokenization and execution, excluding host I/O
 waits. Use `-p` or `perfrun` for cycle counts and estimated 500 kHz runtime.

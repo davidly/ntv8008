@@ -223,7 +223,6 @@ NEW:
         LME
         INL
         LMD
-        LAI 0D
         LDI 0D
         LEI 0D
 ; STW LAST
@@ -239,7 +238,9 @@ NEW:
         LHD
         LLE
         LMI 0D
-        INL
+        ; The empty program header may straddle a page.
+        LHI HIGH PROGRAM+1D
+        LLI LOW PROGRAM+1D
         LMI 0D
         CAL RESET
         JMP PROMPT
@@ -300,6 +301,24 @@ GET:
         LHB
         LLC
         LAM
+        INC
+        RFZ
+        INB
+        RET
+; Read a little-endian word, preserving neither A nor HL; advance BC twice.
+; A still returns the high byte, matching GET/LEA/GET/LDA callers.
+GETWORD:
+        LHB
+        LLC
+        LEM
+        INC
+        JFZ WORDHIGH
+        INB
+WORDHIGH:
+        LHB
+        LLC
+        LDM
+        LAD
         INC
         RFZ
         INB
@@ -625,7 +644,6 @@ EMIT:
 STORELINE:
         JMP EDIT
 RESET:
-        LAI 0D
         LHI HIGH VARS
         LLI 0D
 CLEARV:
@@ -690,10 +708,7 @@ RUN:
         LCI LOW PROGRAM
         JMP ENTERLINE
 ENTERLINE:
-        CAL GET
-        LEA
-        CAL GET
-        LDA
+        CAL GETWORD
 ; STW CUR
         LHI HIGH CUR
         LLI LOW CUR
@@ -705,11 +720,11 @@ ENTERLINE:
         JTZ PROMPT
         CAL GET
 DISPATCH:
+        ; Variables precede keyword tokens; implicit assignments dominate.
+        CAL PEEK
+        CPI 91D
+        JTC DISPATLOW
         CAL GET
-        NDA
-        JTZ ENDLINE
-        CPI 58D
-        JTZ DISPATCH
         CPI TPRINT
         JTZ PRINT
         CPI TLET
@@ -742,12 +757,16 @@ DISPATCH:
         JTZ POKE
         CPI TLIST
         JTZ LIST
-        LAC
-        SUI 1D
-        LCA
-        LAB
-        SBI 0D
-        LBA
+        JMP SYNTAX
+DISPATLOW:
+        CPI 65D
+        JFC ASSIGN
+        CAL GET
+        NDA
+        JTZ ENDLINE
+        CPI 58D
+        JTZ DISPATCH
+        JMP SYNTAX
 ASSIGN:
 ; CALL LVALUE
         LHI HIGH STKP
@@ -804,25 +823,17 @@ STOREVALUE:
         LLI LOW AWIDTH
         LAM
         CPI 1D
-        JTZ STOREBYTE
-        LHI HIGH DEST
+        ; Pointer loads and stores preserve the width comparison flags.
         LLI LOW DEST
         LAM
-        INL
+        LLI LOW DEST+1D
         LHM
         LLA
         LME
+        JTZ FINISH
         INL
         LMD
         JMP FINISH
-STOREBYTE:
-        LHI HIGH DEST
-        LLI LOW DEST
-        LAM
-        INL
-        LHM
-        LLA
-        LME
 FINISH:
         CAL PEEK
         NDA
@@ -913,10 +924,7 @@ XR6:
         JMP DISPATCH
 GOTOADDR:
         CAL GET
-        CAL GET
-        LEA
-        CAL GET
-        LDA
+        CAL GETWORD
 JUMPDE:
         LBD
         LCE
@@ -948,10 +956,7 @@ XR7:
         JMP DISPATCH
 GOSUBADDR:
         CAL GET
-        CAL GET
-        LEA
-        CAL GET
-        LDA
+        CAL GETWORD
         CAL GSAVE
         JMP JUMPDE
 GSAVE:
@@ -1034,10 +1039,7 @@ FINDMISS:
         LBI HIGH PROGRAM
         LCI LOW PROGRAM
 FINDLOOP:
-        CAL GET
-        LEA
-        CAL GET
-        LDA
+        CAL GETWORD
         LAD
         ORE
         JTZ LINEERR
@@ -1087,10 +1089,7 @@ BIND:
         LBI HIGH PROGRAM
         LCI LOW PROGRAM
 BINDLINE:
-        CAL GET
-        LEA
-        CAL GET
-        LDA
+        CAL GETWORD
         LAD
         ORE
         RTZ
@@ -1134,10 +1133,7 @@ BINDTARGET:
         INL
         LMD
         CAL GET
-        CAL GET
-        LEA
-        CAL GET
-        LDA
+        CAL GETWORD
         CAL PEEK
         NDA
         JTZ BINDLOOK
@@ -1169,10 +1165,7 @@ RESOLVE:
         LBI HIGH PROGRAM
         LCI LOW PROGRAM
 RESLINE:
-        CAL GET
-        LEA
-        CAL GET
-        LDA
+        CAL GETWORD
         LAD
         ORE
         JTZ RESDONE
@@ -1223,10 +1216,7 @@ UNBIND:
         LBI HIGH PROGRAM
         LCI LOW PROGRAM
 UNBLINE:
-        CAL GET
-        LEA
-        CAL GET
-        LDA
+        CAL GETWORD
         LAD
         ORE
         RTZ
@@ -1253,10 +1243,7 @@ UNBTOKEN:
         LME
         INL
         LMD
-        CAL GET
-        LEA
-        CAL GET
-        LDA
+        CAL GETWORD
         LAE
         SUI 3D
         LEA
@@ -1354,6 +1341,12 @@ EXPRCMP:
         LLI LOW OP
         LMA
         CAL VPUSH
+        CAL SIMPLEVALUE
+        JFZ CMPSLOW
+        CAL LPOP
+        CAL COMPARE
+        JMP EXPR1
+CMPSLOW:
         ; Save the operator across nested expressions.
 ; LD OP
         LHI HIGH OP
@@ -1427,6 +1420,14 @@ SUMOP:
         LLI LOW OP
         LMA
         CAL VPUSH
+        CAL SUMATOM
+        JFZ SUMSLOW
+; LD OP
+        LHI HIGH OP
+        LLI LOW OP
+        LAM
+        JMP SUMDO
+SUMSLOW:
 ; LD OP
         LHI HIGH OP
         LLI LOW OP
@@ -1454,12 +1455,7 @@ SUMOP:
 XR11:
         CAL VPOP
         LAL
-; ST OP
-        LHI HIGH OP
-        LLI LOW OP
-        LMA
-; LD OP
-        LAM
+SUMDO:
         CPI 43D
         JTZ SUMADD
         CPI 45D
@@ -1551,10 +1547,7 @@ XR12:
         JMP TERM1
 TERMCONST:
         CAL GET
-        CAL GET
-        LEA
-        CAL GET
-        LDA
+        CAL GETWORD
         JMP TERM1
 TERMSLOW:
 ; CALL FACTOR
@@ -1592,6 +1585,14 @@ TERMOP:
         LLI LOW OP
         LMA
         CAL VPUSH
+        CAL ATOM
+        JFZ TERMRHS
+; LD OP
+        LHI HIGH OP
+        LLI LOW OP
+        LAM
+        JMP TERMDONE
+TERMRHS:
 ; LD OP
         LHI HIGH OP
         LLI LOW OP
@@ -1623,8 +1624,7 @@ XR14:
         LHI HIGH OP
         LLI LOW OP
         LMA
-; LD OP
-        LAM
+TERMDONE:
         CPI 42D
         JTZ TERMUL
         CAL LPOP
@@ -1704,10 +1704,7 @@ FACTDONE:
 ; RETURN
         JMP SRET
 CONSTANT:
-        CAL GET
-        LEA
-        CAL GET
-        LDA
+        CAL GETWORD
 ; RETURN
         JMP SRET
 PAREN:
@@ -1877,6 +1874,52 @@ INDEXDONE:
         CAL ARRAYADDR
 ; RETURN
         JMP SRET
+; An atomic arithmetic RHS avoids operator and recursive parser frames.
+; A scalar followed by '(' belongs to the full array/expression parser.
+; SUM must also defer to TERM when a multiplicative operator follows.
+SUMATOM:
+        CAL ATOM
+        RFZ
+        CAL PEEK
+        CPI 42D
+        JTZ IXFAIL
+        CPI 47D
+        JTZ IXFAIL
+        CPI TMOD
+        JTZ IXFAIL
+        JMP IXOK
+ATOM:
+        LEC
+        LDB
+; STW IXSTART
+        LHI HIGH IXSTART
+        LLI LOW IXSTART
+        LME
+        INL
+        LMD
+        CAL GET
+        CPI TNUM
+        JTZ ATOMNUM
+        CPI 65D
+        JTC IXFAIL
+        CPI 91D
+        JFC IXFAIL
+        SUI 65D
+        LEA
+        CAL PEEK
+        CPI 40D
+        JTZ IXFAIL
+        LAE
+        ADE
+        LLA
+        LHI HIGH VARS
+        LEM
+        INL
+        LDM
+        JMP IXOK
+ATOMNUM:
+        CAL GETWORD
+        JMP IXOK
 ; Speculate on an atom plus/minus one constant, sharing the code for array
 ; indices and simple assignment RHSs (including C=C+1). No new program tokens.
 ; Z means success; NZ restores BC so EXPR can apply its full precedence rules.
@@ -1909,10 +1952,7 @@ SIMPLEVALUE:
         LDM
         JMP IXCHECK
 IXNUMBER:
-        CAL GET
-        LEA
-        CAL GET
-        LDA
+        CAL GETWORD
 IXCHECK:
         CAL PEEK
         CPI 43D
@@ -1933,10 +1973,7 @@ IXOFFSET:
         CAL GET
         CPI TNUM
         JFZ IXFAIL
-        CAL GET
-        LEA
-        CAL GET
-        LDA
+        CAL GETWORD
         CAL PEEK
 IXFINISH:
         ; Leave the delimiter to EXPECT or FINISH, exactly as EXPR does.
@@ -1945,6 +1982,8 @@ IXFINISH:
         NDA
         JTZ IXAPPLY
         CPI 58D
+        JTZ IXAPPLY
+        CPI TTHEN
         JFZ IXFAIL
 IXAPPLY:
 ; LD IXOP
@@ -1976,8 +2015,7 @@ IXFAIL:
         LCM
         INL
         LBM
-        LAI 1D
-        NDA
+        ORI 1D
         RET
 ARRAYADDR:
         ; A = array number; DE = zero-based index. Descriptor stride is 8.
@@ -2591,8 +2629,8 @@ DIVLOOP:
         ACA
         LMA
         LDA
-        ; Unsigned remainder >= divisor? The 17th bit implies yes.
-        JTC DIVSUB
+        ; Divisor magnitudes are <= 32768 (formatting uses 10).
+        ; The prior remainder is smaller, so its extension fits 16 bits.
         LLI LOW RIGHT
         LAE
         SUM
@@ -2602,16 +2640,6 @@ DIVLOOP:
         SBM
         LDA
         JTC DIVNEXT
-        JMP DIVSTORE
-DIVSUB:
-        LLI LOW RIGHT
-        LAE
-        SUM
-        LEA
-        INL
-        LAD
-        SBM
-        LDA
 DIVSTORE:
 ; STW REMDR
         LHI HIGH REMDR
@@ -2796,28 +2824,11 @@ PRINTDIV:
         LLI LOW REMDR
         LAM
         ADI 48D
-; ST DIGIT
-        LLI LOW DIGIT
-        LMA
+        LEA
 ; LD PRINTN
         LLI LOW PRINTN
         LAM
         ADI 224D
-        LLA
-        LHI HIGH FRAMES
-        ; Digit is loaded before reconstructing this indexed address.
-        LAL
-; ST RCOUNT
-        LHI HIGH RCOUNT
-        LLI LOW RCOUNT
-        LMA
-; LD DIGIT
-        LLI LOW DIGIT
-        LAM
-        LEA
-; LD RCOUNT
-        LLI LOW RCOUNT
-        LAM
         LLA
         LHI HIGH FRAMES
         LME
@@ -3010,62 +3021,44 @@ DIMBYTES:
         LAM
         NDA
         JFZ BOUNDS
-; LD ASLOT
-        LHI HIGH ASLOT
-        LLI LOW ASLOT
-        LAM
-        LLA
-        LHI HIGH DESC
-        LAL
-; ST RCOUNT
-        LHI HIGH RCOUNT
-        LLI LOW RCOUNT
-        LMA
 ; LDW HEAP
+        LHI HIGH HEAP
         LLI LOW HEAP
         LEM
         INL
         LDM
-; LD RCOUNT
-        LLI LOW RCOUNT
+; LD ASLOT
+        LLI LOW ASLOT
         LAM
         LLA
         LHI HIGH DESC
         LME
         INL
         LMD
-        INL
-        LAL
-; ST RCOUNT
-        LHI HIGH RCOUNT
-        LLI LOW RCOUNT
-        LMA
 ; LDW FORLIM
+        LHI HIGH FORLIM
         LLI LOW FORLIM
         LEM
         INL
         LDM
-; LD RCOUNT
-        LLI LOW RCOUNT
+; LD ASLOT
+        LLI LOW ASLOT
         LAM
+        ADI 2D
         LLA
         LHI HIGH DESC
         LME
         INL
         LMD
-        INL
-        LAL
-; ST RCOUNT
-        LHI HIGH RCOUNT
-        LLI LOW RCOUNT
-        LMA
 ; LD WIDTH
+        LHI HIGH WIDTH
         LLI LOW WIDTH
         LAM
         LEA
-; LD RCOUNT
-        LLI LOW RCOUNT
+; LD ASLOT
+        LLI LOW ASLOT
         LAM
+        ADI 4D
         LLA
         LHI HIGH DESC
         LME
@@ -3324,12 +3317,39 @@ NEXTGO:
         LLA
         LHI HIGH FRAMES
         LAM
+        CPI 255D
+        JTZ NEXTMINUS
         CPI 1D
         JFZ NEXTGENERAL
         INL
         LAM
         NDA
         JTZ NEXTONE
+        JMP NEXTGENERAL
+NEXTMINUS:
+        INL
+        LAM
+        CPI 255D
+        JFZ NEXTGENERAL
+; LD FORVAR
+        LHI HIGH FORVAR
+        LLI LOW FORVAR
+        LAM
+        LLA
+        LAM
+        SUI 1D
+        LMA
+        LEA
+        INL
+        LAM
+        SBI 0D
+        LMA
+        CPI 7FH
+        JFZ FORTEST
+        LAE
+        CPI 255D
+        JTZ FORDONE
+        JMP FORTEST
 NEXTGENERAL:
 ; LD FORVAR
         LHI HIGH FORVAR
@@ -3592,10 +3612,7 @@ FORSCANSTR:
         JFZ FORSCANSTR
         JMP FORSCAN
 FORSCANLINE:
-        CAL GET
-        LEA
-        CAL GET
-        LDA
+        CAL GETWORD
         LAD
         ORE
         JTZ STACKERR
@@ -3756,10 +3773,7 @@ LIST:
         LBI HIGH PROGRAM
         LCI LOW PROGRAM
 LISTLINE:
-        CAL GET
-        LEA
-        CAL GET
-        LDA
+        CAL GETWORD
         LAD
         ORE
         JTZ PROMPT
@@ -3819,10 +3833,7 @@ LISTFOUND1:
         OUT 10D
         JMP LISTTOKEN
 LISTNUM:
-        CAL GET
-        LEA
-        CAL GET
-        LDA
+        CAL GETWORD
         CAL PRINTNUM
         JMP LISTTOKEN
 LISTLE:
@@ -3883,10 +3894,7 @@ EDITFIND:
         LME
         INL
         LMD
-        CAL GET
-        LEA
-        CAL GET
-        LDA
+        CAL GETWORD
         LAD
         ORE
         JTZ EDITINSERT

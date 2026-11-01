@@ -354,3 +354,94 @@ Intermediate cycle totals (sieve / e / TTT): address cleanup alone
 helps sieve/TTT further while adding about 4.7% to e's compound-assignment paths;
 all three workloads improve substantially overall. Totals include native input,
 tokenization, binding/unbinding, and execution, excluding host I/O waits.
+
+## b8008 dispatch, comparisons, and descending loops (2026-11-01)
+
+Implicit assignments are recognized before keyword dispatch. Comparisons try
+an atomic RHS (optionally plus/minus a constant) through the existing leaf
+parser before saving operator/recursive parser frames. Compound expressions
+restore the token pointer and use the original precedence parser. STEP -1
+updates the scalar in place, checks signed underflow, and shares the general
+signed-bound comparison; other descending steps retain the general path.
+The common byte/word store preserves width flags while loading its pointer;
+redundant operator stores/reloads were removed to retain the RAM-size guard.
+
+Code-layout testing exposed NEW clearing the second empty-header byte on the
+wrong page when PROGRAM ended in ffh. It now addresses PROGRAM+1 explicitly.
+A regression assembles a deliberately padded image with that layout and checks
+editing, RUN, NEW, and LIST. Extra comparisons cover scalar signed boundaries,
+all six operators, constant offsets, complex-RHS fallback, chaining and nested
+IF. Descending-loop cases cover byte boundaries, signed underflow, zero trips,
+and non-unit steps. All 25 tests pass on Linux and native Windows. Rebuilding
+matches the checked-in image; the original full-sieve RAM guard still passes.
+
+| Benchmark | Before cycles | After cycles | Fewer cycles |
+| --- | ---: | ---: | ---: |
+| Sieve, ten passes | 4,199,466,844 | 3,924,396,176 | 6.6% |
+| E, 192 digits | 939,516,764 | 915,743,020 | 2.5% |
+| TTT, one iteration | 2,789,402,456 | 2,448,409,404 | 12.2% |
+
+Each proposed path was also disabled independently and measured against the
+combined image: assignment dispatch and comparison matching help all three;
+the decrement specialization primarily helps E. Workloads and examples are
+unchanged. Counts include input/tokenization and execution, excluding I/O waits.
+
+## b8008 code-size savings (2026-11-01)
+
+Saved 120 bytes without changing program tokens or reducing the benchmark:
+
+* Seventeen pairs of byte-reader calls now share a native GETWORD leaf. It
+  advances BC twice, handles either page crossing, returns DE and the high byte
+  in A, and retains the original reader's final increment flags.
+* Decimal formatting loads the digit before constructing its destination;
+  DIM loads descriptor values before constructing descriptor addresses.
+  Both avoid scratch-address saves and reconstruction.
+* Removed the division loop's duplicate subtraction for a 17-bit remainder.
+  Signed divisor magnitudes are at most 32768, and the prior partial remainder
+  is smaller than the divisor, so extending it cannot overflow 16 bits. The
+  only unsigned caller is decimal formatting with divisor 10.
+
+Code ends at 1887h instead of 18ffh: 6215 resident bytes from 0040h, plus the
+startup jump at zero. The unchanged full sieve's 8191-byte array and program
+leave 402 bytes below workspace (previously 282); the conservative regression
+size guard now has 121 bytes to spare. All 26 tests pass on Linux and native
+Windows. The new native word-reader regression checks values, BC advancement,
+A, and flags with either byte crossing a page. The existing forced-header
+boundary regression now emits padding in short DATA lines for the assembler.
+
+| Benchmark | Before cycles | After cycles |
+| --- | ---: | ---: |
+| Sieve, ten passes | 3,924,396,176 | 3,902,725,516 |
+| E, 192 digits | 915,743,020 | 910,363,660 |
+| TTT, one iteration | 2,448,409,404 | 2,433,730,726 |
+
+All three improve by roughly 0.6%; totals include input/tokenization and
+execution, excluding host I/O waits. Benchmark sources are unchanged.
+
+## b8008 atomic arithmetic operands (2026-11-01)
+
+SUMOP and TERMOP recognize a scalar or numeric constant on their right without
+saving/restoring the operator or entering the recursive TERM/FACTOR parser.
+The left value still uses the checked value stack; the change removes the
+operator frame and software parser return frames. SUM rejects the fast result
+when followed by *, /, or MOD, preserving multiplicative precedence. Scalars
+followed by '(' restore the token pointer and enter the general array parser;
+unary, parenthesized, and other complex operands also retain the general path.
+Helpers run natively on the 8008, adding no program tokens or host evaluation.
+
+The helpers consume 108 of the 120 bytes just recovered. Code ends at 18f3h;
+full sieve free space is 294 bytes, and the conservative size guard still has
+13 bytes to spare. All 28 tests pass on Linux and native Windows. Added tests
+cover signed scalar RHSs for every arithmetic/bitwise operator, precedence,
+left associativity, array/nested/unary fallback, division by zero, and malformed
+operand recovery. A native FACTOR marker proves atomic multiply/divide bypass
+recursive parsing while an array RHS still takes that path.
+
+| Benchmark | Before cycles | After cycles | Fewer cycles |
+| --- | ---: | ---: | ---: |
+| Sieve, ten passes | 3,902,725,516 | 3,840,704,110 | 1.6% |
+| E, 192 digits | 910,363,660 | 885,172,030 | 2.8% |
+| TTT, one iteration | 2,433,730,726 | 2,412,522,654 | 0.9% |
+
+Workloads are unchanged. Counts include native loading/tokenization and
+execution, excluding host I/O waits.

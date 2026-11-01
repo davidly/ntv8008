@@ -225,7 +225,9 @@ class B8008(unittest.TestCase):
     def test_unit_and_general_for_steps(self):
         cases=[(-32768,-32765,1),(-257,-255,1),(-2,2,1),(254,258,1),
                (32765,32767,1),(-1,-2,1),(2,-2,-1),(32767,32767,2),
-               (-32768,-32768,-2),(1,5,257),(258,254,-1),(-2,2,2)]
+               (-32768,-32768,-2),(1,5,257),(258,254,-1),(-2,2,2),(-32768,-32768,-1),
+               (-255,-258,-1),(1,-1,-1),(-32765,-32768,-1),
+               (3,4,-1),(32767,32765,-1),(-1,-1,-257)]
         lines=[]
         expected=[]
         for start,limit,step in cases:
@@ -392,6 +394,116 @@ CLOBBER:
                 self.assertEqual(result.returncode,0,result.stderr)
                 outputs.append(result.stdout)
         self.assertEqual(outputs,[b'ABB\x01B!']*2)
+
+    def test_fast_comparison_rhs(self):
+        # Scalars/constants/offsets use the leaf path; compound RHSs fall back.
+        expressions=[]
+        expected=[]
+        for a in (-32768,-1,0,255,32767):
+            for b in (-32768,-1,0,256,32767):
+                for op, value in [('<',a<b),('>',a>b),('=',a==b),
+                                  ('<=',a<=b),('>=',a>=b),('<>',a!=b)]:
+                    expressions.append(f'A={a}:B={b}:PRINT "@";A{op}B')
+                    expected.append(int(value))
+        output=self.execute('\n'.join(expressions)+'\n')
+        self.assertEqual([int(n) for n in re.findall(r'^@(-?\d+)$',output,re.M)],expected)
+        source=('10 A=3:B=2\n20 IF A=B+1 THEN PRINT "OFFSET"\n'
+                '30 IF A=B+1*2 THEN PRINT "BAD"\n'
+                '40 IF A=B*2-1 THEN PRINT "FALLBACK"\n'
+                '50 IF A>B THEN IF B=2 THEN PRINT "NESTED"\n'
+                '60 PRINT "@";A=B+1;",";A=B+1*2;",";A<B<2\nRUN\n')
+        output=self.execute(source).split('>RUN\n')[1]
+        self.assertEqual(output,'OFFSET\nFALLBACK\nNESTED\n@1,0,1\n>')
+
+    def test_program_header_page_boundary(self):
+        # Force PROGRAM to xxFF: NEW must clear both bytes across the page.
+        asm=(ROOT/'a08/b8008.asm').read_text()
+        records=(ROOT/'a08/b8008.hex').read_text().splitlines()
+        end=max(int(r[3:7],16)+int(r[1:3],16) for r in records if r[7:9]=='00')
+        padding=(255-end)%256
+        fill=''.join('        DATA '+','.join(['0D']*min(16,padding-i))+'\n'
+                     for i in range(0,padding,16))
+        asm=asm.replace('PROGRAM:',fill+'PROGRAM:')
+        with tempfile.TemporaryDirectory() as directory:
+            path=Path(directory)/'boundary.asm'
+            image=path.with_suffix('.hex')
+            path.write_text(asm)
+            result=subprocess.run([str(ASSEMBLER),str(path),'-o'+str(image)],capture_output=True,timeout=15)
+            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+            output=self.execute('10 PRINT "FIRST"\n20 END\nRUN\nNEW\n'
+                                '20 PRINT "SECOND"\n30 END\nRUN\nLIST\n',image=image)
+            self.assertIn('>RUN\nFIRST\n>',output)
+            self.assertIn('>RUN\nSECOND\n>',output)
+            self.assertTrue(output.endswith('20 PRINT "SECOND"\n30 END \n>'),repr(output))
+
+    def test_word_reader_boundaries(self):
+        # Both byte increments can cross a page; preserve GET's final A/flags.
+        asm=(ROOT/'a08/b8008.asm').read_text().replace('        JMP START','        JMP WORDTEST',1)
+        code=['        ORG 3000H','WORDTEST:']
+        expected=bytearray()
+        for i,(address,lo,hi) in enumerate([(0x30fe,0x12,0x34),
+                                           (0x30ff,0x34,0x56),(0x3100,0x56,0x78)]):
+            code += [f'        LBI {address>>8}D',f'        LCI {address&255}D',
+                     '        CAL GETWORD','        OUT 10D',
+                     '        LAE','        OUT 10D','        LAD','        OUT 10D',
+                     '        LAC','        OUT 10D','        LAB','        OUT 10D',
+                     '        LAI 0D',f'        JFZ WORDNZ{i}',
+                     '        LAI 1D',f'WORDNZ{i}:','        OUT 10D']
+            after=address+2
+            expected.extend([hi,lo,hi,after&255,after>>8,0])
+        code += ['        HLT','        ORG 30FEH','        DATA 12H,34H,56H,78H']
+        asm=asm.replace('        END','\n'.join(code)+'\n        END')
+        with tempfile.TemporaryDirectory() as directory:
+            path=Path(directory)/'reader.asm'
+            image=path.with_suffix('.hex')
+            path.write_text(asm)
+            result=subprocess.run([str(ASSEMBLER),str(path),'-o'+str(image)],capture_output=True,timeout=15)
+            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+            result=run('-a:0','-n:100000',image)
+            self.assertEqual(result.returncode,0,result.stderr)
+            self.assertEqual(result.stdout,bytes(expected))
+
+    def test_atomic_arithmetic_rhs(self):
+        statements=[]
+        expected=[]
+        for a,b in [(-32768,-1),(-17,5),(0,1),(255,256),(32767,3)]:
+            q=abs(a)//abs(b)*(-1 if (a<0)!=(b<0) else 1)
+            for op,value in [('+',a+b),('-',a-b),('*',a*b),('/',q),
+                             (' MOD ',a-q*b),(' AND ',a&b),(' OR ',a|b)]:
+                statements.append(f'A={a}:B={b}:PRINT "@";A{op}B')
+                expected.append(signed(value))
+        output=self.execute('\n'.join(statements)+'\n')
+        self.assertEqual([int(n) for n in re.findall(r'^@(-?\d+)$',output,re.M)],expected)
+        cases={'2+3*4':14,'20-3*4':8,'20-12/3':16,'20+12 MOD 5':22,
+               '20-6-3':11,'24/3/2':4,'24 MOD 7*3':9,'8 OR 1 AND 3':1,
+               '2+3*4-5':9,'2+(-3)*4':-10,'20/(2+3)':4,
+               '20 MOD (2+3)':0,'2+ABS(-3)*4':14,'3*(2+4)':18}
+        self.assertEqual(self.values(cases),list(cases.values()))
+        output=self.execute('DIM A(3),BYTE B(3)\nA(1)=7:B(2)=3\n'
+                            'PRINT "@";2+A(1)*B(2);",";A(1)*B(2);",";'
+                            '20-A(B(2)-2)*2\n')
+        self.assertIn('@23,21,6\n',output)
+        for expression in ('7/0','7 MOD 0','7+','7*','7/(2-2)'):
+            output=self.execute('PRINT '+expression+'\nPRINT "RECOVERED"\n',errors=True)
+            self.assertIn('?',output)
+            self.assertTrue(output.endswith('RECOVERED\n>'))
+
+    def test_atomic_rhs_skips_recursive_factor(self):
+        # A native marker proves atomic multiply/divide skip FACTOR; arrays
+        # still enter it. Instrumentation executes on the emulated CPU.
+        asm=(ROOT/'a08/b8008.asm').read_text().replace(
+            'FACTOR:', 'FACTOR:\n        LAI 33D\n        OUT 10D',1)
+        with tempfile.TemporaryDirectory() as directory:
+            path=Path(directory)/'factor.asm'
+            image=path.with_suffix('.hex')
+            path.write_text(asm)
+            result=subprocess.run([str(ASSEMBLER),str(path),'-o'+str(image)],capture_output=True,timeout=15)
+            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+            output=self.execute('PRINT 7*3\nPRINT 24/3\nDIM BYTE A(1)\n'
+                                'A(1)=4\nPRINT 7*A(1)\n',image=image)
+            self.assertIn('>PRINT 7*3\n21\n>',output)
+            self.assertIn('>PRINT 24/3\n8\n>',output)
+            self.assertIn('>PRINT 7*A(1)\n!28\n>',output)
 
     def test_errors_recover(self):
         cases = [('PRINT 1/0','DIVIDE BY ZERO'), ('PRINT (2+3','SYNTAX'),
