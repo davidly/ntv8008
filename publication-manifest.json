@@ -23,17 +23,17 @@
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "PROVENANCE.md": {
-      "sha256": "243ff78c980de66660385c544c3ad52eadb16e354cc80bf9c0dd11fa052101e2",
+      "sha256": "f0de4879367f8713c6569774edac5d25111bacebf56398bff1c117e83219c6a3",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "README.md": {
-      "sha256": "398d682186a64845ed9b5ac4f6756a21cc561c6c1bd9b01e0cd0a9b08c5f0713",
+      "sha256": "081023986486e27cb50cbdfcaffacfd958fd1a4997fda060b01c015486570328",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "THIRD_PARTY_NOTICES.md": {
-      "sha256": "4d15695abe44a049b594d2eb5d73b4c683e80f494dce15eee50b08733c435033",
+      "sha256": "0bda10b10dda1b8ce199d15d81cd85410b1385f19d989a29073c67e531303fbf",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
@@ -928,7 +928,7 @@
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "examples/README.md": {
-      "sha256": "4df184819e8ab2977b8babdff08596e7f3f45b35cc22131b8ea60b927149b70e",
+      "sha256": "36e9785818f73def4217882496aab412525f7eb77c284eb546b99d671bfee1a4",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
@@ -1061,6 +1061,151 @@
       "sha256": "e6130a00f20612904c1f17865f3e47dff3e8963cf612e49ee1c9f185f38815d4",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
+    },
+    "examples/wumpus/LICENSE": {
+      "sha256": "fce84e4e9b69b7b4f2a74b4eac7e814115e9ff16ed04815702d2e50c04c80c81",
+      "license": "MIT",
+      "origin": "Adapted from davidly/dcc tests/wumpus.c 1d4dff6e140b795899d5f4b7045636daf1c6ac72; examples/wumpus/LICENSE; PROVENANCE.md"
+    },
+    "examples/wumpus/README.md": {
+      "sha256": "9ce334d938842701bdbf998e1a539ca379121c7439a0f09f615f93253eab85c6",
+      "license": "MIT",
+      "origin": "Adapted from davidly/dcc tests/wumpus.c 1d4dff6e140b795899d5f4b7045636daf1c6ac72; examples/wumpus/LICENSE; PROVENANCE.md"
+    },
+    "examples/wumpus/build.py": {
+      "sha256": "3c630a3e9947deb6c58ea5c9e0b49ae712296df697a070c6b39f603a310885a4",
+      "license": "MIT",
+      "origin": "Adapted from davidly/dcc tests/wumpus.c 1d4dff6e140b795899d5f4b7045636daf1c6ac72; examples/wumpus/LICENSE; PROVENANCE.md"
+    },
+    "examples/wumpus/program.c": {
+      "sha256": "49b9acf5c31910fe6e97a0d4582753fc0a8bd64723a1044546c0eb2ebd74cfda",
+      "license": "MIT",
+      "origin": "Adapted from davidly/dcc tests/wumpus.c 1d4dff6e140b795899d5f4b7045636daf1c6ac72; examples/wumpus/LICENSE; PROVENANCE.md"
+    },
+    "examples/wumpus/run.py": {
+      "sha256": "fe8b5c0e02ea028711ce418b2eb92b92fdd88ee4382e14304f2ac855e80f19e5",
+      "license": "MIT",
+      "origin": "Adapted from davidly/dcc tests/wumpus.c 1d4dff6e140b795899d5f4b7045636daf1c6ac72; examples/wumpus/LICENSE; PROVENANCE.md"
+    },
+    "examples/wumpus/sessions/bats.out": {
+      "sha256": "9f90d4652818802b35e589a3cd071a4cdcf16cf02beadad755ffe0acf52de514",
+      "license": "MIT",
+      "origin": "Adapted from davidly/dcc tests/wumpus.c 1d4dff6e140b795899d5f4b7045636daf1c6ac72; examples/wumpus/LICENSE; PROVENANCE.md"
+    },
+    "examples/wumpus/sessions/bats.txt": {
+      "sha256": "62ae76fc010a9ab733efd49ce952e1df878abd2fc1aa89c6d353ecd0d3c885a2",
+      "license": "MIT",
+      "origin": "Adapted from davidly/dcc tests/wumpus.c 1d4dff6e140b795899d5f4b7045636daf1c6ac72; examples/wumpus/LICENSE; PROVENANCE.md"
+    },
+    "examples/wumpus/sessions/computer.out": {
+      "sha256": "a24c947f35579231f6a80da358b7212690be436fce2d3c9d3c2e52e4568ba512",
+      "license": "MIT",
+      "origin": "Adapted from davidly/dcc tests/wumpus.c 1d4dff6e140b795899d5f4b7045636daf1c6ac72; examples/wumpus/LICENSE; PROVENANCE.md"
+    },
+    "examples/wumpus/sessions/computer.txt": {
+      "sha256": "621a4c7c90bcfa7ef33a53942ae261476eb87892e28ded06334bb05d4dd051f6",
+      "license": "MIT",
+      "origin": "Adapted from davidly/dcc tests/wumpus.c 1d4dff6e140b795899d5f4b7045636daf1c6ac72; examples/wumpus/LICENSE; PROVENANCE.md"
+    },
+    "examples/wumpus/sessions/crooked.out": {
+      "sha256": "377fb5105188d4dd253661a12b4315771239334d38110093bca436002065080c",
+      "license": "MIT",
+      "origin": "Adapted from davidly/dcc tests/wumpus.c 1d4dff6e140b795899d5f4b7045636daf1c6ac72; examples/wumpus/LICENSE; PROVENANCE.md"
+    },
+    "examples/wumpus/sessions/crooked.txt": {
+      "sha256": "1da458709f2f758e3897b143a87d13d3d6fc43d036730f834b4b9ea87e85a0f6",
+      "license": "MIT",
+      "origin": "Adapted from davidly/dcc tests/wumpus.c 1d4dff6e140b795899d5f4b7045636daf1c6ac72; examples/wumpus/LICENSE; PROVENANCE.md"
+    },
+    "examples/wumpus/sessions/editing.out": {
+      "sha256": "b0c3ce42ce0d4aa8d9259fc83f58af7e144dded9b5f8b59ca0da7d2d7ae2abeb",
+      "license": "MIT",
+      "origin": "Adapted from davidly/dcc tests/wumpus.c 1d4dff6e140b795899d5f4b7045636daf1c6ac72; examples/wumpus/LICENSE; PROVENANCE.md"
+    },
+    "examples/wumpus/sessions/editing.txt": {
+      "sha256": "e68889ade56233aafd44541c6036d7b4f872500ebb252434c4243886c2fc6524",
+      "license": "MIT",
+      "origin": "Adapted from davidly/dcc tests/wumpus.c 1d4dff6e140b795899d5f4b7045636daf1c6ac72; examples/wumpus/LICENSE; PROVENANCE.md"
+    },
+    "examples/wumpus/sessions/instructions.out": {
+      "sha256": "ce2b984d196300576def6a6f525ba933e9e632137a99ea133dee16ef2652101e",
+      "license": "MIT",
+      "origin": "Adapted from davidly/dcc tests/wumpus.c 1d4dff6e140b795899d5f4b7045636daf1c6ac72; examples/wumpus/LICENSE; PROVENANCE.md"
+    },
+    "examples/wumpus/sessions/instructions.txt": {
+      "sha256": "0c849bc3814fff394e407faddfa99db5b9c824de31e065b5c4030e14c6016558",
+      "license": "MIT",
+      "origin": "Adapted from davidly/dcc tests/wumpus.c 1d4dff6e140b795899d5f4b7045636daf1c6ac72; examples/wumpus/LICENSE; PROVENANCE.md"
+    },
+    "examples/wumpus/sessions/invalid.out": {
+      "sha256": "ceb77c50d3062d5b2b9869e3490529dea1bd02842fb29959cd3565300ec6459d",
+      "license": "MIT",
+      "origin": "Adapted from davidly/dcc tests/wumpus.c 1d4dff6e140b795899d5f4b7045636daf1c6ac72; examples/wumpus/LICENSE; PROVENANCE.md"
+    },
+    "examples/wumpus/sessions/invalid.txt": {
+      "sha256": "25cb43fe9c2b179e4a2a25ccad52f2a184d7a79a8414dd0569bce28bde654fe5",
+      "license": "MIT",
+      "origin": "Adapted from davidly/dcc tests/wumpus.c 1d4dff6e140b795899d5f4b7045636daf1c6ac72; examples/wumpus/LICENSE; PROVENANCE.md"
+    },
+    "examples/wumpus/sessions/long.out": {
+      "sha256": "e6712b93a67261108e908ada915a71146e155450304d57a2435c7a8e47a47f17",
+      "license": "MIT",
+      "origin": "Adapted from davidly/dcc tests/wumpus.c 1d4dff6e140b795899d5f4b7045636daf1c6ac72; examples/wumpus/LICENSE; PROVENANCE.md"
+    },
+    "examples/wumpus/sessions/long.txt": {
+      "sha256": "78403ba362a76085b3ed5fb6150bbb4c871c4906ad02074dc4964c263cc06dc1",
+      "license": "MIT",
+      "origin": "Adapted from davidly/dcc tests/wumpus.c 1d4dff6e140b795899d5f4b7045636daf1c6ac72; examples/wumpus/LICENSE; PROVENANCE.md"
+    },
+    "examples/wumpus/sessions/miss.out": {
+      "sha256": "917c1638136697e9ba3f06f595a3940b2cf9abfdee7f3813d93ba2c71b2dec85",
+      "license": "MIT",
+      "origin": "Adapted from davidly/dcc tests/wumpus.c 1d4dff6e140b795899d5f4b7045636daf1c6ac72; examples/wumpus/LICENSE; PROVENANCE.md"
+    },
+    "examples/wumpus/sessions/miss.txt": {
+      "sha256": "83fac81993c92e78dd36d041f00f929f90029230dd77c759dc2ae3fcb1fc80fd",
+      "license": "MIT",
+      "origin": "Adapted from davidly/dcc tests/wumpus.c 1d4dff6e140b795899d5f4b7045636daf1c6ac72; examples/wumpus/LICENSE; PROVENANCE.md"
+    },
+    "examples/wumpus/sessions/pit.out": {
+      "sha256": "e56eceb0e30fffcd84b2a817055cf123e079722b3a11a5597f061187c93586eb",
+      "license": "MIT",
+      "origin": "Adapted from davidly/dcc tests/wumpus.c 1d4dff6e140b795899d5f4b7045636daf1c6ac72; examples/wumpus/LICENSE; PROVENANCE.md"
+    },
+    "examples/wumpus/sessions/pit.txt": {
+      "sha256": "2d15012bf80c85f529075827830fd67caab72b2a02fe4efa61cc743b830ba034",
+      "license": "MIT",
+      "origin": "Adapted from davidly/dcc tests/wumpus.c 1d4dff6e140b795899d5f4b7045636daf1c6ac72; examples/wumpus/LICENSE; PROVENANCE.md"
+    },
+    "examples/wumpus/sessions/replay.out": {
+      "sha256": "a9887369d4a8934ca5ccdd0c1609ec3bb867988e80631920c6a30521ac3ac85a",
+      "license": "MIT",
+      "origin": "Adapted from davidly/dcc tests/wumpus.c 1d4dff6e140b795899d5f4b7045636daf1c6ac72; examples/wumpus/LICENSE; PROVENANCE.md"
+    },
+    "examples/wumpus/sessions/replay.txt": {
+      "sha256": "9816cba99073973249a3157d57fdbe4de1fd163f6fe84af6d6f32dc693df50e3",
+      "license": "MIT",
+      "origin": "Adapted from davidly/dcc tests/wumpus.c 1d4dff6e140b795899d5f4b7045636daf1c6ac72; examples/wumpus/LICENSE; PROVENANCE.md"
+    },
+    "examples/wumpus/sessions/self.out": {
+      "sha256": "8257a039f05334eeb2a921575dfdccae625bcbb5cdcbef768cdc015199cc2c8b",
+      "license": "MIT",
+      "origin": "Adapted from davidly/dcc tests/wumpus.c 1d4dff6e140b795899d5f4b7045636daf1c6ac72; examples/wumpus/LICENSE; PROVENANCE.md"
+    },
+    "examples/wumpus/sessions/self.txt": {
+      "sha256": "9dfd059c7ce265860895dd60f46fae96e43d2293eee23858b2b952ea99e4bb58",
+      "license": "MIT",
+      "origin": "Adapted from davidly/dcc tests/wumpus.c 1d4dff6e140b795899d5f4b7045636daf1c6ac72; examples/wumpus/LICENSE; PROVENANCE.md"
+    },
+    "examples/wumpus/sessions/win.out": {
+      "sha256": "c5d3b68e9585dcb20e2ff943467f697dc55a7499bd4fd56fe3a7d3f96d595cc7",
+      "license": "MIT",
+      "origin": "Adapted from davidly/dcc tests/wumpus.c 1d4dff6e140b795899d5f4b7045636daf1c6ac72; examples/wumpus/LICENSE; PROVENANCE.md"
+    },
+    "examples/wumpus/sessions/win.txt": {
+      "sha256": "65db0d01d6d114576eec717ebb2c6568344864885b04307e1679a60853d8d8dd",
+      "license": "MIT",
+      "origin": "Adapted from davidly/dcc tests/wumpus.c 1d4dff6e140b795899d5f4b7045636daf1c6ac72; examples/wumpus/LICENSE; PROVENANCE.md"
     },
     "forth/NOTICE.txt": {
       "sha256": "ef34c0b9114c684da2b48882b8cfd9d7264828c6d6f1f7fe4ae8fdc49af04315",
@@ -1758,7 +1903,7 @@
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "tests/run.py": {
-      "sha256": "0f8f6201c3e219daa8621aac0e84793c215ae6644e7d3df92b469a02ad270789",
+      "sha256": "713e5fc292e5b7708028aa4ca825eabafd9a2576700f277f0762e2b55255dff6",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
@@ -1789,6 +1934,11 @@
     },
     "tests/symbols.py": {
       "sha256": "394cf7ae6e634ee5e87bea748e671ccbb958250f2c842e486020bad4559b48c4",
+      "license": "BSD-3-Clause",
+      "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
+    },
+    "tests/wumpus.py": {
+      "sha256": "0d6016792dab12b3da662fd0d64524525c02c1b5bf6a743c0709f170867f42fe",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
@@ -1823,7 +1973,7 @@
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "tools/publication.py": {
-      "sha256": "0deb45acf77a73a3b5bd10c5faf50d9563e218c052d5c9d94a7ff50e3e14a32a",
+      "sha256": "3a2b68227bfcfa591501b5bc1817e4dabd72bfe775539f7f7a6f629f86990ade",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },

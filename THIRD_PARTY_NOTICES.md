@@ -36,3 +36,10 @@ directory: local build directories may contain such components.
 The b8008 integer BASIC interpreter (`b8008/`, `a08/b8008.asm`, and
 `a08/b8008.hex`) is an original BSD-3-Clause project contribution, with no
 third-party interpreter source or runtime linked or translated.
+
+## Hunt the Wumpus example
+
+`examples/wumpus/` adapts `davidly/dcc`'s `tests/wumpus.c` at commit
+`1d4dff6e140b795899d5f4b7045636daf1c6ac72`. Copyright (c) 2026 David Lee,
+MIT licensed; the complete notice is retained in `examples/wumpus/LICENSE`.
+Adaptation, build wrappers and recorded sessions in that directory use MIT.

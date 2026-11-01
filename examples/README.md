@@ -23,3 +23,6 @@ are project contributions under BSD-3-Clause.
 
 See also [equivalent programs in seven languages](../docs/languages.md) and
 [measured C optimization examples](../docs/optimization.md).
+
+[Hunt the Wumpus](wumpus/README.md) is a larger shared SmallC/ACK C example,
+with human play, a breadth-first-search computer player, and recorded games.

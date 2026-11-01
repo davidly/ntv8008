@@ -309,3 +309,6 @@ More programming resources: [choose a language](docs/languages.md),
 [practical games](examples/README.md), [optimization walkthrough](docs/optimization.md),
 and [testing your programs](docs/testing.md). Starter builds generate adjacent
 symbol maps; `-t -i` automatically uses them without a `-m` argument.
+
+[Hunt the Wumpus](examples/wumpus/README.md) runs from one shared C source with
+either SmallC or ACK C, including human and computer play.

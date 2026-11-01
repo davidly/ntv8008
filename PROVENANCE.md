@@ -76,3 +76,13 @@ parser/table C. Lua and ACK sources remain verified, ignored downloads. All
 frontend parsers and optimizer/scanner tables are regenerated on Windows.
 This product includes software developed by the University of California,
 Berkeley and its contributors.
+
+## Wumpus for both C compilers
+
+`examples/wumpus/program.c` derives from the local `davidly/dcc` checkout's
+`tests/wumpus.c`, commit `1d4dff6e140b795899d5f4b7045636daf1c6ac72` (MIT,
+Copyright 2026 David Lee). Struct state and multidimensional integer arrays were
+flattened to global byte arrays; hosted console calls and argument parsing were
+replaced; instructions and computer search were condensed for the 16 KiB target.
+The full MIT license is retained alongside the example. The expected sessions
+were executed independently with a native GNU89 build of the adapted source.

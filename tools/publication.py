@@ -17,7 +17,7 @@ EXCLUDED_NAMES={'a08/a85.c','a08/a85.h','a08/a85eval.c','a08/a85eval_nosplit.c',
                 'a08/a85util.c','a08/A08.DOC','a08/readme.txt','a08/MONITOR8.ASM',
                 'a08/scelbal.asm','a08/scelbal.hex','a08/forth.asm','a08/forth.hex',
                 'a08/a08','ntv8008'}
-REQUIRED={'LICENSE','THIRD_PARTY_NOTICES.md','PROVENANCE.md','licenses/CC0-1.0.txt',
+REQUIRED={'examples/wumpus/LICENSE','LICENSE','THIRD_PARTY_NOTICES.md','PROVENANCE.md','licenses/CC0-1.0.txt',
           'ack/ACK-COPYRIGHT','ack/NOTICE.txt','smallc/upstream/LICENSE',
           'smallc/NOTICE.txt','robson/upstream/LICENSE','robson/NOTICE.txt',
           'scelbal/NOTICE.txt','forth/NOTICE.txt','plm8/upstream/NOTICE.txt',
@@ -80,6 +80,8 @@ def validate(names):
 
 
 def category(name):
+    if name.startswith('examples/wumpus/'):
+        return 'MIT','Adapted from davidly/dcc tests/wumpus.c 1d4dff6e140b795899d5f4b7045636daf1c6ac72; examples/wumpus/LICENSE; PROVENANCE.md'
     if name.startswith('ack/generators/byacc/upstream/'):
         return 'LicenseRef-Public-Domain','Berkeley Yacc 20260126; ack/generators/byacc/NOTICE.txt and upstream/LICENSE'
     if name.startswith('ack/generators/reflex/upstream/'):
