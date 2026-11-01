@@ -134,6 +134,30 @@ terminator. The wrapper removes the decoration and replaces that terminator
 with modern Intel HEX EOF `:00000001FF`. It preserves generated data bytes and
 addresses. It does not translate 8080 code or implement a new PL/M compiler.
 
+## Compilation performance
+
+The Python PDP-10 runner handles direct addressing without calling the general
+indirection routine, dispatches ordinary CPU instructions before monitor calls,
+and has short paths for the common MOVE, MOVEM, and MOVEI instructions. Its main
+loop also keeps the memory and instruction executor in local variables. The
+original Intel compiler images and code generation are unchanged; instruction
+fetches still read current memory, including self-modifying code.
+
+Example before/after compilation times on Linux with CPython 3.10, including
+both compiler passes and HEX conversion (host-dependent wall-clock seconds):
+
+| Example | Before | After | Reduction |
+| --- | ---: | ---: | ---: |
+| Sieve | 3.20 | 2.08 | 35% |
+| E | 2.77 | 1.77 | 36% |
+| TTT | 14.56 | 9.49 | 35% |
+
+All five example HEX images and compiler listings were byte-for-byte identical
+before and after these changes. `tests/pdp10.py` tests addressing, move forms,
+self-modifying code, nested instruction execution, conditional jumps, monitor
+output, and instruction/indirection limits without needing the historical
+compiler images. Both main test scripts include it unconditionally.
+
 ## Recovery and provenance
 
 The images came from the `(UPL)` directory of Tymshare tape **169278**, archived

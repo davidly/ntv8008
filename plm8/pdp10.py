@@ -76,11 +76,13 @@ class PDP10:
         self.m[matches[0]] = 0o267716000002  # JRA 16,2(16)
 
     def run(self, budget=50_000_000):
+        memory = self.m
+        execute = self.execute
         try:
             for _ in range(budget):
                 address = self.pc
-                self.pc = (self.pc + 1) & RH
-                self.execute(self.m[address], address)
+                self.pc = (address + 1) & RH
+                execute(memory[address], address)
             raise RuntimeError('compiler instruction limit exceeded')
         except Finished:
             return self.output.getvalue()
@@ -118,19 +120,225 @@ class PDP10:
             c['flushed'] = n
 
     def execute(self, ir, at):
+        m = self.m
         op = ir >> 27
         ac = ir >> 23 & 15
-        e = self.ea(ir)
-        v = self.m[e]
-        av = self.m[ac]
+        if ir & 1 << 22:
+            e = self.ea(ir)
+        else:
+            e = ir & RH
+            x = ir >> 18 & 15
+            if x:
+                e = e + m[x] & RH
+        v = m[e]
+        av = m[ac]
         form = op & 3
-        if op < 0o40:  # Fortran local UUOs, dispatched through the saved vector
-            self.m[0o40] = op << 27 | ac << 23 | e
-            self.execute(self.m[0o41], 0o41)
+        if op == 0o200:  # MOVE
+            m[ac] = v
+        elif op == 0o202:  # MOVEM
+            m[e] = av
+        elif op == 0o201:  # MOVEI
+            m[ac] = e
+        elif 0o200 <= op <= 0o217:  # MOVE, MOVS, MOVN, MOVM
+            val = e if form == 1 else av if form == 2 else v
+            grp = op >> 2 & 3
+            if grp == 1:
+                val = (val << 18 | val >> 18) & MASK
+            elif grp == 2:
+                val = -val & MASK
+            elif grp == 3:
+                val = abs(signed(val))
+            if form < 2:
+                m[ac] = val
+            else:
+                m[e] = val
+                if form == 3 and ac:
+                    m[ac] = val
+        elif 0o270 <= op <= 0o277 or 0o220 <= op <= 0o237:  # integer arithmetic
+            arg = e if form == 1 else v
+            if 0o270 <= op <= 0o277:
+                val = av + arg if op < 0o274 else av - arg
+            elif op < 0o224:
+                val = signed(av) * signed(arg)
+            elif op >= 0o230 and op < 0o234:
+                a = signed(av)
+                d = signed(arg)
+                val = abs(a) // abs(d) * (-1 if (a < 0) != (d < 0) else 1)
+                m[ac + 1 & 15] = a - val * d & MASK
+            else:
+                raise RuntimeError(('arithmetic', oct(op)))
+            val &= MASK
+            if form < 2:
+                m[ac] = val
+            else:
+                m[e] = val
+                if form == 3:
+                    m[ac] = val
+        elif 0o300 <= op <= 0o377:  # compare, skip, jump, increment/decrement
+            grp = op >> 3 & 7
+            k = op & 7
+            if grp < 2:
+                if pred(signed(av) - signed(e if grp == 0 else v), k):
+                    self.pc = self.pc + 1 & RH
+            elif grp == 2:
+                if pred(signed(av), k):
+                    self.pc = e
+            elif grp == 3:
+                if ac:
+                    m[ac] = v
+                if pred(signed(v), k):
+                    self.pc = self.pc + 1 & RH
+            else:
+                val = (av if grp in (4, 6) else v) + (1 if grp in (4, 5) else -1) & MASK
+                if grp in (4, 6):
+                    m[ac] = val
+                else:
+                    m[e] = val
+                    if ac:
+                        m[ac] = val
+                if pred(signed(val), k):
+                    self.pc = e if grp in (4, 6) else self.pc + 1 & RH
+        elif 0o400 <= op <= 0o477:  # Boolean operations
+            arg = e if form == 1 else v
+            f = op >> 2 & 15
+            val = 0
+            if f & 1:
+                val |= av & arg
+            if f & 2:
+                val |= ~av & arg
+            if f & 4:
+                val |= av & ~arg
+            if f & 8:
+                val |= ~(av | arg)
+            val &= MASK
+            if form < 2:
+                m[ac] = val
+            else:
+                m[e] = val
+                if form == 3:
+                    m[ac] = val
+        elif 0o500 <= op <= 0o577:  # halfword transfers
+            src = e if form == 1 else av if form == 2 else v
+            dest = av if form < 2 else v
+            leftdest = not bool(op & 32)
+            leftsrc = leftdest != bool(op & 4)
+            half = (src >> 18 if leftsrc else src) & RH
+            fill = op >> 3 & 3
+            other = (dest & RH if leftdest else dest >> 18) if fill == 0 else 0 if fill == 1 else RH if fill == 2 or half & 1 << 17 else 0
+            val = half << 18 | other if leftdest else other << 18 | half
+            if form < 2:
+                m[ac] = val
+            else:
+                m[e] = val
+                if form == 3 and ac:
+                    m[ac] = val
+        elif 0o600 <= op <= 0o677:  # bit tests and modifications
+            k = op >> 1 & 3
+            mod = op >> 4 & 3
+            arg = (e << 18 if op & 1 else e) if not op & 8 else (v << 18 | v >> 18) & MASK if op & 1 else v
+            yes = bool(av & arg)
+            if k == 2 or (k == 1 and (not yes)) or (k == 3 and yes):
+                self.pc = self.pc + 1 & RH
+            if mod == 1:
+                m[ac] = av & ~arg
+            elif mod == 2:
+                m[ac] = av ^ arg
+            elif mod == 3:
+                m[ac] = av | arg
+        elif op == 0o254:
+            if ac == 4:
+                raise RuntimeError(('HALT', oct(at), oct(e)))
+            self.pc = e
+        elif op == 0o255:
+            pass
+        elif op == 0o260:
+            m[ac] = (av + 0o1000001) & MASK
+            m[m[ac] & RH] = self.pc
+            self.pc = e
+        elif op == 0o261:
+            m[ac] = (av + 0o1000001) & MASK
+            m[m[ac] & RH] = v
+        elif op == 0o262:
+            m[e] = m[av & RH]
+            m[ac] = (av - 0o1000001) & MASK
+        elif op == 0o263:
+            self.pc = m[av & RH] & RH
+            m[ac] = (av - 0o1000001) & MASK
+        elif op == 0o264:
+            m[e] = self.pc
+            self.pc = e + 1 & RH
+        elif op == 0o265:
+            m[ac] = self.pc
+            self.pc = e
+        elif op == 0o266:
+            m[e] = av
+            m[ac] = e << 18 | self.pc
+            self.pc = e + 1 & RH
+        elif op == 0o267:
+            m[ac] = m[av >> 18 & RH]
+            self.pc = e
+        elif op == 0o256:
+            self.execute(v, e)
+        elif op == 0o250:
+            (m[ac], m[e]) = (v, av)
+        elif op == 0o251:
+            a = av >> 18
+            d = av & RH
+            while d <= e:
+                m[d] = m[a]
+                a = a + 1 & RH
+                d += 1
+            m[ac] = (a << 18 | d) & MASK
+        elif op in (0o242, 0o240, 0o241):
+            n = e if e < 131072 else e - (1 << 18)
+            if op == 0o242:
+                val = (av << min(n, 36) if n >= 0 else av >> min(-n, 36)) & MASK
+            elif op == 0o240:
+                val = (signed(av) << min(n, 36) if n >= 0 else signed(av) >> min(-n, 36)) & MASK
+            else:
+                n %= 36
+                val = (av << n | av >> 36 - n) & MASK
+            m[ac] = val
+        elif op == 0o246:
+            n = e if e < 131072 else e - (1 << 18)
+            val = av << 36 | m[ac + 1 & 15]
+            val = val << min(n, 72) if n >= 0 else val >> min(-n, 72)
+            m[ac] = val >> 36 & MASK
+            m[ac + 1 & 15] = val & MASK
+        elif op in (0o252, 0o253):
+            m[ac] = (av + 0o1000001) & MASK
+            if (signed(m[ac]) < 0) == (op == 0o253):
+                self.pc = e
+        elif 0o133 <= op <= 0o137:  # IBP, ILDB, LDB, IDPB, DPB
+            bp = v
+            if op in (0o133, 0o134, 0o136):
+                pos = (bp >> 30) - (bp >> 24 & 63)
+                if pos < 0:
+                    pos = 36 - (bp >> 24 & 63)
+                    bp = bp & ~RH | bp + 1 & RH
+                bp = bp & (1 << 30) - 1 | pos << 30
+                m[e] = bp
+            if op != 0o133:
+                a = self.ea(bp)
+                pos = bp >> 30
+                sz = bp >> 24 & 63
+                mask = (1 << sz) - 1
+                if op in (0o134, 0o135):
+                    m[ac] = m[a] >> pos & mask
+                else:
+                    m[a] = m[a] & ~(mask << pos) | (av & mask) << pos
+                    if sz == 7:
+                        for (ch, c) in self.channels.items():
+                            base = 0o100000 + ch * 0o1000
+                            if c.get('ready') and base <= a < base + 128:
+                                c['written'] = max(c.get('written', 0), (a - base) * 5 + (29 - pos) // 7 + 1)
+        elif op < 0o40:  # Fortran local UUOs, dispatched through the saved vector
+            m[0o40] = op << 27 | ac << 23 | e
+            self.execute(m[0o41], 0o41)
         elif op == 0o47 and e in (0, 0o16):  # RESET, APRENB
             pass
         elif op == 0o47 and e in (0o23, 0o27, 0o30, 0o24):  # timing/job queries
-            self.m[ac] = 0
+            m[ac] = 0
         elif op == 0o47 and e >= 0o400000:
             pass
         elif op == 0o51:  # TTCALL: clear input, write string, write character
@@ -141,7 +349,7 @@ class PDP10:
                 while True:
                     end = False
                     for sh in (29, 22, 15, 8, 1):
-                        c = self.m[a] >> sh & 127
+                        c = m[a] >> sh & 127
                         if not c:
                             end = True
                             break
@@ -159,14 +367,14 @@ class PDP10:
             self.flush_channel(ac)
             if 'file' in self.channels.get(ac, {}):
                 self.channels[ac]['file'].close()
-            self.channels[ac] = {'mode': self.m[e], 'out': self.m[e + 2] >> 18, 'in': self.m[e + 2] & RH}
+            self.channels[ac] = {'mode': m[e], 'out': m[e + 2] >> 18, 'in': m[e + 2] & RH}
             self.pc += 1
         elif op in (0o76, 0o77):  # LOOKUP, ENTER (extended or original block)
 
             def six(w):
                 return ''.join((chr((w >> sh & 63) + 32) for sh in (30, 24, 18, 12, 6, 0))).strip()
             f = e + 2 if v < 64 else e
-            name = six(self.m[f]) + '.' + six(self.m[f + 1] >> 18 << 18).strip()
+            name = six(m[f]) + '.' + six(m[f + 1] >> 18 << 18).strip()
             if op == 0o77:
                 self.channels[ac]['file'] = open(self.directory / name, 'w+b')
                 self.pc += 1
@@ -177,12 +385,12 @@ class PDP10:
                     c['lines'] = iter(c['file'].read().decode('ascii').splitlines())
                     self.pc += 1
                 except FileNotFoundError:
-                    self.m[f + 1] = self.m[f + 1] & ~RH | 0
+                    m[f + 1] = m[f + 1] & ~RH | 0
         elif op == 0o47 and e == 4:
             name = ''.join((chr((av >> sh & 63) + 32) for sh in (30, 24, 18, 12, 6, 0))).strip()
             # DEVCHR: available, input/output capable TTY or directory DSK.
             flags = 0o53 if name == 'TTY' else 0o200047
-            self.m[ac] = (flags << 18) | 0o640003 if name in ('TTY', 'DSK') else 0
+            m[ac] = (flags << 18) | 0o640003 if name in ('TTY', 'DSK') else 0
         elif op == 0o47 and e in (0o53, 0o101):
             pass  # optional DEVTYP/DEVSIZ; runtime falls back to DEVCHR
         elif op in (0o57, 0o67):  # OUT, OUTPUT
@@ -193,9 +401,9 @@ class PDP10:
             c['written'] = 0
             c['flushed'] = 0
             c['ready'] = True
-            self.m[h] = base
-            self.m[h + 1] = 7 << 24 | base - 1
-            self.m[h + 2] = 640
+            m[h] = base
+            m[h + 1] = 7 << 24 | base - 1
+            m[h + 2] = 640
         elif op in (0o56, 0o66):  # IN, INPUT
             c = self.channels[ac]
             h = c['in']
@@ -210,14 +418,14 @@ class PDP10:
                     raise RuntimeError('unexpected end of compiler input')
             data = line.rstrip('\n') + '\r\n'
             for i in range(128):
-                self.m[base + i] = 0
+                m[base + i] = 0
             for (i, ch) in enumerate(data):
-                self.m[base + i // 5] |= ord(ch) << 29 - 7 * (i % 5)
-            self.m[h] = base
-            self.m[h + 1] = 7 << 24 | base - 1
-            self.m[h + 2] = len(data)
+                m[base + i // 5] |= ord(ch) << 29 - 7 * (i % 5)
+            m[h] = base
+            m[h + 1] = 7 << 24 | base - 1
+            m[h + 2] = len(data)
         elif op == 0o62:
-            self.m[e] = 0
+            m[e] = 0
         elif op in (0o70, 0o71):  # CLOSE, RELEASE
             c = self.channels.get(ac, {})
             self.flush_channel(ac)
@@ -227,198 +435,5 @@ class PDP10:
             for channel in self.channels:
                 self.flush_channel(channel)
             raise Finished()
-        elif 0o200 <= op <= 0o217:  # MOVE, MOVS, MOVN, MOVM
-            val = e if form == 1 else av if form == 2 else v
-            grp = op >> 2 & 3
-            if grp == 1:
-                val = (val << 18 | val >> 18) & MASK
-            elif grp == 2:
-                val = -val & MASK
-            elif grp == 3:
-                val = abs(signed(val))
-            if form < 2:
-                self.m[ac] = val
-            else:
-                self.m[e] = val
-                if form == 3 and ac:
-                    self.m[ac] = val
-        elif 0o270 <= op <= 0o277 or 0o220 <= op <= 0o237:  # integer arithmetic
-            arg = e if form == 1 else v
-            if 0o270 <= op <= 0o277:
-                val = av + arg if op < 0o274 else av - arg
-            elif op < 0o224:
-                val = signed(av) * signed(arg)
-            elif op >= 0o230 and op < 0o234:
-                a = signed(av)
-                d = signed(arg)
-                val = abs(a) // abs(d) * (-1 if (a < 0) != (d < 0) else 1)
-                self.m[ac + 1 & 15] = a - val * d & MASK
-            else:
-                raise RuntimeError(('arithmetic', oct(op)))
-            val &= MASK
-            if form < 2:
-                self.m[ac] = val
-            else:
-                self.m[e] = val
-                if form == 3:
-                    self.m[ac] = val
-        elif 0o300 <= op <= 0o377:  # compare, skip, jump, increment/decrement
-            grp = op >> 3 & 7
-            k = op & 7
-            if grp < 2:
-                if pred(signed(av) - signed(e if grp == 0 else v), k):
-                    self.pc = self.pc + 1 & RH
-            elif grp == 2:
-                if pred(signed(av), k):
-                    self.pc = e
-            elif grp == 3:
-                if ac:
-                    self.m[ac] = v
-                if pred(signed(v), k):
-                    self.pc = self.pc + 1 & RH
-            else:
-                val = (av if grp in (4, 6) else v) + (1 if grp in (4, 5) else -1) & MASK
-                if grp in (4, 6):
-                    self.m[ac] = val
-                else:
-                    self.m[e] = val
-                    if ac:
-                        self.m[ac] = val
-                if pred(signed(val), k):
-                    self.pc = e if grp in (4, 6) else self.pc + 1 & RH
-        elif 0o400 <= op <= 0o477:  # Boolean operations
-            arg = e if form == 1 else v
-            f = op >> 2 & 15
-            val = 0
-            if f & 1:
-                val |= av & arg
-            if f & 2:
-                val |= ~av & arg
-            if f & 4:
-                val |= av & ~arg
-            if f & 8:
-                val |= ~(av | arg)
-            val &= MASK
-            if form < 2:
-                self.m[ac] = val
-            else:
-                self.m[e] = val
-                if form == 3:
-                    self.m[ac] = val
-        elif 0o500 <= op <= 0o577:  # halfword transfers
-            src = e if form == 1 else av if form == 2 else v
-            dest = av if form < 2 else v
-            leftdest = not bool(op & 32)
-            leftsrc = leftdest != bool(op & 4)
-            half = (src >> 18 if leftsrc else src) & RH
-            fill = op >> 3 & 3
-            other = (dest & RH if leftdest else dest >> 18) if fill == 0 else 0 if fill == 1 else RH if fill == 2 or half & 1 << 17 else 0
-            val = half << 18 | other if leftdest else other << 18 | half
-            if form < 2:
-                self.m[ac] = val
-            else:
-                self.m[e] = val
-                if form == 3 and ac:
-                    self.m[ac] = val
-        elif 0o600 <= op <= 0o677:  # bit tests and modifications
-            k = op >> 1 & 3
-            mod = op >> 4 & 3
-            arg = (e << 18 if op & 1 else e) if not op & 8 else (v << 18 | v >> 18) & MASK if op & 1 else v
-            yes = bool(av & arg)
-            if k == 2 or (k == 1 and (not yes)) or (k == 3 and yes):
-                self.pc = self.pc + 1 & RH
-            if mod == 1:
-                self.m[ac] = av & ~arg
-            elif mod == 2:
-                self.m[ac] = av ^ arg
-            elif mod == 3:
-                self.m[ac] = av | arg
-        elif op == 0o254:
-            if ac == 4:
-                raise RuntimeError(('HALT', oct(at), oct(e)))
-            self.pc = e
-        elif op == 0o255:
-            pass
-        elif op == 0o260:
-            self.m[ac] = (av + 0o1000001) & MASK
-            self.m[self.m[ac] & RH] = self.pc
-            self.pc = e
-        elif op == 0o261:
-            self.m[ac] = (av + 0o1000001) & MASK
-            self.m[self.m[ac] & RH] = v
-        elif op == 0o262:
-            self.m[e] = self.m[av & RH]
-            self.m[ac] = (av - 0o1000001) & MASK
-        elif op == 0o263:
-            self.pc = self.m[av & RH] & RH
-            self.m[ac] = (av - 0o1000001) & MASK
-        elif op == 0o264:
-            self.m[e] = self.pc
-            self.pc = e + 1 & RH
-        elif op == 0o265:
-            self.m[ac] = self.pc
-            self.pc = e
-        elif op == 0o266:
-            self.m[e] = av
-            self.m[ac] = e << 18 | self.pc
-            self.pc = e + 1 & RH
-        elif op == 0o267:
-            self.m[ac] = self.m[av >> 18 & RH]
-            self.pc = e
-        elif op == 0o256:
-            self.execute(v, e)
-        elif op == 0o250:
-            (self.m[ac], self.m[e]) = (v, av)
-        elif op == 0o251:
-            a = av >> 18
-            d = av & RH
-            while d <= e:
-                self.m[d] = self.m[a]
-                a = a + 1 & RH
-                d += 1
-            self.m[ac] = (a << 18 | d) & MASK
-        elif op in (0o242, 0o240, 0o241):
-            n = e if e < 131072 else e - (1 << 18)
-            if op == 0o242:
-                val = (av << min(n, 36) if n >= 0 else av >> min(-n, 36)) & MASK
-            elif op == 0o240:
-                val = (signed(av) << min(n, 36) if n >= 0 else signed(av) >> min(-n, 36)) & MASK
-            else:
-                n %= 36
-                val = (av << n | av >> 36 - n) & MASK
-            self.m[ac] = val
-        elif op == 0o246:
-            n = e if e < 131072 else e - (1 << 18)
-            val = av << 36 | self.m[ac + 1 & 15]
-            val = val << min(n, 72) if n >= 0 else val >> min(-n, 72)
-            self.m[ac] = val >> 36 & MASK
-            self.m[ac + 1 & 15] = val & MASK
-        elif op in (0o252, 0o253):
-            self.m[ac] = (av + 0o1000001) & MASK
-            if (signed(self.m[ac]) < 0) == (op == 0o253):
-                self.pc = e
-        elif 0o133 <= op <= 0o137:  # IBP, ILDB, LDB, IDPB, DPB
-            bp = v
-            if op in (0o133, 0o134, 0o136):
-                pos = (bp >> 30) - (bp >> 24 & 63)
-                if pos < 0:
-                    pos = 36 - (bp >> 24 & 63)
-                    bp = bp & ~RH | bp + 1 & RH
-                bp = bp & (1 << 30) - 1 | pos << 30
-                self.m[e] = bp
-            if op != 0o133:
-                a = self.ea(bp)
-                pos = bp >> 30
-                sz = bp >> 24 & 63
-                mask = (1 << sz) - 1
-                if op in (0o134, 0o135):
-                    self.m[ac] = self.m[a] >> pos & mask
-                else:
-                    self.m[a] = self.m[a] & ~(mask << pos) | (av & mask) << pos
-                    if sz == 7:
-                        for (ch, c) in self.channels.items():
-                            base = 0o100000 + ch * 0o1000
-                            if c.get('ready') and base <= a < base + 128:
-                                c['written'] = max(c.get('written', 0), (a - base) * 5 + (29 - pos) // 7 + 1)
         else:
             raise RuntimeError(f'unsupported PDP-10 opcode {op:03o} at {at:06o}')
