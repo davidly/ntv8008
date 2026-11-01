@@ -7,6 +7,11 @@
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
+    ".github/workflows/regression.yml": {
+      "sha256": "86cd293f20f80321291e54210da40dcf9a1cd5201af84b3543347d1186a27c69",
+      "license": "BSD-3-Clause",
+      "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
+    },
     ".gitignore": {
       "sha256": "b2b0ed26fdba5d4faf972200bef556328d9b161aecfede78c63c378f910078e8",
       "license": "BSD-3-Clause",
@@ -23,7 +28,7 @@
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "README.md": {
-      "sha256": "56898088685b78bfa7114aa544c67fc4431fc5222e17455e699b0f8779ef90dd",
+      "sha256": "979f141a1a27bae1ae01d4d733a88a3bb82b7ec6aead05f191a483cde2856ff7",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },

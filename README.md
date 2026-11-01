@@ -180,6 +180,15 @@ tests and reference benchmark results. Missing optional historical components
 are explicitly skipped. Windows skips the POSIX terminal-restoration test.
 Full optional SCELBAL benchmarks: `./test.sh --basic-benchmarks`.
 
+[GitHub Actions regression tests](https://github.com/davidly/ntv8008/actions/workflows/regression.yml)
+run on every push and pull request, and can also be started manually. Linux
+builds all five ACK frontends and SmallC before running `test.sh --compile`.
+Windows uses MSVC, runs `test.bat`, and additionally tests native SmallC compiler
+rebuilds, Snake, and compiler differential cases. Both include the b8008 suite.
+ACK runtime/code-generation tests run on Windows with the supplied images;
+ACK frontend rebuilds run on Linux. Optional PL/M, Forth, and SCELBAL inputs
+are not downloaded by CI, so their unavailable tests report explicit skips.
+
 Validation covers all instruction encodings, arithmetic and branch behavior,
 clock counts, HEX loader errors, redirected/file/interactive input, terminal
 restoration, and native generated code against unoptimized/reference behavior.
