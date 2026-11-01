@@ -17,7 +17,12 @@ def lower_bytes(text):
             output.append(' '+('llb' if following[0]=='loi' else 'slb')+' '+fields[1]);i+=2
             continue
         output.append(lines[i]);i+=1
-    lines=output
+    text='\n'.join(output)
+    # A byte increment consumes and stores the promoted value; no result
+    # escapes. Same-size conversions do not alter its low byte.
+    text=re.sub(r'^ llb (-?\d+)\n inc ?\n(?: loc 2\n loc 2\n ciu ?\n)? slb \1$',
+                lambda m:' ubinc '+m[1],text,flags=re.M)
+    lines=text.splitlines()
     def operand(index):
         if index>=len(lines): return None
         f=lines[index].strip().split()

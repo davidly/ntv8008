@@ -241,6 +241,12 @@ class Generator:
                 output.append('LOCAL_ADD '+first[1]+','+str(int(parts(index+4)[1])-4))
                 index += 8
                 continue
+            if (len(first)==2 and first[0]=='ADDRSP' and second==['PUSH'] and
+                    third==['LOAD','1'] and len(fourth)==2 and fourth[0]=='OFFSET' and
+                    parts(index+4)==['STIND','1']):
+                output.append('LOCAL_BYTE_UPDATE '+first[1]+','+fourth[1])
+                index+=5
+                continue
             if (len(first) == 2 and first[0] == 'ADDRSP' and second == ['PUSH'] and
                     int(first[1]) >= 0 and
                     third == ['LOAD','2'] and len(fourth) == 2 and fourth[0] == 'OFFSET' and
@@ -760,6 +766,14 @@ class Generator:
                 self.emit('LAM','ADC','LMA','LEA')
                 self.inc_hl()
                 self.emit('LAM','ACD','LMA','LBA','LAE')
+            elif op=='LOCAL_BYTE_UPDATE':
+                offset,value=map(int,arg.split(','));value&=65535
+                slot=offset-(self.frame_depth if self.frame_depth is not None else -65536)
+                self.emit('; local byte update '+str(slot))
+                self.stack_address(offset)
+                # Retain the full promoted result in AB, including byte wrap.
+                self.emit('LAM',f'ADI {value&255}D','LMA','LEA','LAI 0D',
+                          f'ACI {value>>8}D','LBA','LAE','; end local byte')
             elif op in ('LOCAL_UPDATE','LOCAL_CONST'):
                 fields = arg.split(',')
                 slot=int(fields[0])-(self.frame_depth if self.frame_depth is not None else -65536)

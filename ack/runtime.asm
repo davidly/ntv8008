@@ -99,43 +99,82 @@ LOCAL:  LHI HIGH FP
         LHA
         LLE
         RET
+; ACK frames are word aligned. ENTER preserves CD and checks the stack floor.
 ENTER:  LHI HIGH FP
         LLI LOW FP
-        LAM
-        INL
-        LBM
-        CAL PUSH
-        LHI HIGH RSP
-        LLI LOW RSP
-        LAM
-        INL
-        LBM
-        LLI LOW FP
-        LMA
-        INL
-        LMB
-        RET
-LEAVE:  LHI HIGH FP
-        LLI LOW FP
-        LAM
+        LEM
         INL
         LBM
         LLI LOW RSP
+        LAM
+        SUI 2
         LMA
         INL
+        LAM
+        SBI 0
+        LMA
+        CPI HIGH STACKMIN
+        JTC STACKFAULT
+        DCL
+        LLM
+        LHA
+        LME
+        INL
         LMB
-        CAL POP
+        DCL
+        LAL
+        LBH
         LHI HIGH FP
         LLI LOW FP
         LMA
         INL
         LMB
-        CAL POP
-        LHI HIGH RETURNJ
-        LLI LOW RETURNJ+1
-        LMA
+        RET
+; The saved FP and return word are adjacent at FP. Release them together,
+; then read both directly instead of calling the general POP twice.
+; Software calls may clobber CD; the function result remains in RV.
+LEAVE:  LHI HIGH FP
+        LLI LOW FP
+        LAM
+        ADI 4
+        LCA
+        INL
+        LAM
+        ACI 0
+        LBA
+        LLI LOW RSP
+        LMC
         INL
         LMB
+        LLI LOW FP
+        LEM
+        INL
+        LHM
+        LLE
+        LAM
+        LCA
+        INL
+        LAM
+        LDA
+        INL
+        JFZ LEAVERET
+        INH
+LEAVERET:
+        LAM
+        LBA
+        INL
+        LAM
+        LEA
+        LHI HIGH FP
+        LLI LOW FP
+        LMC
+        INL
+        LMD
+        LHI HIGH RETURNJ
+        LLI LOW RETURNJ+1
+        LMB
+        INL
+        LME
 RETURNJ: JMP 0
 LD1:
         LHB

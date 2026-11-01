@@ -125,6 +125,28 @@ RSP EQU 3F00H
         depths=stack_depths(text,{'main'})
         self.assertEqual(depths[text.splitlines().index('OTHER:')],4)
 
+    def test_zero_offset_pointer_results_and_flags(self):
+        for pointer in (0x20ff,0x2100):
+            for suffix in (['LAM','OUT 12'],['LAE','OUT 12'],['OUT 12'],
+                           ['JTC YES','LAI 48D','JMP DONE','YES:','LAI 49D','DONE:','OUT 12']):
+                self.differential(['LAI 255D','ADI 1D']+frame(0)+suffix+['HLT'],pointer=pointer)
+
+    def test_memory_compare_flags_and_live_right_operand(self):
+        for left in (0,1,127,128,255):
+            for right in (0,1,127,128,255):
+                for operand in ('LAC','LAB','LAE','LAD','LAI '+str(left)+'D'):
+                    for keep_d in (False,True):
+                        code=[f'LCI {left}D',f'LBI {left}D',f'LEI {left}D','LDI 99D',
+                              'LHI HIGH (RIGHT)','LLI LOW (RIGHT)','LAM','LDA',
+                              '; cached byte local test',operand,'CPD','JTC LESS','JTZ EQUAL',
+                              'LAI 71D','JMP PRINT','LESS:','LAI 76D','JMP PRINT',
+                              'EQUAL:','LAI 69D','PRINT:','OUT 12']
+                        if keep_d:code+=['LAD','OUT 12']
+                        code+=['HLT']
+                        before,after=self.differential(code,data=(f'RIGHT: DB {right}D',))
+                        optimized=any(t.strip()=='CPM' for t in after[2])
+                        self.assertEqual(optimized,not keep_d and operand!='LAD')
+
     def test_wide_frame_offsets(self):
         for pointer in (0x2000,0x20fe,0x20ff,0x2100,0x21ff):
             for delta in (-255,-128,-17,-3,3,17,128,255):

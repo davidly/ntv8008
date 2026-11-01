@@ -1,69 +1,8 @@
 -- Ascending alpha-beta minimax. Explicit frames preserve Occam's no-recursion rule.
 var board[byte 9], moves, score, ok:
-proc winner(value move, var won) =
-  var p:
-  seq
-    p := board[byte move]
-    won := 0
-    if
-      move = 0
-        if
-          ((p = board[byte 1]) and (p = board[byte 2])) or ((p = board[byte 3]) and (p = board[byte 6])) or ((p = board[byte 4]) and (p = board[byte 8]))
-            won := p
-          true
-            skip
-      move = 1
-        if
-          ((p = board[byte 0]) and (p = board[byte 2])) or ((p = board[byte 4]) and (p = board[byte 7]))
-            won := p
-          true
-            skip
-      move = 2
-        if
-          ((p = board[byte 0]) and (p = board[byte 1])) or ((p = board[byte 5]) and (p = board[byte 8])) or ((p = board[byte 4]) and (p = board[byte 6]))
-            won := p
-          true
-            skip
-      move = 3
-        if
-          ((p = board[byte 4]) and (p = board[byte 5])) or ((p = board[byte 0]) and (p = board[byte 6]))
-            won := p
-          true
-            skip
-      move = 4
-        if
-          ((p = board[byte 3]) and (p = board[byte 5])) or ((p = board[byte 1]) and (p = board[byte 7])) or ((p = board[byte 0]) and (p = board[byte 8])) or ((p = board[byte 2]) and (p = board[byte 6]))
-            won := p
-          true
-            skip
-      move = 5
-        if
-          ((p = board[byte 3]) and (p = board[byte 4])) or ((p = board[byte 2]) and (p = board[byte 8]))
-            won := p
-          true
-            skip
-      move = 6
-        if
-          ((p = board[byte 7]) and (p = board[byte 8])) or ((p = board[byte 0]) and (p = board[byte 3])) or ((p = board[byte 2]) and (p = board[byte 4]))
-            won := p
-          true
-            skip
-      move = 7
-        if
-          ((p = board[byte 6]) and (p = board[byte 8])) or ((p = board[byte 1]) and (p = board[byte 4]))
-            won := p
-          true
-            skip
-      move = 8
-        if
-          ((p = board[byte 6]) and (p = board[byte 7])) or ((p = board[byte 2]) and (p = board[byte 5])) or ((p = board[byte 0]) and (p = board[byte 4]))
-            won := p
-          true
-            skip
-:
 proc search(value opening, var answer, nodes) =
   var position[9], best[9], alpha[9], beta[9], last[9]:
-  var depth, state, finished, result, won, piece, move:
+  var depth, state, finished, result, piece, move:
   seq
     board[byte opening] := 1
     depth := 0
@@ -81,13 +20,102 @@ proc search(value opening, var answer, nodes) =
             if
               depth >= 4
                 seq
-                  winner(last[depth], won)
+                  -- Inline win dispatch; the last-move square is occupied.
+                  move := last[depth]
+                  piece := board[byte move]
                   if
-                    won = 1
-                      result := 6
-                    won = 2
-                      result := 4
-                    depth = 8
+                    move = 0
+                      if
+                        ((piece = board[byte 1]) and (piece = board[byte 2])) or ((piece = board[byte 3]) and (piece = board[byte 6])) or ((piece = board[byte 4]) and (piece = board[byte 8]))
+                          if
+                            piece = 1
+                              result := 6
+                            true
+                              result := 4
+                        true
+                          skip
+                    move = 1
+                      if
+                        ((piece = board[byte 0]) and (piece = board[byte 2])) or ((piece = board[byte 4]) and (piece = board[byte 7]))
+                          if
+                            piece = 1
+                              result := 6
+                            true
+                              result := 4
+                        true
+                          skip
+                    move = 2
+                      if
+                        ((piece = board[byte 0]) and (piece = board[byte 1])) or ((piece = board[byte 5]) and (piece = board[byte 8])) or ((piece = board[byte 4]) and (piece = board[byte 6]))
+                          if
+                            piece = 1
+                              result := 6
+                            true
+                              result := 4
+                        true
+                          skip
+                    move = 3
+                      if
+                        ((piece = board[byte 4]) and (piece = board[byte 5])) or ((piece = board[byte 0]) and (piece = board[byte 6]))
+                          if
+                            piece = 1
+                              result := 6
+                            true
+                              result := 4
+                        true
+                          skip
+                    move = 4
+                      if
+                        ((piece = board[byte 3]) and (piece = board[byte 5])) or ((piece = board[byte 1]) and (piece = board[byte 7])) or ((piece = board[byte 0]) and (piece = board[byte 8])) or ((piece = board[byte 2]) and (piece = board[byte 6]))
+                          if
+                            piece = 1
+                              result := 6
+                            true
+                              result := 4
+                        true
+                          skip
+                    move = 5
+                      if
+                        ((piece = board[byte 3]) and (piece = board[byte 4])) or ((piece = board[byte 2]) and (piece = board[byte 8]))
+                          if
+                            piece = 1
+                              result := 6
+                            true
+                              result := 4
+                        true
+                          skip
+                    move = 6
+                      if
+                        ((piece = board[byte 7]) and (piece = board[byte 8])) or ((piece = board[byte 0]) and (piece = board[byte 3])) or ((piece = board[byte 2]) and (piece = board[byte 4]))
+                          if
+                            piece = 1
+                              result := 6
+                            true
+                              result := 4
+                        true
+                          skip
+                    move = 7
+                      if
+                        ((piece = board[byte 6]) and (piece = board[byte 8])) or ((piece = board[byte 1]) and (piece = board[byte 4]))
+                          if
+                            piece = 1
+                              result := 6
+                            true
+                              result := 4
+                        true
+                          skip
+                    move = 8
+                      if
+                        ((piece = board[byte 6]) and (piece = board[byte 7])) or ((piece = board[byte 2]) and (piece = board[byte 5])) or ((piece = board[byte 0]) and (piece = board[byte 4]))
+                          if
+                            piece = 1
+                              result := 6
+                            true
+                              result := 4
+                        true
+                          skip
+                  if
+                    (result = 0) and (depth = 8)
                       result := 5
                     true
                       skip

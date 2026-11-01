@@ -29,6 +29,52 @@ class Codegen(unittest.TestCase):
                 self.assertEqual(result.returncode,0,result.stderr)
                 self.assertEqual(result.stdout,expected)
 
+    def test_byte_updates_keep_promoted_result_and_older_stack(self):
+        body=[]
+        for offset in (0,255,256):
+            for value in (0,1,127,254,255):
+                for delta in (-257,-1,0,1,257):
+                    expected=(value+delta)&65535
+                    body.append(f"""IMM 7
+PUSH
+ADDRSP {offset+2}
+PUSH
+IMM {value}
+STIND 1
+ADDRSP {offset+2}
+PUSH
+LOAD 1
+OFFSET {delta}
+STIND 1
+PUSH
+IMM {expected}
+NE
+JTRUE fail
+ADDRSP {offset+2}
+LOAD 1
+PUSH
+IMM {expected&255}
+NE
+JTRUE fail
+IMM 7
+NE
+JTRUE fail
+""")
+        ir='TEXT\nmain:\nADJSP -258\n'+''.join(body)+"""IMM 75
+JUMP print
+fail:
+IMM 33
+print:
+ADJSP 258
+PUSH
+CALL putchar
+ADJSP 2
+IMM 0
+RETURN
+"""
+        self.assertIn('LOCAL_BYTE_UPDATE',codegen.Generator().optimized_ir(ir))
+        self.differential(ir,b'K')
+
     def test_memory_immediate_byte_store_result_and_live_stack(self):
         for width in (1,-1):
             body=[]

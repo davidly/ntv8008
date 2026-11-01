@@ -156,3 +156,11 @@ down from 937.7 seconds, a 29.5% cycle reduction. Differential EM tests
 cover both layouts, zero-trip loops, page crossings, signed wrapping, negative
 indices that alias the stride, final variable/stack values, and fallback for
 unknown buffers, extra entries, aliased operands, or added body effects.
+
+### Inlined TTT win dispatch
+
+The last-move winner dispatch now lives inside the search, avoiding its separate
+procedure call. Pascal records the win in its existing Boolean local before assigning the score.
+The search order, data types, three drawn openings, 6493 nodes per iteration,
+and ten iterations are unchanged. TTT uses 2,394,463,122 clocks instead of
+2,603,063,742 (8.0% fewer). This is source inlining, not automatic compiler inlining.

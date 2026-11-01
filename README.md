@@ -204,12 +204,12 @@ Measured from the included images on 2026-10-31. Values below are estimated
 | Implementation | Sieve | E | TTT per iteration |
 | --- | ---: | ---: | ---: |
 | A08 assembly | 78.1 | 36.5 | 32.2 |
-| ACK C | 321.3 | 343.7 | 184.5 |
-| SmallC-85 C | 349.0 | 253.8 | 152.5 |
-| ACK Pascal | 639.2 | 575.9 | 520.6 |
-| ACK Modula-2 | 740.8 | 526.6 | 375.9 |
-| ACK Occam 1 | 1,354.1 | 730.4 | 873.0 |
-| ACK integer BASIC | 2,568.7 | 617.5 | 496.3 |
+| ACK C | 321.3 | 343.6 | 145.3 |
+| SmallC-85 C | 349.0 | 251.8 | 127.2 |
+| ACK Pascal | 639.2 | 575.7 | 475.2 |
+| ACK Modula-2 | 740.8 | 526.3 | 319.9 |
+| ACK Occam 1 | 1,354.1 | 730.2 | 817.2 |
+| ACK integer BASIC | 2,568.7 | 617.0 | 489.2 |
 
 ACK and SmallC share conservative native optimizations for byte locals,
 register/flag liveness, and frame addresses. Byte values can stay in otherwise
@@ -225,6 +225,21 @@ and 6493 nodes per iteration. This revision reduces ACK C from 218.8 to 184.5
 seconds per iteration (15.7% fewer clocks) and SmallC from 209.1 to 152.5 (27.1%).
 The general RAM-stack calling convention is retained; reserving scratch registers
 throughout every function would require additional save/restore traffic.
+
+The C benchmarks now inline the last-move winner switch inside `minmax()`,
+returning the score directly when a winning line is found. This source change
+further lowers TTT to 152.3 seconds for ACK C and 131.2 for SmallC. The recursive
+search, ascending moves, and 6493-node workload are unchanged.
+
+Pascal, Modula-2, and Occam also inline their last-move winner dispatch.
+This reduces TTT cycles by 8.0%, 13.3%, and 6.4%, respectively; their search
+structure and data types are unchanged. Occam retains explicit frames.
+
+The next compiler/runtime pass leaves those sources unchanged and reduces
+ACK C TTT from 152.3 to 145.3 seconds per iteration (4.6% fewer cycles), and
+SmallC from 131.2 to 127.2 (3.1%). It fuses unsigned byte increments, uses
+direct-memory byte comparisons and shorter zero-offset pointer loads, and
+specializes ACK frame entry/exit and SmallC returns.
 
 Sieve includes all ten passes; E produces 192 digits. TTT is normalized to one
 iteration (6493 search nodes): compiled images run ten iterations, while the

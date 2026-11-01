@@ -105,3 +105,11 @@ down from 1,269.2 seconds, a 36.0% cycle reduction. Differential EM tests
 cover both layouts, zero-trip loops, page crossings, signed wrapping, negative
 indices that alias the stride, final variable/stack values, and fallback for
 unknown buffers, extra entries, aliased operands, or added body effects.
+
+### Inlined TTT win dispatch
+
+The last-move winner dispatch now lives inside the search, avoiding its separate
+procedure call. Winning cases return their score immediately; the obsolete result test is removed.
+The search order, data types, three drawn openings, 6493 nodes per iteration,
+and ten iterations are unchanged. TTT uses 1,628,518,588 clocks instead of
+1,879,420,868 (13.3% fewer). This is source inlining, not automatic compiler inlining.

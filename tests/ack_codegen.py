@@ -32,6 +32,43 @@ class Codegen(unittest.TestCase):
             with self.subTest(optimize=optimize):
                 self.assertEqual(self.execute(em,optimize),expected)
 
+    def test_byte_increment_keeps_older_operands(self):
+        from ack_bytes import lower_bytes
+        for conversion in ('',' loc 2\n loc 2\n ciu \n'):
+            body=[]
+            for value in (0,1,127,254,255):
+                body.append(f""" loc 7
+ loc {value}
+ lal -1
+ sti 1
+ lal -1
+ loi 1
+ inc
+{conversion} lal -1
+ sti 1
+ lal -1
+ loi 1
+ loc {(value+1)&255}
+ cmi 2
+ zne *9
+ loc 7
+ cmi 2
+ zne *9
+""")
+            em=' pro $main,2\n'+''.join(body)+""" loc 75
+ bra *8
+9
+ loc 33
+8
+ cal $putchar
+ asp 2
+ loc 0
+ ret 2
+ end 2
+"""
+            self.assertEqual(lower_bytes(em).count(' ubinc '),5)
+            self.differential(em,b'K')
+
     def test_constant_byte_stores_keep_older_values(self):
         body=[]
         for byte in (-32768,-257,-1,0,255,256,305,32767):

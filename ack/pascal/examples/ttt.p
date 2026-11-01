@@ -5,39 +5,6 @@ var
   moves, iteration: integer;
   ok: boolean;
 
-function winner(move: integer): integer;
-var p: integer;
-begin
-  p := board[move];
-  winner := 0;
-  case move of
-    0: if ((p=board[1]) and (p=board[2])) or
-          ((p=board[3]) and (p=board[6])) or
-          ((p=board[4]) and (p=board[8])) then winner:=p;
-    1: if ((p=board[0]) and (p=board[2])) or
-          ((p=board[4]) and (p=board[7])) then winner:=p;
-    2: if ((p=board[0]) and (p=board[1])) or
-          ((p=board[5]) and (p=board[8])) or
-          ((p=board[4]) and (p=board[6])) then winner:=p;
-    3: if ((p=board[0]) and (p=board[6])) or
-          ((p=board[4]) and (p=board[5])) then winner:=p;
-    4: if ((p=board[0]) and (p=board[8])) or
-          ((p=board[2]) and (p=board[6])) or
-          ((p=board[1]) and (p=board[7])) or
-          ((p=board[3]) and (p=board[5])) then winner:=p;
-    5: if ((p=board[3]) and (p=board[4])) or
-          ((p=board[2]) and (p=board[8])) then winner:=p;
-    6: if ((p=board[4]) and (p=board[2])) or
-          ((p=board[0]) and (p=board[3])) or
-          ((p=board[7]) and (p=board[8])) then winner:=p;
-    7: if ((p=board[1]) and (p=board[4])) or
-          ((p=board[6]) and (p=board[8])) then winner:=p;
-    8: if ((p=board[0]) and (p=board[4])) or
-          ((p=board[2]) and (p=board[5])) or
-          ((p=board[6]) and (p=board[7])) then winner:=p
-  end
-end;
-
 function minmax(alpha,beta,depth,move: integer): integer;
 var pos, value, piece, score: integer;
     done: boolean;
@@ -45,8 +12,36 @@ begin
   moves := moves+1;
   score := 0;
   if depth >= 4 then begin
-    piece := winner(move);
-    if piece <> 0 then begin
+    { Inline win dispatch; the last-move square is occupied. }
+    piece := board[move];
+    done := false;
+    case move of
+      0: if ((piece=board[1]) and (piece=board[2])) or
+            ((piece=board[3]) and (piece=board[6])) or
+            ((piece=board[4]) and (piece=board[8])) then done:=true;
+      1: if ((piece=board[0]) and (piece=board[2])) or
+            ((piece=board[4]) and (piece=board[7])) then done:=true;
+      2: if ((piece=board[0]) and (piece=board[1])) or
+            ((piece=board[5]) and (piece=board[8])) or
+            ((piece=board[4]) and (piece=board[6])) then done:=true;
+      3: if ((piece=board[0]) and (piece=board[6])) or
+            ((piece=board[4]) and (piece=board[5])) then done:=true;
+      4: if ((piece=board[0]) and (piece=board[8])) or
+            ((piece=board[2]) and (piece=board[6])) or
+            ((piece=board[1]) and (piece=board[7])) or
+            ((piece=board[3]) and (piece=board[5])) then done:=true;
+      5: if ((piece=board[3]) and (piece=board[4])) or
+            ((piece=board[2]) and (piece=board[8])) then done:=true;
+      6: if ((piece=board[4]) and (piece=board[2])) or
+            ((piece=board[0]) and (piece=board[3])) or
+            ((piece=board[7]) and (piece=board[8])) then done:=true;
+      7: if ((piece=board[1]) and (piece=board[4])) or
+            ((piece=board[6]) and (piece=board[8])) then done:=true;
+      8: if ((piece=board[0]) and (piece=board[4])) or
+            ((piece=board[2]) and (piece=board[5])) or
+            ((piece=board[6]) and (piece=board[7])) then done:=true
+    end;
+    if done then begin
       if piece = 1 then score := 6 else score := 4
     end else if depth = 8 then score := 5
   end;

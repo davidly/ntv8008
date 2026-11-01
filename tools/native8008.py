@@ -118,6 +118,7 @@ def allocate_leaf(lines,data):
                 if live_flags[i] or (text.endswith('load '+slot) and initialized[i] is not True):valid=False
             elif live_in[i] or live_out[i]:
                 if any(c_touch(s.strip()) for s in (group or [text])):valid=False
+            if text=='; local byte update '+slot:valid=False
             # Other accesses to an overlapping word/escaped frame reject allocation.
             if text.strip().startswith('; local word '):
                 offset=int(text.strip().rsplit(' ',1)[1])
@@ -263,7 +264,8 @@ def optimize_functions(code,data,aligned=False):
         from register8008 import cache_bytes, cache_frame_registers, join_values
         block=allocate_leaf(join_values(block,data),data)
         block=cache_frame_registers(cache_bytes(block,data),data)
-        return simplify_values(cache_frame_addresses(block,data,aligned,serial),data)
+        from peephole8008 import shorten
+        return shorten(simplify_values(cache_frame_addresses(block,data,aligned,serial),data),data)
     for line in code:
         if line.strip().startswith('; function '):
             if block:result+=finish(block)

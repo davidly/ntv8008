@@ -29,7 +29,7 @@ def cache_bytes(lines, data):
 
     def transfer(i,state):
         text,group=nodes[i];state=state.copy();replacement=None;extra=[]
-        match=re.fullmatch(r'; local byte (load|store) (-?\d+)',text)
+        match=re.fullmatch(r'; local byte (load|store|update) (-?\d+)',text)
         slot=int(match[2]) if match else None
         old=next((r for r,s in state.items() if s==slot),None) if match else None
         # Address calculations leave A, E, HL and flags behind. Replacing a
@@ -47,7 +47,7 @@ def cache_bytes(lines, data):
             if op.startswith('LM') and not match:
                 # Unmarked stores can be local word writes or alias stores.
                 state={}
-        if match and match[1]=='store':state={r:s for r,s in state.items() if s!=slot}
+        if match and match[1] in ('store','update'):state={r:s for r,s in state.items() if s!=slot}
         if match:
             # Deterministic allocation makes this a monotone must analysis:
             # dropping an incoming fact cannot select a different register.

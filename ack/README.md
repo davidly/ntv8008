@@ -458,3 +458,27 @@ Recursive C TTT now uses 922,437,514 clocks for ten runs, versus 1,093,895,626
 before this revision (15.7% fewer). Integer BASIC TTT also benefits from
 register-held values and stack-join elimination: 3,369,136,732 to
 2,481,289,378 clocks (26.4% fewer). Benchmark sources are unchanged.
+
+### Inlined TTT winner dispatch
+
+The TTT example now contains its last-move winner switch directly in `minmax()`.
+Winning cases return their minimax score immediately, avoiding the winner's
+software call/frame and intermediate result. This is explicit source inlining,
+not automatic compiler inlining; recursion, move order and node counts are
+unchanged. ACK C falls from 922,437,514 to 761,427,614 clocks for ten runs (17.5% fewer).
+
+### Byte increments, memory comparisons and frame primitives
+
+Unsigned byte increments can update their RAM slot without loading and storing
+the frame address twice. The shared register cache recognizes the new update
+operation, so it retains the updated byte and unaffected locals. The native
+pass uses CPM for eligible static-memory comparisons when D is dead, preserving
+operand order and all comparison flags. FP/SP+0 uses a shorter pointer load
+when A and arithmetic flags are dead; its E result is retained.
+
+ACK folds the consumed EM byte increment, including an optional same-size
+conversion, while preserving older expression-stack operands. ENTER directly
+saves the parent frame, retaining CD and the bounds check. LEAVE reads the
+adjacent saved FP/return words and releases both together, with an explicit
+page-crossing guard. Software calls may clobber CD; return values stay in RV.
+TTT drops from 761,427,614 to 726,710,020 clocks for ten iterations (4.6% fewer).

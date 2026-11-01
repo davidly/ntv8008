@@ -376,3 +376,26 @@ incoming/outgoing branch edges or exposed pointers. BYTE_CMP branch successors
 are included in stack-depth analysis, enabling safe local caching after those
 branches. The recursive TTT example now uses 762,252,864 clocks for ten runs,
 versus 1,045,360,912 before this revision (27.1% fewer).
+
+### Inlined TTT winner dispatch
+
+The TTT example now contains its last-move winner switch directly in `minmax()`.
+Winning cases return their minimax score immediately, avoiding the winner's
+software call/frame and intermediate result. This is explicit source inlining,
+not automatic compiler inlining; recursion, move order and node counts are
+unchanged. SmallC falls from 762,252,864 to 656,075,244 clocks for ten runs (13.9% fewer).
+
+### Byte increments, memory comparisons and frame primitives
+
+Unsigned byte increments can update their RAM slot without loading and storing
+the frame address twice. The shared register cache recognizes the new update
+operation, so it retains the updated byte and unaffected locals. The native
+pass uses CPM for eligible static-memory comparisons when D is dead, preserving
+operand order and all comparison flags. FP/SP+0 uses a shorter pointer load
+when A and arithmetic flags are dead; its E result is retained.
+
+SmallC retains the full promoted AB result of an unsigned-byte update, including
+wrap and negative offsets. Signed-byte operations retain their original path.
+SCRETURN consumes the return word directly instead of calling POP, retaining
+AB in CD and preserving the odd-address/page-crossing guards.
+TTT drops from 656,075,244 to 635,817,708 clocks for ten iterations (3.1% fewer).

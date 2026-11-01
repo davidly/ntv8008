@@ -132,3 +132,11 @@ ACK's existing BSD notice is retained in `../ACK-COPYRIGHT`. The frontend patch,
 wrapper, console prelude, runtime, examples and tests are project contributions
 under the root BSD-3-Clause license. No additional upstream archive or runtime
 library is required; see `../NOTICE.txt` and the root third-party notices.
+
+### Inlined TTT win dispatch
+
+The last-move winner dispatch now lives inside the search, avoiding its separate
+procedure call. The IF dispatch is inside the explicit-frame search and writes its score directly.
+The search order, data types, three drawn openings, 6493 nodes per iteration,
+and ten iterations are unchanged. TTT uses 4,086,062,652 clocks instead of
+4,364,965,452 (6.4% fewer). This is source inlining, not automatic compiler inlining.

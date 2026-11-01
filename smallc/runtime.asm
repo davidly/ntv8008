@@ -526,10 +526,32 @@ SWAP:   LEA
         LDA
         LAE
         RET
+; Consume the return word directly, retaining AB in CD. Keep the odd-address
+; page guard used by POP; no nested hardware call is needed here.
 SCRETURN:
         LCA
         LDB
-        CAL POP
+        LHI HIGH RSP
+        LLI LOW RSP
+        LEM
+        LAM
+        ADI 2
+        LMA
+        INL
+        LBM
+        JFC SCRETREADY
+        INB
+        LMB
+        DCB
+SCRETREADY:
+        LHB
+        LLE
+        LAM
+        INL
+        JFZ SCRETWORD
+        INH
+SCRETWORD:
+        LBM
         LHI HIGH SCRETJ
         LLI LOW SCRETJ+1
         LMA

@@ -2,44 +2,68 @@
 #include <stdio.h>
 static unsigned char board[9];
 static unsigned moves;
-static int winner(unsigned char move)
-{
-    unsigned char p = board[move];
-    switch (move) {
-    case 0: return ((p == board[1] && p == board[2]) ||
-                    (p == board[3] && p == board[6]) ||
-                    (p == board[4] && p == board[8])) ? p : 0;
-    case 1: return ((p == board[0] && p == board[2]) ||
-                    (p == board[4] && p == board[7])) ? p : 0;
-    case 2: return ((p == board[0] && p == board[1]) ||
-                    (p == board[5] && p == board[8]) ||
-                    (p == board[4] && p == board[6])) ? p : 0;
-    case 3: return ((p == board[0] && p == board[6]) ||
-                    (p == board[4] && p == board[5])) ? p : 0;
-    case 4: return ((p == board[0] && p == board[8]) ||
-                    (p == board[2] && p == board[6]) ||
-                    (p == board[1] && p == board[7]) ||
-                    (p == board[3] && p == board[5])) ? p : 0;
-    case 5: return ((p == board[3] && p == board[4]) ||
-                    (p == board[2] && p == board[8])) ? p : 0;
-    case 6: return ((p == board[4] && p == board[2]) ||
-                    (p == board[0] && p == board[3]) ||
-                    (p == board[7] && p == board[8])) ? p : 0;
-    case 7: return ((p == board[1] && p == board[4]) ||
-                    (p == board[6] && p == board[8])) ? p : 0;
-    case 8: return ((p == board[0] && p == board[4]) ||
-                    (p == board[2] && p == board[5]) ||
-                    (p == board[6] && p == board[7])) ? p : 0;
-    }
-    return 0;
-}
 static int minmax(unsigned char alpha, unsigned char beta, unsigned char depth, unsigned char move)
 {
     unsigned char pos, value, piece, score;
     ++moves;
     if (depth >= 4) {
-        piece = winner(move);
-        if (piece) return piece == 1 ? 6 : 4;
+        /* Inline last-move win dispatch to avoid a RAM-stack call. */
+        piece = board[move];
+        if (piece) {
+            switch (move) {
+            case 0:
+                if ((piece == board[1] && piece == board[2]) ||
+                    (piece == board[3] && piece == board[6]) ||
+                    (piece == board[4] && piece == board[8]))
+                    return piece == 1 ? 6 : 4;
+                break;
+            case 1:
+                if ((piece == board[0] && piece == board[2]) ||
+                    (piece == board[4] && piece == board[7]))
+                    return piece == 1 ? 6 : 4;
+                break;
+            case 2:
+                if ((piece == board[0] && piece == board[1]) ||
+                    (piece == board[5] && piece == board[8]) ||
+                    (piece == board[4] && piece == board[6]))
+                    return piece == 1 ? 6 : 4;
+                break;
+            case 3:
+                if ((piece == board[0] && piece == board[6]) ||
+                    (piece == board[4] && piece == board[5]))
+                    return piece == 1 ? 6 : 4;
+                break;
+            case 4:
+                if ((piece == board[0] && piece == board[8]) ||
+                    (piece == board[2] && piece == board[6]) ||
+                    (piece == board[1] && piece == board[7]) ||
+                    (piece == board[3] && piece == board[5]))
+                    return piece == 1 ? 6 : 4;
+                break;
+            case 5:
+                if ((piece == board[3] && piece == board[4]) ||
+                    (piece == board[2] && piece == board[8]))
+                    return piece == 1 ? 6 : 4;
+                break;
+            case 6:
+                if ((piece == board[4] && piece == board[2]) ||
+                    (piece == board[0] && piece == board[3]) ||
+                    (piece == board[7] && piece == board[8]))
+                    return piece == 1 ? 6 : 4;
+                break;
+            case 7:
+                if ((piece == board[1] && piece == board[4]) ||
+                    (piece == board[6] && piece == board[8]))
+                    return piece == 1 ? 6 : 4;
+                break;
+            case 8:
+                if ((piece == board[0] && piece == board[4]) ||
+                    (piece == board[2] && piece == board[5]) ||
+                    (piece == board[6] && piece == board[7]))
+                    return piece == 1 ? 6 : 4;
+                break;
+            }
+        }
         if (depth == 8) return 5;
     }
     piece = (depth & 1) ? 1 : 2;

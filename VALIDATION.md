@@ -132,3 +132,39 @@ the runtime/codegen suites pass; final native SmallC rebuild tests and the
 13 register/codegen tests exercise the same generated images on Windows.
 The ACK frontend remains a Linux/WSL build, so that optional native-Windows
 frontend test is skipped.
+
+Manual C TTT winner inlining (2026-10-31): the switch now lives in `minmax()`
+and returns a win's score directly. Nine function-pointer specializations were
+also measured in ACK C, but all three formulations were slower than the old
+switch function; those experiments are not included in the examples.
+
+ACK C: 922,437,514 -> 761,427,614 clocks (17.5% fewer).
+SmallC: 762,252,864 -> 656,075,244 clocks (13.9% fewer).
+Totals cover ten iterations, each with 6493 nodes and three drawn opening
+positions. Existing runtime and frontend-rebuild tests validate both examples.
+
+Pascal/Modula-2/Occam winner-inlining experiment (2026-10-31):
+Pascal: 2,603,063,742 -> 2,394,463,122 clocks (8.0% fewer).
+Modula-2: 1,879,420,868 -> 1,628,518,588 clocks (13.3% fewer).
+Occam: 4,364,965,452 -> 4,086,062,652 clocks (6.4% fewer).
+These are ten-iteration totals. All three retain the same last-move line checks,
+search order, data types, three drawn openings and 6493 nodes per iteration.
+Pascal and Modula-2 remain recursive; Occam retains its explicit frames.
+The existing language runtime tests check independent minimax results, and
+frontend tests check exact regeneration of the updated HEX files.
+
+Native byte/frame refinements (2026-10-31): benchmark sources are unchanged
+from the manual winner-inlining revisions. ACK C TTT uses 726,710,020 clocks
+instead of 761,427,614 (4.6% fewer); SmallC uses 635,817,708 instead of
+656,075,244 (3.1% fewer). These remain ten-iteration totals. All 18 compiled
+benchmarks were regenerated and produced the expected results, with no cycle
+regressions. The byte-copy prototype was dropped: ACK regressed and SmallC's
+benefit was negligible compared with its added complexity.
+
+New regressions check byte wrap, negative/large increments, full promoted
+results and older stack operands; CPM carry/equality behavior and live D;
+zero-offset address results and flags; ACK frame restoration, CD preservation
+in ENTER and bounds failures; and SmallC returns at odd/even page boundaries.
+The Linux compiler/runtime suite reports 207 tests (with historical-component
+skips in the isolated validation tree), including all prior language, alias,
+recursive-call and Snake tests.

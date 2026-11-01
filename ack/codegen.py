@@ -333,6 +333,9 @@ class Generator:
                     self.emit('@DOUBLE 1')
                     index += 1
                     continue
+            if op=='ubinc':
+                self.emit('@BYTE_INC '+arg)
+                continue
             if op in ('llb','slb'):
                 self.emit('@LOCAL_'+('LOAD1 ' if op=='llb' else 'STORE1 ')+arg)
                 continue
@@ -649,13 +652,20 @@ class Generator:
             instruction = line.strip()
             if instruction.startswith('@'):
                 operation, argument = instruction.split(None, 1)
-                if operation == '@BYTE_CMP':
+                if operation in ('@BYTE_CMP','@BYTE_INC'):
                     if pending: output.append('        CAL PUSH')
                 elif operation in ('@GLOBAL_LOAD2','@LOCAL_LOAD2','@LOCAL_LOAD1'):
                     if pending:
                         output.append('        CAL PUSH')
                 elif not pending:
                     output.append('        CAL POP')
+                if operation=='@BYTE_INC':
+                    offset=int(argument);offset=(offset+(4 if offset>=0 else 0))&65535
+                    native=['; local byte update '+argument,'LHI HIGH FP','LLI LOW FP','LAM',
+                            f'ADI {offset&255}D','LEA','INL','LAM',f'ACI {offset>>8}D',
+                            'LHA','LLE','LAM','ADI 1D','LMA','; end local byte']
+                    output+=['        '+s for s in native];pending=False
+                    continue
                 if operation == '@DENSE_SWITCH':
                     table,low,count,default=argument.split(',')
                     low=int(low);native=[]
