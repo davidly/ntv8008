@@ -168,8 +168,9 @@ PROMPT:
         CAL TOKENIZE
         JMP STORELINE
 DIRECT:
-        LDI 0D
-        LEI 0D
+        XRA
+        LDA
+        LEA
 ; STW LINE
         LHI HIGH LINE
         LLI LOW LINE
@@ -295,8 +296,9 @@ EXPECT:
         RET
 ; Decimal reader. Arithmetic is deliberately modulo 65536.
 NUMBER:
-        LDI 0D
-        LEI 0D
+        XRA
+        LDA
+        LEA
 NUMLOOP:
         CAL PEEK
         CPI 48D
@@ -308,32 +310,7 @@ NUMLOOP:
         LHI HIGH DIGIT
         LLI LOW DIGIT
         LMA
-        LAE
-        ADE
-        LEA
-        LAD
-        ACD
-        LDA
-        LHD
-        LLE
-        LAE
-        ADE
-        LEA
-        LAD
-        ACD
-        LDA
-        LAE
-        ADE
-        LEA
-        LAD
-        ACD
-        LDA
-        LAE
-        ADL
-        LEA
-        LAD
-        ACH
-        LDA
+        CAL TIMESTEN
 ; LD DIGIT
         LHI HIGH DIGIT
         LLI LOW DIGIT
@@ -430,9 +407,7 @@ TOKTRY:
         LHI HIGH KMATCH
         LLI LOW KMATCH
         LMA
-        INE
-        JFZ TOKTRY1
-        IND
+        CAL NEXTDE
 TOKTRY1:
 ; LD RSTART
         LHI HIGH RSTART
@@ -441,29 +416,21 @@ TOKTRY1:
         LCA
 TOKCMP:
         CAL GET
-        ; Restore dictionary pointer into HL (D/E).
+; ST KSTART
+        LHI HIGH KSTART
+        LLI LOW KSTART
+        LMA
+        ; TOKCAP already uppercased the raw word; compare it directly.
         LHD
         LLE
         LAM
         NDA
         JTZ TOKMATCH
-        ; Compare with the raw character just consumed.
-; ST KSTART
-        LHI HIGH KSTART
-        LLI LOW KSTART
-        LMA
-        LHB
-        LLC
-        DCL
-        LAM
-        CAL UPPER
         LHI HIGH KSTART
         LLI LOW KSTART
         CPM
         JFZ TOKMISS
-        INE
-        JFZ TOKCMP
-        IND
+        CAL NEXTDE
         JMP TOKCMP
 TOKMATCH:
 ; LD KSAVE
@@ -490,9 +457,7 @@ TOKMISS:
         LHD
         LLE
         LAM
-        INE
-        JFZ TOKMISS1
-        IND
+        CAL NEXTDE
 TOKMISS1:
         NDA
         JFZ TOKMISS
@@ -2086,7 +2051,47 @@ IXFINISH:
         CPI 58D
         JTZ IXOK
         CPI TTHEN
+        JTZ IXOK
+        CPI TMOD
         JFZ IFFAIL
+; LD IXSTART
+        LHI HIGH IXSTART
+        LLI LOW IXSTART
+        LAM
+        LLI LOW IFSTART
+        CPM
+        JFZ IFFAIL
+; LD IXSTART+1D
+        LHI HIGH IXSTART+1D
+        LLI LOW IXSTART+1D
+        LAM
+        LLI LOW IFSTART+1D
+        CPM
+        JFZ IFFAIL
+IXMOD:
+        ; Both saved pointers match only before any additive operation.
+        ; Require a complete atomic MOD; otherwise restore full precedence.
+; STW LEFT
+        LHI HIGH LEFT
+        LLI LOW LEFT
+        LME
+        INL
+        LMD
+        CAL GET
+        CAL ATOM
+        JFZ IFFAIL
+        CAL PEEK
+        CAL IXFINISH
+        RFZ
+        CAL DIVIDE
+; LDW DREM
+        LHI HIGH DREM
+        LLI LOW DREM
+        LEM
+        INL
+        LDM
+        XRA
+        RET
 IXOK:
         XRA
         RET
@@ -2363,10 +2368,14 @@ TEXT:
         NDA
         RTZ
         OUT 10D
-        INE
-        JFZ TEXT
-        IND
+        CAL NEXTDE
         JMP TEXT
+; Shared wrap-aware advancement for editing, tokenization, and output.
+NEXTDE:
+        INE
+        RFZ
+        IND
+        RET
 CRLF:
         LAI 10D
         OUT 10D
@@ -2387,6 +2396,7 @@ MULTIPLY:
         INL
         ORM
         JFZ MULGENERAL
+TIMESTEN:
         ; Ten times DE = eight times DE plus twice DE, modulo 65536.
         LAE
         ADE
@@ -2416,8 +2426,9 @@ MULTIPLY:
         LDA
         RET
 MULGENERAL:
-        LDI 0D
-        LEI 0D
+        XRA
+        LDA
+        LEA
 MULLOOP:
         ; H stays on the workspace page throughout this leaf.
         ; Keep the accumulating result in DE instead of workspace RAM.
@@ -2627,7 +2638,7 @@ DIVALIGNED:
         LLI LOW RIGHT+1D
         LAM
         NDA
-        JTZ DIV8LOOP
+        JTZ DIV8INIT
         JMP DIVLOOP
 DIVSMALL:
 ; STW REMDR
@@ -2976,9 +2987,7 @@ DIMNAME:
 XR21:
         LAI 41D
         CAL EXPECT
-        INE
-        JFZ DIMSIZE
-        IND
+        CAL NEXTDE
 DIMSIZE:
         LAD
         NDA
@@ -3101,9 +3110,7 @@ DIMZERO:
         LHD
         LLE
         LMI 0D
-        INE
-        JFZ DIMTEST
-        IND
+        CAL NEXTDE
 DIMTEST:
         LHI HIGH ENDPTR
         LLI LOW ENDPTR
@@ -3827,23 +3834,17 @@ LISTKEY:
         CPM
         JTZ LISTFOUND
 LISTSKIP:
-        INE
-        JFZ LISTSKIP1
-        IND
+        CAL NEXTDE
 LISTSKIP1:
         LHD
         LLE
         LAM
         NDA
         JFZ LISTSKIP
-        INE
-        JFZ LISTKEY
-        IND
+        CAL NEXTDE
         JMP LISTKEY
 LISTFOUND:
-        INE
-        JFZ LISTFOUND1
-        IND
+        CAL NEXTDE
 LISTFOUND1:
         CAL TEXT
         LAI 32D
@@ -3960,13 +3961,9 @@ EDITFIND:
         LEM
         INL
         LDM
-        INE
-        JFZ EDITEND
-        IND
+        CAL NEXTDE
 EDITEND:
-        INE
-        JFZ EDITEND1
-        IND
+        CAL NEXTDE
 EDITEND1:
 ; STW ENDPTR
         LHI HIGH ENDPTR
@@ -4041,9 +4038,7 @@ EDITINSERT:
         INL
         LMD
         ; Copy the trailing sentinel and suffix upward, from the end.
-        INE
-        JFZ EDITUP0
-        IND
+        CAL NEXTDE
 EDITUP0:
 ; STW TARGET
         LHI HIGH TARGET
@@ -4056,9 +4051,7 @@ EDITUP0:
         LEM
         INL
         LDM
-        INE
-        JFZ EDITUP1
-        IND
+        CAL NEXTDE
 EDITUP1:
 ; STW SOURCE
         LHI HIGH SOURCE
@@ -4172,9 +4165,7 @@ EDITTOK:
         LLE
         LAM
         CAL PUT
-        INE
-        JFZ EDITTOK1
-        IND
+        CAL NEXTDE
 EDITTOK1:
 ; LD RCOUNT
         LHI HIGH RCOUNT
@@ -4218,9 +4209,7 @@ MOVEONE:
         LHI HIGH DIGIT
         LLI LOW DIGIT
         LMA
-        INE
-        JFZ MOVEONE1
-        IND
+        CAL NEXTDE
 MOVEONE1:
 ; STW SOURCE
         LHI HIGH SOURCE
@@ -4239,9 +4228,7 @@ MOVEONE1:
         LHD
         LLE
         LMA
-        INE
-        JFZ MOVEONE2
-        IND
+        CAL NEXTDE
 MOVEONE2:
 ; STW TARGET
         LHI HIGH TARGET
@@ -4358,8 +4345,14 @@ ERROR:
 
 ; The last 48 descriptor bytes are outside all 26 eight-byte slots.
         ORG DESC+208D
+DIV8INIT:
+; LD COUNT
+        LHI HIGH COUNT
+        LLI LOW COUNT
+        LAM
+        LDA
 DIV8LOOP:
-        ; E holds the byte remainder; carry supplies its ninth shifted bit.
+        ; E holds the byte remainder; D counts bits; carry is the ninth remainder bit.
         ; H remains on the arithmetic workspace page throughout this loop.
         LLI LOW RESULT
         LAM
@@ -4372,13 +4365,11 @@ DIV8LOOP:
         LAE
         ACE
         LEA
-        JTC DIV8SUB
         LLI LOW RIGHT
+        JTC DIV8SUB
         CPM
         JTC DIV8NEXT
 DIV8SUB:
-        LLI LOW RIGHT
-        LAE
         SUM
         LEA
         LLI LOW RESULT
@@ -4386,12 +4377,8 @@ DIV8SUB:
         ORI 1D
         LMA
 DIV8NEXT:
-        LLI LOW COUNT
-        LAM
-        SUI 1D
-        LMA
+        DCD
         JFZ DIV8LOOP
-        LDI 0D
         JMP DIVSAVE
 ARFAIL:
         XRA

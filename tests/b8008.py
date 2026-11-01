@@ -71,7 +71,7 @@ class B8008(unittest.TestCase):
             self.assertLess(end+8191+512, 0x3b00)
             # Fixed helpers reuse only explicitly reserved variable-page tail.
             memory=self.image_memory()
-            reserved=set(range(0x3ca4,0x3ccb))|set(range(0x3cd0,0x3cfd))|set(range(0x3dd0,0x3e00))
+            reserved=set(range(0x3ca4,0x3ccb))|set(range(0x3cd0,0x3cfd))|set(range(0x3dd0,0x3dfc))
             self.assertEqual({a for a in memory if a>=0x3b00},reserved)
             workspace=prepare.addresses((ROOT/'b8008/basic.src').read_text())
             self.assertLessEqual(max(v for v in workspace.values()
@@ -623,7 +623,7 @@ CLOBBER:
         addresses=sorted(a for a in memory if a>=0x3b00)
         expected=[memory[a] for a in addresses]
         program=('10 FOR I=15524 TO 15562\n20 PRINT "@";PEEK(I)\n30 NEXT I\n'
-                 '40 FOR I=15568 TO 15612\n50 PRINT "@";PEEK(I)\n60 NEXT I\n70 FOR I=15824 TO 15871\n80 PRINT "@";PEEK(I)\n90 NEXT I\n100 END\n')
+                 '40 FOR I=15568 TO 15612\n50 PRINT "@";PEEK(I)\n60 NEXT I\n70 FOR I=15824 TO 15867\n80 PRINT "@";PEEK(I)\n90 NEXT I\n100 END\n')
         output=self.execute(program+'RUN\nNEW\nPRINT 1/0\n'+program+'RUN\n',errors=True)
         self.assertIn('?DIVIDE BY ZERO',output)
         self.assertEqual([int(n) for n in re.findall(r'^@(\d+)$',output,re.M)],expected*2)
@@ -806,6 +806,59 @@ CLOBBER:
             fallback=output.split('>PRINT 7*(2+1)\n')[1]
             self.assertIn('!',fallback)
             self.assertTrue(fallback.endswith('21\n>'))
+
+    def test_simple_mod_assignment_and_precedence(self):
+        cases=[]
+        expected=[]
+        for a in (-32768,-511,-17,-1,0,1,17,511,32767):
+            for b in (-32768,-256,-17,-1,1,2,17,255,256):
+                q=abs(a)//abs(b)*(-1 if (a<0)!=(b<0) else 1)
+                cases += [f'A={a}:B={b}:C=A MOD B','PRINT "@";C']
+                expected.append(a-q*b)
+        output=self.execute('\n'.join(cases)+'\n')
+        self.assertEqual([int(n) for n in re.findall(r'^@(-?\d+)$',output,re.M)],expected)
+        source=('A=17:B=5:C=1+A MOD B:D=A MOD B+1:E=A MOD B*2\n'
+                'F=A MOD (B+1):G=A MOD B MOD 2:H=A+B MOD 3\n'
+                'PRINT "@";C;",";D;",";E;",";F;",";G;",";H\n'
+                'DIM BYTE Q(2):Q(1)=17:Q(2)=5\nR=Q(1) MOD Q(2)\n'
+                'IF R=Q(1) MOD Q(2) THEN PRINT "ARRAY MOD"\n')
+        output=self.execute(source)
+        self.assertIn('@3,3,4,5,0,19\n',output)
+        self.assertIn('ARRAY MOD\n',output)
+        for expression,error in [('A MOD 0','DIVIDE BY ZERO'),
+                                 ('A MOD (B-B)','DIVIDE BY ZERO'),
+                                 ('A MOD','SYNTAX'),('A MOD B+','SYNTAX')]:
+            output=self.execute('A=17:B=5\nC='+expression+'\nPRINT "RECOVERED"\n',errors=True)
+            self.assertIn('?'+error,output)
+            self.assertTrue(output.endswith('RECOVERED\n>'))
+
+    def test_simple_mod_skips_expression_parser(self):
+        asm=(ROOT/'a08/b8008.asm').read_text().replace(
+            'EXPR:', 'EXPR:\n        LAI 33D\n        OUT 10D',1)
+        with tempfile.TemporaryDirectory() as directory:
+            path=Path(directory)/'mod-parse.asm'
+            image=path.with_suffix('.hex')
+            path.write_text(asm)
+            result=subprocess.run([str(ASSEMBLER),str(path),'-o'+str(image)],capture_output=True,timeout=15)
+            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+            output=self.execute('A=17:B=5\nC=A MOD B\nC=1+A MOD B\n'
+                                'C=A MOD B+1\n',image=image)
+            self.assertIn('>C=A MOD B\n>',output)
+            for expression in ('1+A MOD B','A MOD B+1'):
+                body=output.split('>C='+expression+'\n')[1].split('>')[0]
+                self.assertIn('!',body)
+
+    def test_shared_helpers_and_keyword_case(self):
+        output=self.execute('nEw\n10 fOr i=1 tO 3\n20 pRiNt "@";i\n'
+                            '30 nExT i\n40 eNd\nrUn\n')
+        self.assertTrue(output.endswith('>rUn\n@1\n@2\n@3\n>'))
+        self.assertEqual(self.values(['12345','65535','65536','100000',
+                                     '10*32767','10*(-32768)']),
+                         [12345,-1,0,-31072,-10,0])
+        # Unknown words must still fail and recover.
+        output=self.execute('PRINTTHIS 1\nPRINT "RECOVERED"\n',errors=True)
+        self.assertIn('?SYNTAX',output)
+        self.assertTrue(output.endswith('RECOVERED\n>'))
 
     def test_errors_recover(self):
         cases = [('PRINT 1/0','DIVIDE BY ZERO'), ('PRINT (2+3','SYNTAX'),

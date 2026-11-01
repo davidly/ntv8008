@@ -145,8 +145,9 @@ PROMPT:
         CAL TOKENIZE
         JMP STORELINE
 DIRECT:
-        LDI 0D
-        LEI 0D
+        XRA
+        LDA
+        LEA
         STW LINE
         CAL TOKENIZE
         CAL CLEARCACHE
@@ -249,8 +250,9 @@ EXPECT:
         RET
 ; Decimal reader. Arithmetic is deliberately modulo 65536.
 NUMBER:
-        LDI 0D
-        LEI 0D
+        XRA
+        LDA
+        LEA
 NUMLOOP:
         CAL PEEK
         CPI 48D
@@ -259,32 +261,7 @@ NUMLOOP:
         RFC
         SUI 48D
         ST DIGIT
-        LAE
-        ADE
-        LEA
-        LAD
-        ACD
-        LDA
-        LHD
-        LLE
-        LAE
-        ADE
-        LEA
-        LAD
-        ACD
-        LDA
-        LAE
-        ADE
-        LEA
-        LAD
-        ACD
-        LDA
-        LAE
-        ADL
-        LEA
-        LAD
-        ACH
-        LDA
+        CAL TIMESTEN
         LD DIGIT
         ADE
         LEA
@@ -361,34 +338,24 @@ TOKTRY:
         NDA
         JTZ SYNTAX
         ST KMATCH
-        INE
-        JFZ TOKTRY1
-        IND
+        CAL NEXTDE
 TOKTRY1:
         LD RSTART
         LCA
 TOKCMP:
         CAL GET
-        ; Restore dictionary pointer into HL (D/E).
+        ST KSTART
+        ; TOKCAP already uppercased the raw word; compare it directly.
         LHD
         LLE
         LAM
         NDA
         JTZ TOKMATCH
-        ; Compare with the raw character just consumed.
-        ST KSTART
-        LHB
-        LLC
-        DCL
-        LAM
-        CAL UPPER
         LHI HIGH KSTART
         LLI LOW KSTART
         CPM
         JFZ TOKMISS
-        INE
-        JFZ TOKCMP
-        IND
+        CAL NEXTDE
         JMP TOKCMP
 TOKMATCH:
         LD KSAVE
@@ -407,9 +374,7 @@ TOKMISS:
         LHD
         LLE
         LAM
-        INE
-        JFZ TOKMISS1
-        IND
+        CAL NEXTDE
 TOKMISS1:
         NDA
         JFZ TOKMISS
@@ -1475,7 +1440,31 @@ IXFINISH:
         CPI 58D
         JTZ IXOK
         CPI TTHEN
+        JTZ IXOK
+        CPI TMOD
         JFZ IFFAIL
+        LD IXSTART
+        LLI LOW IFSTART
+        CPM
+        JFZ IFFAIL
+        LD IXSTART+1D
+        LLI LOW IFSTART+1D
+        CPM
+        JFZ IFFAIL
+IXMOD:
+        ; Both saved pointers match only before any additive operation.
+        ; Require a complete atomic MOD; otherwise restore full precedence.
+        STW LEFT
+        CAL GET
+        CAL ATOM
+        JFZ IFFAIL
+        CAL PEEK
+        CAL IXFINISH
+        RFZ
+        CAL DIVIDE
+        LDW DREM
+        XRA
+        RET
 IXOK:
         XRA
         RET
@@ -1669,10 +1658,14 @@ TEXT:
         NDA
         RTZ
         OUT 10D
-        INE
-        JFZ TEXT
-        IND
+        CAL NEXTDE
         JMP TEXT
+; Shared wrap-aware advancement for editing, tokenization, and output.
+NEXTDE:
+        INE
+        RFZ
+        IND
+        RET
 CRLF:
         LAI 10D
         OUT 10D
@@ -1686,6 +1679,7 @@ MULTIPLY:
         INL
         ORM
         JFZ MULGENERAL
+TIMESTEN:
         ; Ten times DE = eight times DE plus twice DE, modulo 65536.
         LAE
         ADE
@@ -1715,8 +1709,9 @@ MULTIPLY:
         LDA
         RET
 MULGENERAL:
-        LDI 0D
-        LEI 0D
+        XRA
+        LDA
+        LEA
 MULLOOP:
         ; H stays on the workspace page throughout this leaf.
         ; Keep the accumulating result in DE instead of workspace RAM.
@@ -1857,7 +1852,7 @@ DIVALIGNED:
         LEI 0D
         LD RIGHT+1D
         NDA
-        JTZ DIV8LOOP
+        JTZ DIV8INIT
         JMP DIVLOOP
 DIVSMALL:
         STW REMDR
@@ -2054,9 +2049,7 @@ DIMNAME:
         CALL EXPR
         LAI 41D
         CAL EXPECT
-        INE
-        JFZ DIMSIZE
-        IND
+        CAL NEXTDE
 DIMSIZE:
         LAD
         NDA
@@ -2131,9 +2124,7 @@ DIMZERO:
         LHD
         LLE
         LMI 0D
-        INE
-        JFZ DIMTEST
-        IND
+        CAL NEXTDE
 DIMTEST:
         LHI HIGH ENDPTR
         LLI LOW ENDPTR
@@ -2581,23 +2572,17 @@ LISTKEY:
         CPM
         JTZ LISTFOUND
 LISTSKIP:
-        INE
-        JFZ LISTSKIP1
-        IND
+        CAL NEXTDE
 LISTSKIP1:
         LHD
         LLE
         LAM
         NDA
         JFZ LISTSKIP
-        INE
-        JFZ LISTKEY
-        IND
+        CAL NEXTDE
         JMP LISTKEY
 LISTFOUND:
-        INE
-        JFZ LISTFOUND1
-        IND
+        CAL NEXTDE
 LISTFOUND1:
         CAL TEXT
         LAI 32D
@@ -2681,13 +2666,9 @@ EDITFIND:
         LDW INS
         STW TARGET
         LDW OLDEND
-        INE
-        JFZ EDITEND
-        IND
+        CAL NEXTDE
 EDITEND:
-        INE
-        JFZ EDITEND1
-        IND
+        CAL NEXTDE
 EDITEND1:
         STW ENDPTR
         CAL MOVEFORWARD
@@ -2731,15 +2712,11 @@ EDITINSERT:
         JFC MEMERR
         STW PE
         ; Copy the trailing sentinel and suffix upward, from the end.
-        INE
-        JFZ EDITUP0
-        IND
+        CAL NEXTDE
 EDITUP0:
         STW TARGET
         LDW SOURCE
-        INE
-        JFZ EDITUP1
-        IND
+        CAL NEXTDE
 EDITUP1:
         STW SOURCE
 EDITUP:
@@ -2800,9 +2777,7 @@ EDITTOK:
         LLE
         LAM
         CAL PUT
-        INE
-        JFZ EDITTOK1
-        IND
+        CAL NEXTDE
 EDITTOK1:
         LD RCOUNT
         SUI 1D
@@ -2835,9 +2810,7 @@ MOVEONE:
         LLE
         LAM
         ST DIGIT
-        INE
-        JFZ MOVEONE1
-        IND
+        CAL NEXTDE
 MOVEONE1:
         STW SOURCE
         LDW TARGET
@@ -2845,9 +2818,7 @@ MOVEONE1:
         LHD
         LLE
         LMA
-        INE
-        JFZ MOVEONE2
-        IND
+        CAL NEXTDE
 MOVEONE2:
         STW TARGET
         JMP MOVEFORWARD
@@ -2959,8 +2930,11 @@ ERROR:
 
 ; The last 48 descriptor bytes are outside all 26 eight-byte slots.
         ORG DESC+208D
+DIV8INIT:
+        LD COUNT
+        LDA
 DIV8LOOP:
-        ; E holds the byte remainder; carry supplies its ninth shifted bit.
+        ; E holds the byte remainder; D counts bits; carry is the ninth remainder bit.
         ; H remains on the arithmetic workspace page throughout this loop.
         LLI LOW RESULT
         LAM
@@ -2973,13 +2947,11 @@ DIV8LOOP:
         LAE
         ACE
         LEA
-        JTC DIV8SUB
         LLI LOW RIGHT
+        JTC DIV8SUB
         CPM
         JTC DIV8NEXT
 DIV8SUB:
-        LLI LOW RIGHT
-        LAE
         SUM
         LEA
         LLI LOW RESULT
@@ -2987,12 +2959,8 @@ DIV8SUB:
         ORI 1D
         LMA
 DIV8NEXT:
-        LLI LOW COUNT
-        LAM
-        SUI 1D
-        LMA
+        DCD
         JFZ DIV8LOOP
-        LDI 0D
         JMP DIVSAVE
 ARFAIL:
         XRA

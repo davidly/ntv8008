@@ -661,3 +661,54 @@ reserved descriptor workspace. Full sieve HEAP=14822 leaves 282 free bytes
 before 3b00h. The unchanged low-code + 8191-byte array + 512-byte source guard
 passes with one byte to spare. Workloads and BASIC tokens are unchanged; counts
 include native loading/tokenization and execution, excluding host I/O waits.
+
+## b8008 complete atomic MOD and register division count (2026-11-01)
+
+SIMPLEVALUE recognizes a complete atomic left MOD right expression after the
+usual terminating-token checks have failed. Matching both bytes of IXSTART and
+IFSTART proves that no earlier additive operation has been consumed. It then
+requires a complete atomic RHS and normal delimiter before calling the signed
+divider and returning DREM. Expressions such as 1+X MOD N, X MOD N+1, products,
+parentheses and chained MOD restore BC and use normal precedence parsing.
+This accelerates E's A(N)=X MOD N without editing the BASIC workload or adding
+special program tokens. Usual zero-divisor, signed wrap and cache rules remain.
+
+The byte divider keeps its bit count in D instead of loading/storing COUNT on
+every bit. E still holds the remainder; carry supplies the ninth bit. Moving
+the divisor pointer setup before the carry branch also removes a repeated low
+pointer load and unnecessary accumulator reload. D reaches zero at loop exit,
+so no separate high-remainder clear is needed. That shrinks descriptor-tail
+code from 48 to 44 bytes, now 3dd0h..3dfbh, including ARFAIL.
+
+To fund the shortcut, NUMBER shares the existing native TIMESTEN shift/add
+leaf; keyword matching compares raw characters already uppercased by TOKCAP
+rather than rereading/folding them again. Sixteen wrap-aware DE increments in
+editing, tokenization and text output share NEXTDE. Small initialization
+sequences also shrink. These changes affect cold-path call overhead slightly,
+but leave sieve/TTT within 0.003% of previous measured cycles.
+
+All 46 tests pass on Linux and native Windows. Added tests cover signed MOD
+assignment pairs, array operands, comparison RHSs, precedence/chaining/error
+fallback and division-by-zero recovery. A native EXPR marker proves only the
+complete atomic MOD shortcut skips recursive parsing. Mixed-case keyword,
+unknown-word recovery, large/wrapped decimal literal and shared-times-ten
+checks complement existing editor, page-boundary, signed arithmetic, native
+loop/stack selection and full benchmark tests. Fixed-code range/preservation
+checks reflect the four-byte smaller descriptor helper.
+
+| Benchmark | Before cycles | After cycles |
+| --- | ---: | ---: |
+| Sieve, ten passes | 2,725,922,906 | 2,725,999,234 |
+| E, 192 digits | 648,071,356 | 572,235,530 |
+| TTT, one iteration | 1,404,545,916 | 1,404,531,196 |
+
+E improves by 11.7%. A first shortcut prototype reached 573,764,362 E cycles but
+added probe overhead to ordinary expressions. Moving the check to the fallback
+path yielded 579,774,320 while avoiding those regressions; register byte-loop
+counting then produced the final 572,235,530. Workloads are unchanged; counts
+include native loading/tokenization and execution, excluding host I/O waits.
+
+Low code ends at 1900h, one byte above 18ffh; descriptor-tail code is four bytes
+smaller, giving a net resident-code saving of three bytes. Full sieve HEAP=14823
+leaves 281 bytes below workspace. The conservative low-code + 8191-byte array +
+512-byte source allowance still passes unchanged.
