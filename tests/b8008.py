@@ -71,7 +71,7 @@ class B8008(unittest.TestCase):
             self.assertLess(end+8191+512, 0x3b00)
             # Fixed helpers reuse only explicitly reserved variable-page tail.
             memory=self.image_memory()
-            reserved=set(range(0x3ca4,0x3ccb))|set(range(0x3cd0,0x3cfd))
+            reserved=set(range(0x3ca4,0x3ccb))|set(range(0x3cd0,0x3cfd))|set(range(0x3dd0,0x3e00))
             self.assertEqual({a for a in memory if a>=0x3b00},reserved)
             workspace=prepare.addresses((ROOT/'b8008/basic.src').read_text())
             self.assertLessEqual(max(v for v in workspace.values()
@@ -623,7 +623,7 @@ CLOBBER:
         addresses=sorted(a for a in memory if a>=0x3b00)
         expected=[memory[a] for a in addresses]
         program=('10 FOR I=15524 TO 15562\n20 PRINT "@";PEEK(I)\n30 NEXT I\n'
-                 '40 FOR I=15568 TO 15612\n50 PRINT "@";PEEK(I)\n60 NEXT I\n70 END\n')
+                 '40 FOR I=15568 TO 15612\n50 PRINT "@";PEEK(I)\n60 NEXT I\n70 FOR I=15824 TO 15871\n80 PRINT "@";PEEK(I)\n90 NEXT I\n100 END\n')
         output=self.execute(program+'RUN\nNEW\nPRINT 1/0\n'+program+'RUN\n',errors=True)
         self.assertIn('?DIVIDE BY ZERO',output)
         self.assertEqual([int(n) for n in re.findall(r'^@(\d+)$',output,re.M)],expected*2)
@@ -756,6 +756,56 @@ CLOBBER:
             self.assertIn('>B(I+1)=8\n>',output)
             self.assertIn('>B(I+J)=9\n!>',output)
             self.assertIn('@7,9\n',output)
+
+    def test_byte_divisor_signed_and_carry_boundaries(self):
+        rng=random.Random(8255)
+        pairs=[(a,b) for a in (-32768,-32767,-511,-255,-1,0,1,255,511,32767)
+               for b in (-32768,-257,-256,-255,-129,-1,1,127,129,255,256,257,32767)]
+        pairs += [(rng.randrange(-32768,32768),rng.choice([-1,1])*rng.randrange(1,256))
+                  for _ in range(160)]
+        expressions=[]
+        expected=[]
+        for a,b in pairs:
+            q=abs(a)//abs(b)*(-1 if (a<0)!=(b<0) else 1)
+            expressions += [f'({a})/({b})',f'({a}) MOD ({b})']
+            expected += [signed(q),a-q*b]
+        self.assertEqual(self.values(expressions),expected)
+
+    def test_divisor_width_selects_native_loop(self):
+        asm=(ROOT/'a08/b8008.asm').read_text().replace(
+            'DIV8LOOP:', 'DIV8LOOP:\n        LAI 33D\n        OUT 10D',1).replace(
+            'DIVLOOP:', 'DIVLOOP:\n        LAI 87D\n        OUT 10D',1)
+        # Instrumentation makes the otherwise exactly packed descriptor tail
+        # larger. Move only this test loop to unused RAM below the workspace.
+        asm=asm.replace('        ORG DESC+208D','        ORG 3000H')
+        with tempfile.TemporaryDirectory() as directory:
+            path=Path(directory)/'divisor-width.asm'
+            image=path.with_suffix('.hex')
+            path.write_text(asm)
+            result=subprocess.run([str(ASSEMBLER),str(path),'-o'+str(image)],capture_output=True,timeout=15)
+            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+            output=self.execute('A=511/255\nA=511/256\nA=511/-255\n',image=image)
+            for expr,marker in [('511/255','!'),('511/256','W'),('511/-255','!')]:
+                body=output.split('>A='+expr+'\n')[1].split('>')[0]
+                self.assertTrue(body)
+                self.assertEqual(set(body),{marker})
+
+    def test_simple_arithmetic_skips_operand_stack(self):
+        asm=(ROOT/'a08/b8008.asm').read_text().replace(
+            'VPUSH:', 'VPUSH:\n        LAI 33D\n        OUT 10D',1)
+        with tempfile.TemporaryDirectory() as directory:
+            path=Path(directory)/'operand-stack.asm'
+            image=path.with_suffix('.hex')
+            path.write_text(asm)
+            result=subprocess.run([str(ASSEMBLER),str(path),'-o'+str(image)],capture_output=True,timeout=15)
+            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+            output=self.execute('PRINT 7*3\nPRINT 14/3\nPRINT 14 MOD 3\n'
+                                'PRINT 7*(2+1)\n',image=image)
+            for expr,value in [('7*3',21),('14/3',4),('14 MOD 3',2)]:
+                self.assertIn('>PRINT '+expr+'\n'+str(value)+'\n>',output)
+            fallback=output.split('>PRINT 7*(2+1)\n')[1]
+            self.assertIn('!',fallback)
+            self.assertTrue(fallback.endswith('21\n>'))
 
     def test_errors_recover(self):
         cases = [('PRINT 1/0','DIVIDE BY ZERO'), ('PRINT (2+3','SYNTAX'),

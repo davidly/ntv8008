@@ -142,15 +142,20 @@ at once) before its bit loop. Signed division caches its last **operand values**
 remainder in eight bytes of existing workspace. An identical `/` or `MOD` pair
 can reuse both results even across multiplication, printing, INPUT, or NEW.
 MOD reads the cached signed remainder directly, avoiding a working-scratch copy
-on hits. Unsigned number formatting bypasses this cache; zero divisors are always errors.
+on hits. Divisors with magnitude 1..255 use a byte-remainder loop with carry for its
+ninth bit; larger divisors retain a register-based full-width loop. Simple
+multiply/divide/MOD RHSs keep the left value in scratch rather than pushing it;
+recursive operands still save/restore it on the checked stack. Unsigned number
+formatting bypasses the cache; zero divisors are always errors.
 
 Code starts at `0040h` (with a jump at zero). Tokenized programs immediately
 follow the interpreter; arrays grow upward after the program's end marker.
 Workspace occupies `3b00h..3fffh`: input/branch cache, variables/state, array
 metadata, FOR/GOSUB frames, and the expression/return stack. Fixed helper code
 uses the previously unused variable-page tail at `3ca4h..3ccah` and
-`3cd0h..3cfch`; scratch ends at `3ca3h`. RESET and the editor preserve these
-reserved code ranges. Allocation and
+`3cd0h..3cfch`; scratch ends at `3ca3h`. The byte-divider and array-fallback
+return occupy the unused descriptor-page tail at `3dd0h..3dffh`. RESET clears
+only the 26 actual descriptors and preserves all three reserved code ranges. Allocation and
 program growth are checked against `3b00h`. The full sieve program and its
 8191-byte array fit together; a full word array of that size cannot fit.
 
@@ -167,9 +172,9 @@ Measured at 500 kHz on 2026-11-01:
 
 | Benchmark | b8008 cycles | b8008 seconds | SCELBAL seconds | Speedup |
 | --- | ---: | ---: | ---: | ---: |
-| Sieve, ten passes | 2,740,693,158 | 5,481.4 | 286,415.9 | 52.3x |
-| E, 192 digits | 704,888,582 | 1,409.8 | 16,176.1 | 11.5x |
-| TTT, one iteration | 1,420,460,512 | 2,840.9 | 118,046.0 | 41.6x |
+| Sieve, ten passes | 2,725,922,906 | 5,451.8 | 286,415.9 | 52.5x |
+| E, 192 digits | 648,071,356 | 1,296.1 | 16,176.1 | 12.5x |
+| TTT, one iteration | 1,404,545,916 | 2,809.1 | 118,046.0 | 42.0x |
 
 Literal branch resolution first reduced total cycles by 4.7% for sieve, 0.1%
 for e, and 12.7% for TTT. Streamlined software calls/returns, operand parsing,
@@ -189,8 +194,9 @@ helpers make room for simple array operands. They reduce cycles by another
 11.0%, 7.1%, and 25.4%. Register multiplication, a times-ten path, shorter
 division alignment, and leaner cache hits then reduce E cycles by another 8.7%.
 Smaller descriptor lookup and shared fast array destinations reduce cycles by a
-further 9.5%, 3.6%, and 4.3%. The full sieve leaves 283 bytes below workspace;
-no benchmark workload was reduced.
+further 9.5%, 3.6%, and 4.3%. The byte divider, less operand-stack traffic, and
+shorter initialization/return sequences then save another 0.5%, 8.1%, and 1.1%.
+The full sieve leaves 282 bytes below workspace; no benchmark workload was reduced.
 
 Timings include session loading/tokenization and execution, excluding host I/O
 waits. Use `-p` or `perfrun` for cycle counts and estimated 500 kHz runtime.

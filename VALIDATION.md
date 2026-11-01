@@ -615,3 +615,49 @@ Benchmark programs and workloads are unchanged.
 Low code ends at 18feh, eleven bytes above 18f3h, and the fixed 84-byte workspace
 code ranges are unchanged. Full sieve HEAP=14821 leaves 283 bytes before 3b00h;
 the unchanged conservative RAM-size guard passes with two bytes to spare.
+
+## b8008 byte divisors and simple-operand stack removal (2026-11-01)
+
+DIVMAIN dispatches divisor magnitudes 1..255 to a byte-remainder loop. E holds
+the remainder; carry retains its ninth bit after shifting. A ninth-bit carry
+implies subtraction is required; otherwise an unsigned byte compare decides.
+The full-width loop keeps the remainder in DE and only saves it once before
+shared signed correction. Negative divisors use the same normalized magnitude
+selection, including the 255/256 boundary; decimal formatting also benefits.
+
+The 46-byte byte loop plus the existing two-byte ARFAIL return fill the unused
+48-byte descriptor tail at 3dd0h..3dffh. RESET clears the 26 eight-byte descriptor
+slots backward (208 bytes) and preserves this code. Existing fixed variable-page
+code is unchanged. HEX overlap/range and reset-preservation regressions now
+cover all three reserved ranges. Shorter zeroing and success-return sequences
+fund the low-memory additions without relaxing the full-sieve size allowance.
+
+TERMOP saves the left operand in LEFT before probing ATOM. That bounded leaf
+cannot clobber LEFT. A successful scalar/constant/simple-array RHS therefore
+avoids the operand push/pop; a complex RHS reloads LEFT, pushes it and the
+operator, and uses the original recursive parser with normal restoration.
+Multiplication, / and MOD share this path; associativity and precedence remain.
+
+All 43 tests pass on Linux and native Windows. New tests include 290 fixed/random
+signed division pairs (small divisors, 255/256 transitions, extreme signed
+values and ninth-bit carry), native markers proving narrow/wide loop selection,
+and a native VPUSH marker proving simple operands avoid the stack while a
+parenthesized RHS retains it. Prior arithmetic, cache, array, recursion, editing,
+workspace-code preservation and full benchmark/reproducibility checks pass.
+
+| Benchmark | Before cycles | After cycles | Fewer cycles |
+| --- | ---: | ---: | ---: |
+| Sieve, ten passes | 2,740,693,158 | 2,725,922,906 | 0.5% |
+| E, 192 digits | 704,888,582 | 648,071,356 | 8.1% |
+| TTT, one iteration | 1,420,460,512 | 1,404,545,916 | 1.1% |
+
+First prototype totals for E: byte/register division 686,020,498; adding operand
+stack removal 650,747,938; shorter zeroing/returns 648,071,356. With only the
+byte-loop dispatch disabled in the final image, E uses 657,010,448 cycles,
+confirming an additional 1.4% gain from the specialized loop itself.
+
+Low code ends at 18ffh, one byte above 18feh; the extra 48 resident bytes reuse
+reserved descriptor workspace. Full sieve HEAP=14822 leaves 282 free bytes
+before 3b00h. The unchanged low-code + 8191-byte array + 512-byte source guard
+passes with one byte to spare. Workloads and BASIC tokens are unchanged; counts
+include native loading/tokenization and execution, excluding host I/O waits.

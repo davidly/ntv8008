@@ -347,7 +347,7 @@ NUMLOOP:
         JMP NUMLOOP
 ; Tokenization happens on the 8008, not in the host build tools.
 TOKENIZE:
-        LAI 0D
+        XRA
 ; ST TLEN
         LHI HIGH TLEN
         LLI LOW TLEN
@@ -546,7 +546,7 @@ TOKEM:
         CAL EMIT
         JMP TOKLOOP
 TOKDONE:
-        LAI 0D
+        XRA
         CAL EMIT
         RET
 UPPER:
@@ -594,13 +594,13 @@ RESET:
         LHI HIGH VARS
         LLI 0D
 CLEARV:
-        LAI 0D
+        XRA
         LMA
         INL
         LAL
         CPI 52D
         JFZ CLEARV
-        LAI 0D
+        XRA
 ; ST FSP
         LHI HIGH FSP
         LLI LOW FSP
@@ -609,10 +609,11 @@ CLEARV:
         LLI LOW GSP
         LMA
         LHI HIGH DESC
-        LLI 0D
+        ; Clear 26 descriptors; preserve the fixed divider in the page tail.
+        LLI 208D
 CLEARD:
-        LMA
-        INL
+        DCL
+        LMI 0D
         JFZ CLEARD
 ; LDW PE
         LHI HIGH PE
@@ -634,7 +635,7 @@ CLEARD:
         CAL CLEARCACHE
         RET
 CLEARCACHE:
-        LAI 0D
+        XRA
         LHI HIGH RAW
         LLI 0D
 CLEARC1:
@@ -1529,20 +1530,28 @@ TERM1:
 ; RETURN
         JMP SRET
 TERMOP:
+        ; ATOM cannot clobber LEFT. Save it on the stack only for recursion.
         CAL GET
 ; ST OP
         LHI HIGH OP
         LLI LOW OP
         LMA
-        CAL VPUSH
+; STW LEFT
+        LLI LOW LEFT
+        LME
+        INL
+        LMD
         CAL ATOM
         JFZ TERMRHS
-; LD OP
-        LHI HIGH OP
-        LLI LOW OP
-        LAM
         JMP TERMDONE
 TERMRHS:
+; LDW LEFT
+        LHI HIGH LEFT
+        LLI LOW LEFT
+        LEM
+        INL
+        LDM
+        CAL VPUSH
 ; LD OP
         LHI HIGH OP
         LLI LOW OP
@@ -1574,10 +1583,14 @@ XR12:
         LHI HIGH OP
         LLI LOW OP
         LMA
+        CAL LPOP
 TERMDONE:
+; LD OP
+        LHI HIGH OP
+        LLI LOW OP
+        LAM
         CPI 42D
         JTZ TERMUL
-        CAL LPOP
         CAL DIVIDE
 ; LD OP
         LHI HIGH OP
@@ -1585,7 +1598,6 @@ TERMDONE:
         LAM
         CPI TMOD
         JFZ TERM1
-        ; Signed MOD reads the canonical cache payload, even after UDIV.
 ; LDW DREM
         LHI HIGH DREM
         LLI LOW DREM
@@ -1594,7 +1606,6 @@ TERMDONE:
         LDM
         JMP TERM1
 TERMUL:
-        CAL LPOP
         CAL MULTIPLY
         JMP TERM1
 FACTOR:
@@ -1878,7 +1889,8 @@ IFOP:
         CPI TTHEN
         JFZ IFFAIL
         CAL COMPARE
-        JMP IXOK
+        XRA
+        RET
 IFFAIL:
         LHI HIGH IFSTART
         LLI LOW IFSTART
@@ -1900,7 +1912,8 @@ SUMATOM:
         JTZ IXFAIL
         CPI TMOD
         JTZ IXFAIL
-        JMP IXOK
+        XRA
+        RET
 ATOM:
         LEC
         LDB
@@ -1929,10 +1942,12 @@ ATOM:
         LEM
         INL
         LDM
-        JMP IXOK
+        XRA
+        RET
 ATOMNUM:
         CAL GETWORD
-        JMP IXOK
+        XRA
+        RET
 ; The leaf index reader accepts scalars/constants and constant offsets only.
 ; It never calls ATOM recursively; nested indices restore BC for full parsing.
 ARRAYATOM:
@@ -1944,7 +1959,8 @@ ARRAYATOM:
         CAL FASTINDEX
         JTZ IXFAIL
         CAL LOADVALUE
-        JMP IXOK
+        XRA
+        RET
 ; ARID holds the array number; NZ returns DE address and A width.
 ; Z leaves BC for the caller to restore before recursive fallback.
 FASTINDEX:
@@ -2010,9 +2026,6 @@ ARDONE:
         LLI LOW ARID
         LAM
         JMP ARRAYADDR
-ARFAIL:
-        XRA
-        RET
 ; Parse sums/differences of scalar/constant atoms for indices and assignments.
 ; Only accept a full expression; other operators use the precedence parser.
 ; Z means success; NZ restores BC so EXPR can apply its full precedence rules.
@@ -2608,10 +2621,13 @@ DIVALIGNED:
         LME
         INL
         LMD
-        LLI LOW REMDR
-        LMI 0D
-        INL
-        LMI 0D
+        LDI 0D
+        LEI 0D
+; LD RIGHT+1D
+        LLI LOW RIGHT+1D
+        LAM
+        NDA
+        JTZ DIV8LOOP
         JMP DIVLOOP
 DIVSMALL:
 ; STW REMDR
@@ -2626,8 +2642,7 @@ DIVSMALL:
         LMI 0D
         JMP DIVSIGN
 DIVLOOP:
-        ; H stays on the workspace page throughout alignment and division.
-        ; Shift the dividend/quotient, then extend the partial remainder.
+        ; Full-width remainder stays in DE; H remains on the workspace page.
         LLI LOW RESULT
         LAM
         ADA
@@ -2636,19 +2651,20 @@ DIVLOOP:
         LAM
         ACA
         LMA
-        LLI LOW REMDR
-        LAM
-        ACA
-        LMA
+        LAE
+        ACE
         LEA
-        INL
-        LAM
-        ACA
-        LMA
+        LAD
+        ACD
         LDA
-        ; Divisor magnitudes are <= 32768 (formatting uses 10).
-        ; The prior remainder is smaller, so its extension fits 16 bits.
         LLI LOW RIGHT
+        LAE
+        SUM
+        INL
+        LAD
+        SBM
+        JTC DIVNEXT
+        DCL
         LAE
         SUM
         LEA
@@ -2656,12 +2672,6 @@ DIVLOOP:
         LAD
         SBM
         LDA
-        JTC DIVNEXT
-DIVSTORE:
-        LLI LOW REMDR
-        LME
-        INL
-        LMD
         LLI LOW RESULT
         LAM
         ORI 1D
@@ -2672,6 +2682,13 @@ DIVNEXT:
         SUI 1D
         LMA
         JFZ DIVLOOP
+DIVSAVE:
+; STW REMDR
+        LHI HIGH REMDR
+        LLI LOW REMDR
+        LME
+        INL
+        LMD
 DIVSIGN:
 ; LD MSIGN
         LHI HIGH MSIGN
@@ -2806,7 +2823,7 @@ PRINTNUM:
         INL
         LMD
 PRINTPOS:
-        LAI 0D
+        XRA
 ; ST PRINTN
         LHI HIGH PRINTN
         LLI LOW PRINTN
@@ -2887,7 +2904,7 @@ UDIV:
         LME
         INL
         LMD
-        LAI 0D
+        XRA
 ; ST SIGN
         LLI LOW SIGN
         LMA
@@ -3283,7 +3300,7 @@ FORSAVE:
 ; ST FSP
         LMA
         ; Initial bounds are tested too: FOR 2 TO 1 executes zero times.
-        LAI 0D
+        XRA
 ; ST KSTART
         LLI LOW KSTART
         LMA
@@ -3659,7 +3676,7 @@ XR25:
         LBI HIGH RAW
         LCI 0D
         CAL SKIP
-        LAI 0D
+        XRA
 ; ST KMATCH
         LHI HIGH KMATCH
         LLI LOW KMATCH
@@ -4339,4 +4356,44 @@ ERROR:
         CAL TEXT
         JMP PROMPT
 
+; The last 48 descriptor bytes are outside all 26 eight-byte slots.
+        ORG DESC+208D
+DIV8LOOP:
+        ; E holds the byte remainder; carry supplies its ninth shifted bit.
+        ; H remains on the arithmetic workspace page throughout this loop.
+        LLI LOW RESULT
+        LAM
+        ADA
+        LMA
+        INL
+        LAM
+        ACA
+        LMA
+        LAE
+        ACE
+        LEA
+        JTC DIV8SUB
+        LLI LOW RIGHT
+        CPM
+        JTC DIV8NEXT
+DIV8SUB:
+        LLI LOW RIGHT
+        LAE
+        SUM
+        LEA
+        LLI LOW RESULT
+        LAM
+        ORI 1D
+        LMA
+DIV8NEXT:
+        LLI LOW COUNT
+        LAM
+        SUI 1D
+        LMA
+        JFZ DIV8LOOP
+        LDI 0D
+        JMP DIVSAVE
+ARFAIL:
+        XRA
+        RET
         END
