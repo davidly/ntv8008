@@ -445,3 +445,133 @@ recursive parsing while an array RHS still takes that path.
 
 Workloads are unchanged. Counts include native loading/tokenization and
 execution, excluding host I/O waits.
+
+## b8008 loop bounds, IF conditions, and assignment sums (2026-11-01)
+
+NEXT now compares the updated counter directly against the frame bound instead
+of copying counter and bound into arithmetic scratch and calling COMPARE. FOR
+biases the bound high byte once, avoiding signed-comparison branches on each
+iteration. Both unit-step specializations remain; other steps retain signed
+wrap/overflow detection and all initial/zero-trip bounds checks.
+
+A native IF leaf recognizes complete scalar/constant comparisons followed by
+THEN. It shares COMPARE but avoids recursive expression parsing and software
+operand/operator frames. Arithmetic, chained comparisons, truth-valued IFs,
+arrays and complex conditions restore the starting token pointer and fall back.
+SIMPLEVALUE now accepts left-associative sums/differences of scalar/constant
+atoms, covering P=I+I+3, K=I+P and T=1-T. A following multiplicative or other
+operator forces full-expression fallback, preserving precedence and wraparound.
+
+TOKENIZE uses bounded hardware calls instead of the recursive software stack:
+it has no recursive paths, and maximum nested hardware depth is three. The
+recovered bytes fund these paths. Code ends at 18fch (6332 bytes from 0040h plus
+the jump at zero), only nine bytes above the prior image. Full sieve free RAM
+is 285 bytes; its unchanged conservative size guard still passes (four spare).
+
+All 32 tests pass on Linux and native Windows. New tests cover all six fast IF
+operators over signed scalar boundaries, constant operands, truth/chain/complex
+fallback and syntax recovery. A native EXPR marker proves simple IF bypasses
+recursive parsing. Other additions cover chained assignment sums/differences,
+byte/word array indices, wrap/precedence/error recovery, and 64 fixed/random
+loop cases with extreme steps, signed overflow, negative bounds and zero trips.
+
+| Benchmark | Before cycles | After cycles | Fewer cycles |
+| --- | ---: | ---: | ---: |
+| Sieve, ten passes | 3,840,704,110 | 3,403,745,824 | 11.4% |
+| E, 192 digits | 885,172,030 | 862,160,476 | 2.6% |
+| TTT, one iteration | 2,412,522,654 | 1,990,027,274 | 17.5% |
+
+General-loop comparison alone first yielded 3,670,431,846 / 864,222,856 /
+2,412,457,942 cycles (sieve/e/TTT). Subsequent measurements retained IF and sum
+recognition. A direct constant byte-array store experiment helped sieve but
+slowed E and TTT through unsuccessful probes; it was discarded. Its early-reject
+variant also exceeded the size guard. No benchmark sources/workloads changed;
+counts include native loading/tokenization and execution, excluding I/O waits.
+
+## b8008 shared operand parsing and simple array reads (2026-11-01)
+
+SIMPLEVALUE now shares ATOM decoding instead of duplicating scalar/constant
+loads. Fixed GETWORD, NEGATE, PEEK, IXFAIL, and error-entry code reuse 84 bytes
+in the previously unused variable-page tail: 3ca4h..3ccah and 3cd0h..3cfch.
+All data scratch ends at 3ca3h; RESET clears only scalar bytes and explicit
+state, preserving the code. This reclaims contiguous program space without
+adding call overhead or consuming more of the reserved 3b00h..3fffh workspace.
+The test-only division counter moved to the gap at 3ccbh.
+
+ATOM now reads byte/word arrays with a constant or scalar index and optional
+left-associative constant +/- offsets. Its index decoder does not recurse or
+call ATOM, keeping hardware depth bounded. Nested arrays, variable offsets,
+products and other complex indices restore the original token pointer and
+retain software-recursive parsing. ARRAYADDR and LOADVALUE retain normal
+allocation/type/bounds checks and byte/word handling. The shared leaf benefits
+IF comparisons, arithmetic RHSs, and simple assignment RHSs, including A(2),
+A(I), A(S+10), P=A(S+10), and IF W<>A(2) THEN ... .
+
+All 35 tests pass on Linux and native Windows. New tests check simple signed
+word/byte array values, arithmetic/comparison operands, offset chains, nested
+and variable-offset fallback, precedence, bounds and malformed-input recovery.
+Native EXPR/FACTOR markers prove simple arrays skip recursive parsing and
+complex indices still enter it. HEX checks reject overlapping records and
+require high-memory code to occupy exactly the two reserved ranges, with no
+scratch symbols inside them. A runtime test compares every reserved code byte
+before/after RUN, NEW, editing, and error recovery. The low-code RAM guard keeps
+its original full-sieve + 512-byte source allowance; it now measures the low
+segment separately from the explicitly validated fixed workspace segments.
+
+Low code ends at 1900h, four bytes above the prior 18fch image. Total resident
+code grew by 88 bytes: 6336 low bytes from 0040h plus 84 workspace bytes and the
+startup jump at zero. The unchanged full sieve leaves 281 bytes below workspace
+(HEAP=14823), and still passes the conservative size guard.
+
+| Benchmark | Before cycles | After cycles | Fewer cycles |
+| --- | ---: | ---: | ---: |
+| Sieve, ten passes | 3,403,745,824 | 3,027,987,100 | 11.0% |
+| E, 192 digits | 862,160,476 | 800,765,028 | 7.1% |
+| TTT, one iteration | 1,990,027,274 | 1,484,165,660 | 25.4% |
+
+Workloads and program tokens are unchanged. Counts include native session
+loading/tokenization and execution, excluding host I/O waits.
+
+## b8008 multiplication and division improvements for E (2026-11-01)
+
+The general shift/add multiplier keeps its accumulator in DE, shifting its
+RAM operands in place instead of loading/storing a RAM result each iteration.
+The smaller routine makes room for a left-operand-of-10 path using three shifts
+and an add, with modulo-65536 results for every signed input. Both operand bytes
+are checked so 266/522 do not accidentally select it.
+
+Division skips an entire zero high dividend byte by moving the low byte up and
+starting COUNT at eight instead of sixteen. Existing leading-bit alignment and
+signed magnitude/remainder correction remain. Helpers retain H on the workspace
+page throughout their inner loops, removing redundant high-page reloads. Zero
+result/remainder setup writes memory directly where DE is not yet needed.
+The raw divisor high byte can supply the sign XOR without an early mask.
+
+Signed MOD now reads the canonical cached DREM payload directly. Cache hits
+return DQUOT without copying the cached remainder back into working REMDR.
+Unsigned printing still owns its independent working remainder; / and MOD reuse
+remain safe across multiplication and printing, as checked by the existing
+native division-count regression.
+
+All 38 tests pass on Linux and native Windows. New boundary tests cover general
+and times-ten multiplication, signed wrapping, small division magnitudes and
+8/16-bit boundaries. Native MULLOOP instrumentation proves 10 takes the direct
+path while 266 uses the loop. Native DIVCOUNT output proves 255/-255 start at
+eight bits, 256 at sixteen, and a smaller dividend bypasses the bit loop.
+
+| Benchmark | Before cycles | After cycles |
+| --- | ---: | ---: |
+| Sieve, ten passes | 3,027,987,100 | 3,027,983,170 |
+| E, 192 digits | 800,765,028 | 731,149,004 |
+| TTT, one iteration | 1,484,165,660 | 1,484,209,968 |
+
+E improves by 8.7%; sieve and TTT remain within 0.004% of the prior counts.
+Intermediate E totals: register multiplication 783,537,070; times-ten and
+smaller sign/zero setup 752,245,424; alignment/page-load cleanup 733,374,214;
+leaner division-cache return 731,149,004. All counts include native session
+loading/tokenization and execution, excluding host I/O waits. Benchmark sources
+are unchanged, including the full 192-digit spigot calculation.
+
+Low code ends at 18f3h, thirteen bytes smaller than 1900h. The fixed 84-byte
+workspace-code ranges are unchanged. Full sieve free RAM increases from 281
+to 294 bytes, and the conservative size guard has thirteen bytes to spare.

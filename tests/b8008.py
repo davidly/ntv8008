@@ -44,6 +44,19 @@ class B8008(unittest.TestCase):
         output = self.execute(source)
         return [int(n) for n in re.findall(r'^@(-?\d+)\n', output, re.M)]
 
+    @staticmethod
+    def image_memory():
+        memory={}
+        for record in (ROOT/'a08/b8008.hex').read_text().splitlines():
+            if record[7:9]!='00':
+                continue
+            start=int(record[3:7],16)
+            for i,value in enumerate(bytes.fromhex(record[9:-2])):
+                if start+i in memory:
+                    raise AssertionError('overlapping interpreter HEX records')
+                memory[start+i]=value
+        return memory
+
     def test_rebuild(self):
         self.assertEqual(prepare.adapt(), (ROOT/'a08/b8008.asm').read_text())
         with tempfile.TemporaryDirectory() as directory:
@@ -54,8 +67,16 @@ class B8008(unittest.TestCase):
             self.assertEqual(target.read_text(), (ROOT/'a08/b8008.hex').read_text())
             # The full 8191-byte sieve array plus program must fit below workspace.
             records = target.read_text().splitlines()
-            end = max(int(r[3:7],16)+int(r[1:3],16) for r in records if r[7:9]=='00')
+            end = max(int(r[3:7],16)+int(r[1:3],16) for r in records if r[7:9]=='00' and int(r[3:7],16)<0x3b00)
             self.assertLess(end+8191+512, 0x3b00)
+            # Fixed helpers reuse only explicitly reserved variable-page tail.
+            memory=self.image_memory()
+            reserved=set(range(0x3ca4,0x3ccb))|set(range(0x3cd0,0x3cfd))
+            self.assertEqual({a for a in memory if a>=0x3b00},reserved)
+            workspace=prepare.addresses((ROOT/'b8008/basic.src').read_text())
+            self.assertLessEqual(max(v for v in workspace.values()
+                                     if isinstance(v,int) and 0x3c00<=v<0x3d00),0x3ca3)
+
 
     def test_arithmetic(self):
         cases = {'2+3*4':14, '(2+3)*4':20, '20-7-2':11,
@@ -294,14 +315,14 @@ class B8008(unittest.TestCase):
             asm=Path(directory)/'division-count.asm'
             image=asm.with_suffix('.hex')
             source=(ROOT/'a08/b8008.asm').read_text().replace('DIVMAIN:\n',
-                'DIVMAIN:\n        LHI HIGH VARS\n        LLI 200D\n'
+                'DIVMAIN:\n        LHI HIGH VARS\n        LLI 203D\n'
                 '        LAM\n        ADI 1D\n        LMA\n',1)
             asm.write_text(source)
             result=subprocess.run([str(ASSEMBLER),str(asm),'-o'+str(image)],
                                   capture_output=True,timeout=15)
             self.assertEqual(result.returncode,0,result.stdout+result.stderr)
-            marker='PRINT "@";PEEK(15560)\n'
-            program=('POKE 15560,0\nA=1234:B=17\n'
+            marker='PRINT "@";PEEK(15563)\n'
+            program=('POKE 15563,0\nA=1234:B=17\n'
                      'PRINT "Q";A/B;",";A MOD B\nC=10*7\n'
                      'PRINT "R";A MOD B;",";A/B\n'+marker+
                      'A=1235\nPRINT "Q";A/B;",";A MOD B\n'+marker+
@@ -419,7 +440,7 @@ CLOBBER:
         # Force PROGRAM to xxFF: NEW must clear both bytes across the page.
         asm=(ROOT/'a08/b8008.asm').read_text()
         records=(ROOT/'a08/b8008.hex').read_text().splitlines()
-        end=max(int(r[3:7],16)+int(r[1:3],16) for r in records if r[7:9]=='00')
+        end=max(int(r[3:7],16)+int(r[1:3],16) for r in records if r[7:9]=='00' and int(r[3:7],16)<0x3b00)
         padding=(255-end)%256
         fill=''.join('        DATA '+','.join(['0D']*min(16,padding-i))+'\n'
                      for i in range(0,padding,16))
@@ -489,8 +510,8 @@ CLOBBER:
             self.assertTrue(output.endswith('RECOVERED\n>'))
 
     def test_atomic_rhs_skips_recursive_factor(self):
-        # A native marker proves atomic multiply/divide skip FACTOR; arrays
-        # still enter it. Instrumentation executes on the emulated CPU.
+        # A native marker proves scalar and simple-array RHSs skip FACTOR.
+        # A complex array index still enters the full parser. Instrumentation executes on the emulated CPU.
         asm=(ROOT/'a08/b8008.asm').read_text().replace(
             'FACTOR:', 'FACTOR:\n        LAI 33D\n        OUT 10D',1)
         with tempfile.TemporaryDirectory() as directory:
@@ -500,10 +521,203 @@ CLOBBER:
             result=subprocess.run([str(ASSEMBLER),str(path),'-o'+str(image)],capture_output=True,timeout=15)
             self.assertEqual(result.returncode,0,result.stdout+result.stderr)
             output=self.execute('PRINT 7*3\nPRINT 24/3\nDIM BYTE A(1)\n'
-                                'A(1)=4\nPRINT 7*A(1)\n',image=image)
+                                'A(1)=4\nPRINT 7*A(1)\nPRINT 7*A(1+0*1)\n',image=image)
             self.assertIn('>PRINT 7*3\n21\n>',output)
             self.assertIn('>PRINT 24/3\n8\n>',output)
-            self.assertIn('>PRINT 7*A(1)\n!28\n>',output)
+            self.assertIn('>PRINT 7*A(1)\n28\n>',output)
+            fallback=output.split('>PRINT 7*A(1+0*1)\n')[1]
+            self.assertIn('!',fallback)
+            self.assertTrue(fallback.endswith('28\n>'))
+
+    def test_fast_if_conditions_and_fallback(self):
+        statements=[]
+        expected=[]
+        for a in (-32768,-1,0,255,32767):
+            for b in (-32768,-1,0,256,32767):
+                for op,value in [('<',a<b),('>',a>b),('=',a==b),
+                                 ('<=',a<=b),('>=',a>=b),('<>',a!=b)]:
+                    statements.append(f'A={a}:B={b}:R=0:IF A{op}B THEN R=1')
+                    statements.append('PRINT "@";R')
+                    expected.append(int(value))
+        output=self.execute('\n'.join(statements)+'\n')
+        self.assertEqual([int(n) for n in re.findall(r'^@(-?\d+)$',output,re.M)],expected)
+        source=('10 A=3:B=2\n20 IF A>B THEN PRINT "SCALARS"\n'
+                '30 IF 3>=B THEN PRINT "LEFT CONSTANT"\n'
+                '40 IF A<>2 THEN PRINT "RIGHT CONSTANT"\n'
+                '50 IF A>B+1 THEN PRINT "BAD"\n'
+                '60 IF A>B*2-2 THEN PRINT "FALLBACK"\n'
+                '70 IF A<B<2 THEN PRINT "CHAIN"\n'
+                '80 IF A THEN IF B=2 THEN PRINT "TRUTH"\n'
+                '90 IF (A-B)=1 THEN PRINT "PARENS"\nRUN\n')
+        self.assertEqual(self.execute(source).split('>RUN\n')[1],
+                         'SCALARS\nLEFT CONSTANT\nRIGHT CONSTANT\nFALLBACK\nCHAIN\nTRUTH\nPARENS\n>')
+        for condition in ('A< THEN','A=3','A=>2 THEN','A<2* THEN'):
+            output=self.execute('A=3\nIF '+condition+' PRINT 7\nPRINT "RECOVERED"\n',errors=True)
+            self.assertIn('?SYNTAX',output)
+            self.assertTrue(output.endswith('RECOVERED\n>'))
+
+    def test_fast_if_skips_expression_parser(self):
+        asm=(ROOT/'a08/b8008.asm').read_text().replace(
+            'EXPR:', 'EXPR:\n        LAI 33D\n        OUT 10D',1)
+        with tempfile.TemporaryDirectory() as directory:
+            path=Path(directory)/'condition.asm'
+            image=path.with_suffix('.hex')
+            path.write_text(asm)
+            result=subprocess.run([str(ASSEMBLER),str(path),'-o'+str(image)],capture_output=True,timeout=15)
+            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+            output=self.execute('A=7:B=3\nIF A>B THEN PRINT "FAST"\n'
+                                'IF A>B+1 THEN PRINT "SLOW"\n',image=image)
+            self.assertIn('>IF A>B THEN PRINT "FAST"\nFAST\n>',output)
+            self.assertIn('>IF A>B+1 THEN PRINT "SLOW"\n!SLOW\n>',output)
+
+    def test_simple_assignment_sums(self):
+        source=('I=7:J=2:K=3\nP=I+I+3:T=1-J:V=I-J-K:W=I+J-K+4\n'
+                'PRINT "@";P;",";T;",";V;",";W\n'
+                'A=32767:B=1:C=A+B+1:D=0-A-B-1\n'
+                'PRINT "@";C;",";D\nDIM A(20),BYTE B(20)\n'
+                'A(I+J-K)=1234:B(I+J+K)=257\n'
+                'PRINT "@";A(I+J-K);",";B(I+J+K)\n'
+                'C=20-J*K+I:D=20-J-K*I\nPRINT "@";C;",";D\n')
+        output=self.execute(source)
+        for expected in ('@17,-1,2,10\n','@-32767,32767\n','@1234,1\n','@21,-3\n'):
+            self.assertIn(expected,output)
+        for expression in ('I+J+','I-J*','I++','I+J/(J-J)'):
+            output=self.execute('I=7:J=2\nC='+expression+'\nPRINT "RECOVERED"\n',errors=True)
+            self.assertIn('?',output)
+            self.assertTrue(output.endswith('RECOVERED\n>'))
+
+    def test_general_loop_signed_boundaries(self):
+        rng=random.Random(800811)
+        cases=[(-32768,-32768,-1),(32767,32767,1),
+               (-32768,32767,32767),(32767,-32768,-32768),
+               (-32768,32767,1),(32767,-32768,-1)]
+        # Avoid the two full-range unit loops: boundaries are covered above.
+        cases=cases[:-2]
+        for _ in range(60):
+            start=rng.choice([-32768,-32767,-257,-1,0,255,32766,32767])
+            step=rng.choice([-32768,-32767,-257,-3,-1,1,2,257,32767])
+            limit=max(-32768,min(32767,start+rng.randrange(-5,6)))
+            cases.append((start,limit,step))
+        for offset in range(0,len(cases),8):
+            lines=[]
+            expected=[]
+            for start,limit,step in cases[offset:offset+8]:
+                value=start
+                count=0
+                while value<=limit if step>0 else value>=limit:
+                    count+=1
+                    updated=signed(value+step)
+                    overflow=(step>0 and updated<value) or (step<0 and updated>value)
+                    value=updated
+                    if overflow:
+                        break
+                expected.append((count,value))
+                for statement in ('C=0',f'FOR I={start} TO {limit} STEP {step}',
+                                  'C=C+1','NEXT I','PRINT "@";C;",";I'):
+                    lines.append(f'{10*(len(lines)+1)} {statement}')
+            output=self.execute('\n'.join(lines)+'\nRUN\n')
+            self.assertEqual([(int(a),int(b)) for a,b in re.findall(r'^@(-?\d+),(-?\d+)$',output,re.M)],expected)
+
+    def test_workspace_code_survives_reset(self):
+        memory=self.image_memory()
+        addresses=sorted(a for a in memory if a>=0x3b00)
+        expected=[memory[a] for a in addresses]
+        program=('10 FOR I=15524 TO 15562\n20 PRINT "@";PEEK(I)\n30 NEXT I\n'
+                 '40 FOR I=15568 TO 15612\n50 PRINT "@";PEEK(I)\n60 NEXT I\n70 END\n')
+        output=self.execute(program+'RUN\nNEW\nPRINT 1/0\n'+program+'RUN\n',errors=True)
+        self.assertIn('?DIVIDE BY ZERO',output)
+        self.assertEqual([int(n) for n in re.findall(r'^@(\d+)$',output,re.M)],expected*2)
+
+    def test_fast_array_operands_and_fallback(self):
+        source=('DIM BYTE B(20),A(20)\nI=3:J=1:B(2)=7:B(3)=9:B(4)=11\n'
+                'A(2)=-1234:A(3)=32767\n'
+                'X=B(2):Y=B(I):Z=B(I+1):W=B(I-1+2-1)\n'
+                'PRINT "@";X;",";Y;",";Z;",";W\n'
+                'PRINT "@";B(2)+B(3)-B(4);",";A(2);",";A(I)\n'
+                'IF B(2)<B(I) THEN PRINT "ARRAYS"\n'
+                'IF B(I+1)=11 THEN PRINT "OFFSET"\n'
+                'IF 0<B(2)+1 THEN PRINT "PRECEDENCE"\n'
+                'B(1)=2\nPRINT "@";B(B(1));",";B(I+J);",";B(I+J*1)\n'
+                'PRINT "@";2+B(I)*3;",";20-B(I-1)*2\n')
+        output=self.execute(source)
+        for expected in ('@7,9,11,9\n','@5,-1234,32767\n','ARRAYS\n','OFFSET\n',
+                         'PRECEDENCE\n','@7,11,11\n','@29,6\n'):
+            self.assertIn(expected,output)
+        for expression,error in [('B(21)','BOUNDS'),('B(0-1)','BOUNDS'),
+                                 ('C(0)','BOUNDS'),('B(I+)','SYNTAX'),
+                                 ('B(I+1','SYNTAX'),('B(I+J*)','SYNTAX')]:
+            output=self.execute('DIM BYTE B(20)\nI=2:J=1\nPRINT '+expression+
+                                '\nPRINT "RECOVERED"\n',errors=True)
+            self.assertIn('?'+error,output)
+            self.assertTrue(output.endswith('RECOVERED\n>'))
+
+    def test_fast_array_skips_expression_parser(self):
+        asm=(ROOT/'a08/b8008.asm').read_text().replace(
+            'EXPR:', 'EXPR:\n        LAI 33D\n        OUT 10D',1)
+        with tempfile.TemporaryDirectory() as directory:
+            path=Path(directory)/'array-parse.asm'
+            image=path.with_suffix('.hex')
+            path.write_text(asm)
+            result=subprocess.run([str(ASSEMBLER),str(path),'-o'+str(image)],capture_output=True,timeout=15)
+            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+            output=self.execute('DIM BYTE B(3)\nI=1:J=1:B(1)=7:B(2)=9\n'
+                                'X=B(I+1)\nIF X=B(2) THEN PRINT "FAST"\n'
+                                'IF X=B(I+J) THEN PRINT "FALLBACK"\n',image=image)
+            self.assertIn('>X=B(I+1)\n>',output)
+            self.assertIn('>IF X=B(2) THEN PRINT "FAST"\nFAST\n>',output)
+            fallback=output.split('>IF X=B(I+J) THEN PRINT "FALLBACK"\n')[1]
+            self.assertIn('!',fallback)
+            self.assertTrue(fallback.endswith('FALLBACK\n>'))
+
+    def test_multiply_ten_and_general_boundaries(self):
+        expressions=[]
+        expected=[]
+        for a in (0,1,2,10,266,522,-10,-1,-32768,32767):
+            for b in (-32768,-257,-1,0,1,255,256,32767):
+                expressions.append(f'({a})*({b})')
+                expected.append(signed(a*b))
+        self.assertEqual(self.values(expressions),expected)
+        # A native marker proves the full 16-bit value 10 selects the shift/add
+        # path, while 266 (same low byte) still uses general multiplication.
+        asm=(ROOT/'a08/b8008.asm').read_text().replace(
+            'MULLOOP:', 'MULLOOP:\n        LAI 33D\n        OUT 10D',1)
+        with tempfile.TemporaryDirectory() as directory:
+            path=Path(directory)/'multiply.asm'
+            image=path.with_suffix('.hex')
+            path.write_text(asm)
+            result=subprocess.run([str(ASSEMBLER),str(path),'-o'+str(image)],capture_output=True,timeout=15)
+            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+            output=self.execute('PRINT 10*7\nPRINT 266*7\n',image=image)
+            self.assertIn('>PRINT 10*7\n70\n>',output)
+            fallback=output.split('>PRINT 266*7\n')[1]
+            self.assertIn('!',fallback)
+            self.assertTrue(fallback.endswith('1862\n>'))
+
+    def test_division_small_magnitudes(self):
+        expressions=[]
+        expected=[]
+        for a in (-257,-256,-255,-128,-1,0,1,127,128,255,256,257):
+            for b in (-32768,-256,-127,-10,-1,1,2,10,127,256):
+                q=abs(a)//abs(b)*(-1 if (a<0)!=(b<0) else 1)
+                expressions += [f'({a})/({b})',f'({a}) MOD ({b})']
+                expected += [signed(q),a-q*b]
+        self.assertEqual(self.values(expressions),expected)
+
+    def test_division_skips_zero_high_byte(self):
+        # Emit the native bit count before its store: no numeric PRINT calls
+        # are used, so unsigned formatting cannot add unrelated divisions.
+        asm=(ROOT/'a08/b8008.asm').read_text().replace(
+            'DIVCOUNT:', 'DIVCOUNT:\n        OUT 10D',1)
+        with tempfile.TemporaryDirectory() as directory:
+            path=Path(directory)/'division-align.asm'
+            image=path.with_suffix('.hex')
+            path.write_text(asm)
+            result=subprocess.run([str(ASSEMBLER),str(path),'-o'+str(image)],capture_output=True,timeout=15)
+            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+            output=self.execute('A=255/2\nA=256/2\nA=-255/2\nA=1/2\nPRINT "DONE"\n',image=image)
+            for expression,count in [('255/2',8),('256/2',16),('-255/2',8)]:
+                self.assertIn('>A='+expression+'\n'+chr(count)+'>',output)
+            self.assertIn('>A=1/2\n>',output)
 
     def test_errors_recover(self):
         cases = [('PRINT 1/0','DIVIDE BY ZERO'), ('PRINT (2+3','SYNTAX'),

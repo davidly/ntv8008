@@ -117,28 +117,37 @@ and RETURN already save continuation addresses and do not search for lines.
 
 Constants, scalar values, and indexed-array operands have fast parsing paths;
 unary operators and compound/parenthesized expressions retain the recursive
-parser and its precedence rules. Positive unit-step NEXT updates and compares
-the saved counter directly, with the same signed-bound/overflow behavior; other
-steps retain the general loop path. All stack capacity and error checks remain.
+parser and its precedence rules. NEXT compares directly against the saved
+frame bound, whose high byte is biased once for signed comparisons. Unit steps
+retain specialized updates; all signed-bound/overflow and stack checks remain.
+Simple scalar/constant/array IF comparisons avoid the recursive expression parser,
+accepting only a complete comparison followed by THEN.
 
 Array indices and assignment right-hand sides share a speculative native parser
-for constants, scalars, and one constant `+`/`-` offset. Thus `A(I)`, `A(3)`,
-`A(I+1)`, `C=C+1`, and simple stores avoid full expression parsing. A nonmatching
+for sums/differences of constants and scalars. Thus `A(I)`, `A(3)`, `A(I+1)`,
+`C=C+1`, `P=I+I+3`, and `T=1-T` avoid full expression parsing. A nonmatching
 expression restores the token pointer and uses the full parser, retaining
 precedence, signed wraparound, and array bounds checks. No new program tokens
-or source edits are needed.
+or source edits are needed. Simple array reads such as `A(2)`, `A(I)`, and
+`A(S+10)` also use a bounded leaf, with full descriptor/bounds checks. Nested
+or complex indices restore the token pointer and use recursive parsing.
 
-Multiplication stops when its remaining multiplier becomes zero. Division
-handles a smaller dividend directly and skips leading zero bits before its
-bit loop. Signed division caches its last **operand values**, quotient, and
+Multiplication keeps its accumulator in registers, stops when the multiplier
+becomes zero, and uses shifts/adds for a left operand of 10. Division handles a
+smaller dividend directly and skips leading zero bits (a whole zero high byte
+at once) before its bit loop. Signed division caches its last **operand values**, quotient, and
 remainder in eight bytes of existing workspace. An identical `/` or `MOD` pair
 can reuse both results even across multiplication, printing, INPUT, or NEW.
-Unsigned number formatting bypasses this cache; zero divisors are always errors.
+MOD reads the cached signed remainder directly, avoiding a working-scratch copy
+on hits. Unsigned number formatting bypasses this cache; zero divisors are always errors.
 
 Code starts at `0040h` (with a jump at zero). Tokenized programs immediately
 follow the interpreter; arrays grow upward after the program's end marker.
 Workspace occupies `3b00h..3fffh`: input/branch cache, variables/state, array
-metadata, FOR/GOSUB frames, and the expression/return stack. Allocation and
+metadata, FOR/GOSUB frames, and the expression/return stack. Fixed helper code
+uses the previously unused variable-page tail at `3ca4h..3ccah` and
+`3cd0h..3cfch`; scratch ends at `3ca3h`. RESET and the editor preserve these
+reserved code ranges. Allocation and
 program growth are checked against `3b00h`. The full sieve program and its
 8191-byte array fit together; a full word array of that size cannot fit.
 
@@ -155,9 +164,9 @@ Measured at 500 kHz on 2026-11-01:
 
 | Benchmark | b8008 cycles | b8008 seconds | SCELBAL seconds | Speedup |
 | --- | ---: | ---: | ---: | ---: |
-| Sieve, ten passes | 3,840,704,110 | 7,681.4 | 286,415.9 | 37.3x |
-| E, 192 digits | 885,172,030 | 1,770.3 | 16,176.1 | 9.1x |
-| TTT, one iteration | 2,412,522,654 | 4,825.0 | 118,046.0 | 24.5x |
+| Sieve, ten passes | 3,027,983,170 | 6,056.0 | 286,415.9 | 47.3x |
+| E, 192 digits | 731,149,004 | 1,462.3 | 16,176.1 | 11.1x |
+| TTT, one iteration | 1,484,209,968 | 2,968.4 | 118,046.0 | 39.8x |
 
 Literal branch resolution first reduced total cycles by 4.7% for sieve, 0.1%
 for e, and 12.7% for TTT. Streamlined software calls/returns, operand parsing,
@@ -170,8 +179,13 @@ A shared native word reader and smaller output/array/division sequences save
 another 120 bytes and about 0.6% of cycles. Atomic arithmetic RHSs now skip
 operator-stack saves and recursive parser calls, saving another 1.6%, 2.8%,
 and 0.9% of cycles. Multiplicative precedence and array/complex operands retain
-the full parser. The full sieve leaves 294 bytes below workspace; no benchmark
-workload was reduced.
+the full parser. Direct loop comparisons, simple IF conditions, and broader
+assignment sums/differences reduce cycles by another 11.4%, 2.6%, and 17.5%.
+Sharing atom decoding and using 84 bytes of unused reserved workspace for fixed
+helpers make room for simple array operands. They reduce cycles by another
+11.0%, 7.1%, and 25.4%. Register multiplication, a times-ten path, shorter
+division alignment, and leaner cache hits then reduce E cycles by another 8.7%.
+The full sieve leaves 294 bytes below workspace; no benchmark workload was reduced.
 
 Timings include session loading/tokenization and execution, excluding host I/O
 waits. Use `-p` or `perfrun` for cycle counts and estimated 500 kHz runtime.

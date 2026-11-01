@@ -218,7 +218,7 @@ Measured from the included images on 2026-10-31. Values below are estimated
 | ACK Modula-2 | 740.8 | 526.3 | 319.9 |
 | ACK Occam 1 | 1,354.1 | 730.2 | 817.2 |
 | ACK integer BASIC | 2,568.7 | 617.0 | 489.2 |
-| b8008 integer BASIC interpreter | 7,681.4 | 1,770.3 | 4,825.0 |
+| b8008 integer BASIC interpreter | 6,056.0 | 1,462.3 | 2,968.4 |
 
 ACK and SmallC share conservative native optimizations for byte locals,
 register/flag liveness, and frame addresses. Byte values can stay in otherwise
