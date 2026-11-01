@@ -34,6 +34,8 @@ class Starters(unittest.TestCase):
     def check_compiled(self, project):
         self.script(project, 'build')
         self.assertTrue((project / 'build/program.hex').is_file())
+        self.assertTrue((project / 'build/program.map').read_text().strip())
+        self.assertTrue((project / 'build/program.lst').is_file())
         for key, square in ((b'0', 0), (b'1', 1), (b'2', 4), (b'3', 9)):
             with self.subTest(project=project.name, key=key):
                 output = self.script(project, 'run', '-n:1000000', data=key)

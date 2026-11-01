@@ -3,4 +3,4 @@ set -eu
 project=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 repo=$(CDPATH= cd -- "$project/../.." && pwd)
 mkdir -p "$project/build"
-"$repo/a08/a08" "$project/program.asm" "-o$project/build/program.hex"
+"${PYTHON:-python3}" "$repo/tools/build_map.py" "$project/program.asm" "$project/build/program.hex"

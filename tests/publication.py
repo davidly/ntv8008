@@ -8,10 +8,17 @@ import unittest
 
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
-from tools.publication import validate, candidates
+from tools.publication import validate, candidates, ignored
 
 
 class Publication(unittest.TestCase):
+    def test_build_directories_ignored_without_git(self):
+        for name in ('examples/adventure-c/build/program.hex',
+                     'examples/compare/build/assembly.map',
+                     'starters/smallc/build/program.asm'):
+            self.assertTrue(ignored(name), name)
+        self.assertFalse(ignored('examples/adventure-c/program.c'))
+
     def test_inventory(self):
         result=subprocess.run([sys.executable,str(ROOT/'tools/publication.py')],capture_output=True,text=True)
         self.assertEqual(result.returncode,0,result.stdout+result.stderr)

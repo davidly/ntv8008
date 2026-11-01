@@ -9,6 +9,8 @@ if errorlevel 1 (set "PYTHON=python") else (set "PYTHON=py -3")
 if not exist build mkdir build
 if errorlevel 1 goto done
 %PYTHON% "%repo%\smallc\compile.py" program.c -o build\program.hex --assembly build\program.asm
+if errorlevel 1 goto done
+%PYTHON% "%repo%\tools\build_map.py" build\program.asm build\program.hex
 :done
 set "result=%errorlevel%"
 popd

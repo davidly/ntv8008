@@ -26,6 +26,7 @@ void I8008::power_on( uint16_t address )
     halted = ended = invalid = false;
     m_state &= stateTrace;
     cycles = 0;
+    m_previousSymbol = 0;
     if ( m_tracer )
         m_tracer->Trace( "power on, pc %04x\n", pc() );
 } //power_on
@@ -320,8 +321,19 @@ void I8008::trace_state() const
 
 void I8008::trace_state( uint16_t address, uint8_t op, bool injected ) const
 {
-    if ( !m_tracer )
+    if ( !m_tracer || !m_tracer->IsEnabled() )
         return;
+    if ( m_symbolLookup )
+    {
+        uint16_t offset = 0;
+        const char * name = m_symbolLookup( address, offset );
+        if ( name != m_previousSymbol && name )
+        {
+            if ( offset ) m_tracer->Trace( "%s + %x:\n", name, offset );
+            else m_tracer->Trace( "%s:\n", name );
+        }
+        m_previousSymbol = name;
+    }
     uint16_t operands = ( address + ( injected ? 0 : 1 ) ) & 0x3fff;
     m_tracer->Trace( "pc %04x, op %02x, op2 %02x, op3 %02x, a %02x, b %02x, c %02x, d %02x, e %02x, h %02x, l %02x, sp %u, %c%c%c%c, cycles %llu, %s%s\n",
                      address, op, memory[ operands ], memory[ ( operands + 1 ) & 0x3fff ],

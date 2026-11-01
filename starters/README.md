@@ -28,3 +28,6 @@ ACK's native Windows setup builds all required generators and host tools with
 MSVC; WSL is optional. See [the Windows build guide](../ack/MSVC.md).
 
 The starter source and wrappers are BSD-3-Clause project code; see [LICENSE](../LICENSE).
+
+Assembly and C builds also produce `build/program.lst` and `build/program.map`.
+Use `run.sh -t -i` or `run.bat -t -i`: the adjacent map is loaded automatically.

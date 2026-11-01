@@ -35,7 +35,7 @@ def ignored(name):
         pattern=pattern.lstrip('/')
         if pattern.endswith('/'):
             directory=pattern.rstrip('/')
-            if (name.startswith(directory+'/') if anchored else directory in Path(name).parts):
+            if (fnmatch.fnmatchcase(name,directory+'/*') if anchored else directory in Path(name).parts):
                 return True
         elif fnmatch.fnmatchcase(name if anchored or '/' in pattern else Path(name).name,pattern):
             return True

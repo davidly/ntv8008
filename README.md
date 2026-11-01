@@ -301,3 +301,11 @@ Downloaded dependencies, historical local inputs, logs, listings, object files
 and emulator/assembler binaries are ignored. Do not force-add them or publish a
 raw working-directory ZIP. Preserve third-party notices in releases as well as
 source checkouts. No GitHub repository is created or pushed by setup.
+
+Programming help: [machine and language reference](docs/programming.md),
+[debugging and symbol maps](docs/debugging.md).
+
+More programming resources: [choose a language](docs/languages.md),
+[practical games](examples/README.md), [optimization walkthrough](docs/optimization.md),
+and [testing your programs](docs/testing.md). Starter builds generate adjacent
+symbol maps; `-t -i` automatically uses them without a `-m` argument.

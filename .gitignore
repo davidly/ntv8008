@@ -42,3 +42,4 @@ __pycache__/
 # Starter build outputs and personal programs are not publication inputs.
 /starters/*/build/
 /work/
+/examples/*/build/

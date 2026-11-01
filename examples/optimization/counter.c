@@ -1,0 +1,17 @@
+#include <stdio.h>
+main()
+{
+    int i, pass, sum, digit;
+    for (pass = 0; pass < 10; pass++) {
+        sum = 0;
+        digit = 0;
+        for (i = 0; i < 128; i++) {
+            sum += digit;
+            digit++;
+            if (digit == 10) digit = 0;
+        }
+    }
+    putu(sum);
+    putchar('\n');
+    return 0;
+}

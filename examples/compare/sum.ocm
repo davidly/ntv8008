@@ -1,0 +1,7 @@
+var total:
+seq
+  total := 0
+  seq i = [1 for 10]
+    total := total + i
+  putu(total)
+  puts("*n")

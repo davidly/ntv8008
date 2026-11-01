@@ -18,6 +18,7 @@ struct I8008
     void set_tracer( CTrace * tracer ) { m_tracer = tracer; } // caller owns the tracer
     void trace_instructions( bool trace ) { if ( trace ) m_state |= stateTrace; else m_state &= ~stateTrace; }
     void trace_state() const;
+    void set_symbol_lookup( const char * (*lookup)( uint16_t, uint16_t & ) ) { m_symbolLookup = lookup; m_previousSymbol = 0; }
     const char * render_operation( uint16_t address ) const;
 
     void power_on( uint16_t address = 0 );
@@ -29,6 +30,8 @@ struct I8008
 
 private:
     CTrace * m_tracer = 0;
+    const char * (*m_symbolLookup)( uint16_t, uint16_t & ) = 0;
+    mutable const char * m_previousSymbol = 0;
     enum { stateHalted = 1, stateEnded = 2, stateTrace = 4 };
     unsigned m_state = 0;
     void sync_state() // preserve direct writes to the public stop fields between calls

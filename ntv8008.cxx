@@ -14,6 +14,8 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <map>
+#include <sstream>
 #ifdef _WIN32
 #define NOMINMAX
 #include <windows.h>
@@ -38,6 +40,44 @@ static int g_pendingInput = -1;
 static bool g_inputEof = false;
 static unsigned g_statusPort = 1;
 static unsigned g_inputPort = 2, g_outputPort = 10; // octal 12
+
+// Map addresses are hexadecimal, independent of command-line number syntax.
+static std::map< uint16_t, std::string > g_symbols;
+
+static const char * symbol_lookup( uint16_t address, uint16_t & offset )
+{
+    auto found = g_symbols.upper_bound( address );
+    if ( found == g_symbols.begin() ) return 0;
+    --found;
+    offset = address - found->first;
+    return found->second.c_str();
+} //symbol_lookup
+
+static bool load_symbols( const char * path )
+{
+    std::ifstream input( path );
+    if ( !input ) { fprintf( stderr, "can't open symbol map: %s\n", path ); return false; }
+    std::string line;
+    unsigned lineNumber = 0;
+    while ( std::getline( input, line ) )
+    {
+        lineNumber++;
+        std::istringstream fields( line );
+        std::string address, name, extra;
+        if ( !( fields >> address ) || '#' == address[ 0 ] ) continue;
+        char * end;
+        errno = 0;
+        unsigned long value = strtoul( address.c_str(), &end, 16 );
+        if ( errno || *end || end == address.c_str() || value >= 16384 ||
+             !( fields >> name ) || ( fields >> extra ) || g_symbols.count( (uint16_t) value ) )
+        {
+            fprintf( stderr, "invalid symbol map %s, line %u\n", path, lineNumber );
+            return false;
+        }
+        g_symbols[ (uint16_t) value ] = name;
+    }
+    return !input.bad();
+} //load_symbols
 
 static void on_signal( int ) { g_stopped = 1; }
 
@@ -276,6 +316,7 @@ static void usage()
             "  -p          report cycles, elapsed time, and estimated 500 kHz 8008 runtime\n"
             "  -t          enable debug tracing to ntv8008.log (overwrites previous log)\n"
             "  -i          include each instruction in the log; requires -t\n"
+            "  -m:file     override automatic adjacent .map files for instruction tracing\n"
             "  --in:port   keyboard port, 0..7 (default 2)\n"
             "  --status:port keyboard status, 0..7 (default input port minus one, modulo 8)\n"
             "  --out:port  console port, 8..31 (default 10 decimal)\n"
@@ -299,7 +340,7 @@ int main( int argc, char * argv[] )
     uint64_t address = 0x40, limit = 0, hz = 0;
     bool performance = false, trace = false, traceInstructions = false, options = true;
     std::vector< const char * > files;
-    const char * inputPath = 0;
+    const char * inputPath = 0, * symbolPath = 0;
     bool statusSpecified = false;
     for ( int i = 1; i < argc; i++ )
     {
@@ -310,6 +351,7 @@ int main( int argc, char * argv[] )
         if ( options && 0 == strcmp( arg, "-p" ) ) performance = true;
         else if ( options && 0 == strcmp( arg, "-t" ) ) trace = true;
         else if ( options && 0 == strcmp( arg, "-i" ) ) traceInstructions = true;
+        else if ( options && 0 == strncmp( arg, "-m:", 3 ) && arg[ 3 ] ) symbolPath = arg + 3;
         else if ( options && 0 == strncmp( arg, "-l:", 3 ) && arg[ 3 ] ) inputPath = arg + 3;
         else if ( options && '-' == *arg )
         {
@@ -345,6 +387,20 @@ int main( int argc, char * argv[] )
         fprintf( stderr, "can't create ntv8008.log\n" );
         return 1;
     }
+    if ( symbolPath && !load_symbols( symbolPath ) ) return 1;
+    if ( !symbolPath && trace && traceInstructions )
+    {
+        for ( size_t i = 0; i < files.size(); i++ )
+        {
+            std::string path = files[ i ];
+            size_t slash = path.find_last_of( "/\\" ), dot = path.find_last_of( '.' );
+            if ( dot != std::string::npos && ( slash == std::string::npos || dot > slash ) ) path.erase( dot );
+            path += ".map";
+            std::ifstream available( path.c_str() );
+            if ( available && !load_symbols( path.c_str() ) ) return 1;
+        }
+    }
+    if ( !g_symbols.empty() ) cpu.set_symbol_lookup( symbol_lookup );
     cpu.set_tracer( &tracer );
     cpu.trace_instructions( traceInstructions );
     tracer.Trace( "Intel 8008 console, entry %04x, input port %u, output port %u, limit %llu, Hz %llu\n",

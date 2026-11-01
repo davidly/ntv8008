@@ -13,8 +13,8 @@ def main():
     parser.add_argument('--compile',action='store_true',help='also rebuild/test ACK and SmallC host toolchains; run setup.py --all first')
     parser.add_argument('--basic-benchmarks',action='store_true',help='include slow optional SCELBAL benchmarks')
     args=parser.parse_args()
-    compilers={'ack','smallc','pascal','modula2','ack_basic','occam','snake','native_codegen','starters'}
-    tests=('integration','starters','pdp10','plm8','forth','ack','smallc','robson','b8008','pascal',
+    compilers={'ack','smallc','pascal','modula2','ack_basic','occam','snake','native_codegen','starters','practical'}
+    tests=('practical','symbols','integration','starters','pdp10','plm8','forth','ack','smallc','robson','b8008','pascal',
            'modula2','occam','stack','snake','native_codegen','array_codegen','ack_msvc','ack_codegen','smallc_codegen','ack_basic','publication')
     if args.basic_benchmarks:
         tests+=('basic_benchmarks',)

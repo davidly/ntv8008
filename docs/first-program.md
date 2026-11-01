@@ -63,7 +63,7 @@ Your project contains:
 | File | Purpose |
 | --- | --- |
 | `program.c` | Your source code |
-| `build.sh`, `build.bat` | Compile it to `build/program.hex`; retain generated assembly in `build/program.asm` |
+| `build.sh`, `build.bat` | Compile to `build/program.hex`; retain assembly, listing and trace map under `build/` |
 | `run.sh`, `run.bat` | Run the HEX image; accept additional emulator options |
 | `input.txt` | A sample keyboard response for automated runs |
 
@@ -136,8 +136,9 @@ Windows:
 run.bat -t -i -n:1000000 -l:input.txt
 ```
 
-The budget bounds the run; `ntv8008.log` contains the trace. To obtain an
-addressed listing of the generated assembly, reassemble it with A08:
+The budget bounds the run; `ntv8008.log` contains the trace. Starter builds now also create `build/program.lst` and `build/program.map`.
+The latter is found automatically during `-t -i` tracing, showing resolved labels.
+For other generated assembly, obtain an addressed listing by reassembling with A08:
 
 ```sh
 ../../a08/a08 build/program.asm -lbuild/program.lst -obuild/program.hex
