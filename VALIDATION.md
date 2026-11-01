@@ -187,3 +187,118 @@ seconds at 500 kHz. The independent minimax reference checks three drawn
 openings and 6493 nodes. Existing repeated-iteration/rebuild tests exercise
 frame reuse; the exhaustive winner test now passes E and poisons the old RAM
 argument, while continuing to check that B is preserved.
+
+
+## b8008 integer BASIC (2026-10-31)
+
+Added an original BSD-3-Clause 8008 assembly interpreter, its mechanical macro
+expander and reproducible HEX, plus full sieve/e/TTT sessions. All BASIC parsing,
+tokenization, execution, and checked byte/word array operations run on the CPU.
+The full 8191-byte sieve array fits with the interpreter and tokenized program.
+
+Fourteen regressions cover reproducible assembly and RAM fit, randomized signed
+16-bit arithmetic and comparisons, arrays, randomized line insertion/replacement/
+deletion, listings, structured loops including zero trips and signed overflow,
+GOSUB/RETURN, INPUT across loops/subroutines, console input, memory access,
+error recovery, and all three complete benchmarks. Independent references check
+1899 odd primes over ten passes, 192 digits of e, and three drawn minimax roots
+with 6493 positions. Linux and native Windows tools pass these regressions.
+
+Measured session totals, including native loading/tokenization: sieve
+10,486,655,256 cycles; e 2,116,305,366; TTT 7,788,531,192. At 500 kHz these are
+20,973.3, 4,232.6, and 15,577.1 seconds, respectively. Compared with the locally
+installed SCELBAL sessions (143,207,960,826 / 8,088,060,426 / 59,022,995,742
+cycles), these are 13.7x / 3.8x / 7.6x faster. Sieve uses the same ten full passes,
+e the same 192 digits, and TTT the same one-iteration 6493-node search.
+
+Default setup also rebuilds the integer BASIC image successfully. The full Linux
+`test.sh` run passes the CPU checks and 160 Python tests (eight expected optional
+compiler-test skips without `--compile`). Native Windows assembler/emulator
+execution passes all 14 integer BASIC tests, including the complete benchmarks.
+The publication audit covers 254 reviewed files plus its manifest.
+
+
+## b8008 integer BASIC literal branches (2026-10-31)
+
+A native RUN prepass now resolves standalone literal GOTO/GOSUB/THEN targets.
+A three-byte numeric token becomes a three-byte address token in place, with
+no additional per-program RAM. Computed target expressions retain runtime
+lookup and caching. Missing targets remain numeric until a branch executes,
+so untaken branches do not introduce startup errors. Before the editor or LIST
+runs, the interpreter restores original line numbers from target record headers.
+Re-running, inserting/replacing/deleting lines, and error recovery rebind safely.
+False-IF and zero-trip FOR scanners skip address operands as binary words.
+
+All 17 integer BASIC tests pass on Linux and with the native Windows emulator
+and assembler. New regressions disable runtime line lookup and run literal
+GOTO, GOSUB, THEN, and the complete 6493-position TTT search successfully. They
+also verify computed-expression fallback, untaken/taken missing targets,
+listings during and after execution, repeated RUN, moved/deleted/replaced
+lines, and restoration after errors. Existing independent arithmetic, arrays,
+full benchmark results, image reproducibility, and sieve RAM-fit checks pass.
+
+Session cycle totals (including input/tokenization, binding and unbinding):
+
+| Benchmark | Before | After | Fewer cycles |
+| --- | ---: | ---: | ---: |
+| Sieve, ten passes | 10,486,655,256 | 9,990,355,052 | 4.7% |
+| E, 192 digits | 2,116,305,366 | 2,113,854,452 | 0.1% |
+| TTT, one iteration | 7,788,531,192 | 6,800,631,862 | 12.7% |
+
+The interpreter code occupies 5810 bytes starting at 0040h, with a startup jump
+at zero; its end is 16f2h. The full sieve program plus its 8191-byte flag array
+still fit below workspace at 3b00h. Publication remains 254 reviewed files plus
+the manifest; no new upstream source or dependency is introduced.
+
+
+## b8008 integer BASIC stack, operand, and NEXT performance (2026-10-31)
+
+Implemented three native runtime changes without changing the BASIC benchmarks:
+
+* CALL expands into a checked direct push of its known return address, avoiding
+  RPUSH's DE save/restore and a second helper call. VPUSH advances its existing
+  stack index. VPOP returns a register value without an unused RAM copy; LPOP
+  supplies RAM operands only for comparison and long multiply/divide. SRET
+  patches the return jump directly from the stack while preserving A/BC/DE.
+* TERM handles constants, scalars, and array operands directly; FACTOR avoids
+  re-reading a consumed variable through LVALUE. Unary/parenthesized expressions
+  retain recursive parsing, and all precedence and array checks remain.
+* NEXT specializes STEP +1 with an in-place increment and signed bound check.
+  Other steps retain the checked general path, including signed overflow exit.
+
+All 19 tests pass with both the Linux and native Windows assemblers/emulators.
+Additional regressions cover nested array/unary expressions, a 30-parenthesis
+expression near the 126-word software-stack limit, long flat expressions, and
+unit/general loops across -32768/32767 and low-byte carries. Earlier arithmetic,
+branch-binding/no-runtime-lookup, errors, editing, full benchmark, reproducibility,
+and memory-fit regressions also pass. No stack capacity or bounds check was
+removed. The interpreter ends at 187dh (6205 bytes from 0040h, plus the jump at
+zero); the full sieve and 8191-byte flag array remain below workspace at 3b00h.
+
+| Benchmark | Before cycles | After cycles | Fewer cycles |
+| --- | ---: | ---: | ---: |
+| Sieve, ten passes | 9,990,355,052 | 5,750,828,782 | 42.4% |
+| E, 192 digits | 2,113,854,452 | 1,424,933,270 | 32.6% |
+| TTT, one iteration | 6,800,631,862 | 3,669,857,000 | 46.0% |
+
+Stack changes alone measured 7,182,944,848 / 1,644,662,322 / 4,622,413,880 cycles.
+Adding operand fast paths measured 6,014,406,504 / 1,422,104,054 / 3,670,063,126.
+Unit-step dispatch then saved another 4.4% on sieve, adding 0.2% on e's general
+negative-step loops; all three benchmarks improve substantially overall. Totals
+include native session loading, tokenization, binding/unbinding, and execution.
+
+
+## b8008 naming (2026-10-31)
+
+The original native integer BASIC is named b8008. Source/examples now reside
+under `b8008/`, generated images are `a08/b8008.asm` and `a08/b8008.hex`, and the
+regression suite is `tests/b8008.py`. Setup, assembler rebuilds, both default
+test scripts, and `perfrun --languages b8008` use the new name. The console
+banner and licensing/provenance references have been updated. No old-name
+source/image files or performance-language alias are retained.
+
+All 19 interpreter tests pass on Linux and native Windows, and the renamed
+performance command runs all three complete benchmarks. Session cycle counts
+are 5,750,828,866 / 1,424,933,366 / 3,669,866,632 for sieve/e/TTT. The banner is
+one byte longer, leaving code end at 187eh; RAM-fit and reproducibility checks
+still pass. The publication inventory retains 254 reviewed files plus manifest.

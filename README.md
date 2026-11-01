@@ -74,6 +74,7 @@ uncached dependencies. A08 is fetched from its official site, not bundled.
 | [ACK integer BASIC](ack/basic/README.md) | Same backend, original BASIC runtime, examples and HEX | `python3 setup.py --ack` |
 | [SmallC-85 C](smallc/README.md) | Permitted frontend source, new backend/runtime, examples and HEX | `python3 setup.py --smallc` |
 | [Robson Tiny BASIC](robson/README.md) | MIT interpreter, adaptation, examples and HEX | `python3 setup.py` |
+| b8008 integer BASIC | Original BSD interpreter, byte/word arrays, full benchmarks | [b8008 guide](b8008/README.md) |
 | SCELBAL floating-point BASIC | Integration and examples; optional noncommercial download | [SCELBAL setup](scelbal/README.md) |
 | Baker 8008-Forth | Integration, native additions and examples; kernel not included | [Local-source setup](forth/README.md) |
 | Intel PL/M-8 | Runner, recovery tool and example sources; compiler/output images not included | [Local-image setup](plm8/README.md) |
@@ -119,8 +120,9 @@ RAM; the emulated hardware stack has seven saved return-address slots, while
 compiler integrations use software stacks in RAM for deeper calls.
 
 Sieve makes ten passes over 8191 odd candidates and prints 1899 primes. E prints
-192 digits. Most compiled TTT examples run ten iterations; assembly and SCELBAL
-TTT run one. Divide total TTT cycles by the iteration count for comparisons.
+192 digits. Most compiled TTT examples run ten iterations; assembly, b8008,
+and SCELBAL run one. Divide total TTT cycles by the iteration
+count for comparisons.
 
 ## Snake at 500 kHz
 
@@ -191,6 +193,12 @@ to the original 500 kHz clock rate; `-p` reports both host elapsed time and an
 estimated real-8008 runtime. The latter is `clock periods / 500000`, independent
 of host speed, with no memory wait states or host I/O delays included.
 
+The original [b8008 integer BASIC](b8008/README.md) runs all three benchmarks
+with checked byte/word arrays and 16-bit integer arithmetic. Its full sieve flag
+array fits in RAM, avoiding SCELBAL's small segmented arrays. The interpreter
+and its HEX image are included under BSD-3-Clause; setup needs no historical
+BASIC download. Select it with `--languages b8008` in either performance script.
+
 The performance script reports unavailable optional languages and runs every
 installed benchmark with `-p`. To select a subset:
 
@@ -210,6 +218,7 @@ Measured from the included images on 2026-10-31. Values below are estimated
 | ACK Modula-2 | 740.8 | 526.3 | 319.9 |
 | ACK Occam 1 | 1,354.1 | 730.2 | 817.2 |
 | ACK integer BASIC | 2,568.7 | 617.0 | 489.2 |
+| b8008 integer BASIC interpreter | 11,501.7 | 2,849.9 | 7,339.7 |
 
 ACK and SmallC share conservative native optimizations for byte locals,
 register/flag liveness, and frame addresses. Byte values can stay in otherwise

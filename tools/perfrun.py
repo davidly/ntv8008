@@ -6,7 +6,7 @@ import subprocess
 import sys
 
 ROOT=Path(__file__).resolve().parents[1]
-LANGUAGES=('assembly','ack','smallc','pascal','modula2','ackbasic','occam','basic','plm8','forth')
+LANGUAGES=('assembly','ack','smallc','pascal','modula2','ackbasic','occam','b8008','basic','plm8','forth')
 
 
 def main():
@@ -17,8 +17,10 @@ def main():
     for language in args.languages or LANGUAGES:
         commands=[]
         for app in ('sieve','e','ttt'):
-            if language in ('basic','forth'):
-                folder,extension,image=('scelbal','bas','scelbal') if language=='basic' else ('forth','f','forth')
+            if language in ('basic','forth','b8008'):
+                folder,extension,image={'basic':('scelbal','bas','scelbal'),
+                                        'forth':('forth','f','forth'),
+                                        'b8008':('b8008','bas','b8008')}[language]
                 session=ROOT/f'{folder}/examples/{app}.{extension}'
                 target=ROOT/f'a08/{image}.hex'
                 command=['-l:'+str(session),str(target)]

@@ -57,3 +57,8 @@ One iteration takes 14,457,102 clocks (28.9 seconds at 500 kHz), versus
 the three drawn openings and 6493 nodes are unchanged. The integration suite
 checks repeated iterations and the winner against every reachable board/last
 move, poisoning the old frame argument to verify the register interface.
+
+The original b8008 integer BASIC image is included as `b8008.asm` and
+`b8008.hex`. Its source macros, examples, memory layout, and regeneration
+instructions are documented in [the b8008 guide](../b8008/README.md).
+It is part of default setup and tests, with no additional historical download.

@@ -30,3 +30,7 @@ all applicable third-party grants. A source archive generated from the reviewed
 publication manifest excludes fetched dependencies and restricted/uncleared
 historical components. Do not upload an arbitrary ZIP of a populated working
 directory: local build directories may contain such components.
+
+The b8008 integer BASIC interpreter (`b8008/`, `a08/b8008.asm`, and
+`a08/b8008.hex`) is an original BSD-3-Clause project contribution, with no
+third-party interpreter source or runtime linked or translated.

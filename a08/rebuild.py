@@ -10,7 +10,7 @@ from tools.dependencies import build_a08, assemble_image
 
 def main():
     build_a08()
-    names=sys.argv[1:] or ['hello.asm','count.asm','echo.asm','sieve.asm','e.asm','ttt.asm','robson.asm']
+    names=sys.argv[1:] or ['hello.asm','count.asm','echo.asm','sieve.asm','e.asm','ttt.asm','robson.asm','b8008.asm']
     for name in names:
         source=Path(name)
         if not source.is_absolute():

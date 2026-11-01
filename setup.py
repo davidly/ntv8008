@@ -53,7 +53,8 @@ def main():
     script('m.bat' if os.name=='nt' else 'm.sh')
     build_a08()
     python('robson/prepare.py')
-    for name in ('hello','count','echo','sieve','e','ttt','robson'):
+    python('b8008/prepare.py')
+    for name in ('hello','count','echo','sieve','e','ttt','robson','b8008'):
         assemble(name)
     if args.smallc or args.all:
         python('smallc/build.py')

@@ -60,3 +60,9 @@ ANSI Snake, its separate SmallC rules implementation, keyboard/timing helpers
 and regression tests were authored for this project. No external game source,
 artwork, terminal translation library or additional dependency is included.
 These contributions and the generated Snake image use BSD-3-Clause.
+
+The b8008 integer BASIC under `b8008/`, and its generated `a08/b8008.asm`
+and HEX image, are original project code under BSD-3-Clause. Palo Alto Tiny
+BASIC was considered as a design reference for a compact integer dialect; no
+Palo Alto, Apple, Microsoft, or other historical BASIC implementation code is
+incorporated. Its examples reuse this project's existing benchmark algorithms.

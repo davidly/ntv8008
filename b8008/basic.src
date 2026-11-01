@@ -1,0 +1,2626 @@
+; b8008 integer BASIC for a 16 KiB 8008 console machine.
+; Original BSD-3-Clause project implementation, 2026.
+; BC = token/text pointer, DE = expression value, HL/A = scratch.
+; CAL/RET are bounded leaf calls. CALL/RETURN macros use a checked RAM stack.
+; No upstream BASIC implementation is incorporated.
+RAW     EQU 3B00H
+VARS    EQU 3C00H
+DESC    EQU 3D00H
+FRAMES  EQU 3E00H
+TOKBUF  EQU 3E00H
+CSTACK  EQU 3F00H
+PE      EQU VARS+64D
+LINE    EQU VARS+66D
+LAST    EQU VARS+68D
+STKP    EQU VARS+70D
+TLEN    EQU VARS+73D
+RSTART  EQU VARS+74D
+KSTART  EQU VARS+75D
+KSAVE   EQU VARS+76D
+KMATCH  EQU VARS+77D
+MODE    EQU VARS+78D
+HEAP    EQU VARS+79D
+DEST    EQU VARS+81D
+WIDTH   EQU VARS+83D
+FSP     EQU VARS+84D
+GSP     EQU VARS+85D
+OP      EQU VARS+86D
+SIGN    EQU VARS+87D
+LEFT    EQU VARS+88D
+RIGHT   EQU VARS+90D
+RESULT  EQU VARS+92D
+REMDR   EQU VARS+94D
+COUNT   EQU VARS+96D
+SAVEP   EQU VARS+97D
+DECNUM  EQU VARS+99D
+DIGIT   EQU VARS+101D
+PRINTN  EQU VARS+102D
+FORVAR  EQU VARS+103D
+FORLIM  EQU VARS+104D
+FORSTEP EQU VARS+106D
+TMP     EQU VARS+108D
+CUR     EQU VARS+110D
+SAVEDE  EQU VARS+112D
+ASLOT   EQU VARS+114D
+INS     EQU VARS+115D
+OLDLEN  EQU VARS+117D
+NEWLEN  EQU VARS+118D
+SOURCE  EQU VARS+119D
+TARGET  EQU VARS+121D
+ENDPTR  EQU VARS+123D
+PSAVE   EQU VARS+125D
+EXPECTC EQU VARS+127D
+MSIGN   EQU VARS+128D
+RCOUNT  EQU VARS+129D
+OLDEND  EQU VARS+130D
+AWIDTH  EQU VARS+132D
+RETA    EQU VARS+133D
+CACHEIX EQU VARS+134D
+FOROLD  EQU VARS+135D
+LINKED  EQU VARS+137D
+BPATCH  EQU VARS+138D
+BLINE   EQU VARS+140D
+BSCAN   EQU VARS+142D
+TNUM    EQU 80H
+TLE     EQU 81H
+TGE     EQU 82H
+TNE     EQU 83H
+TADDR   EQU 84H
+TPRINT  EQU 90H
+TLET    EQU 91H
+TIF     EQU 92H
+TTHEN   EQU 93H
+TGOTO   EQU 94H
+TGOSUB  EQU 95H
+TRETURN EQU 96H
+TFOR    EQU 97H
+TTO     EQU 98H
+TSTEP   EQU 99H
+TNEXT   EQU 9AH
+TEND    EQU 9BH
+TRUN    EQU 9CH
+TNEW    EQU 9DH
+TLIST   EQU 9EH
+TDIM    EQU 9FH
+TBYTE   EQU 0A0H
+TREM    EQU 0A1H
+TINPUT  EQU 0A2H
+TABS    EQU 0A3H
+TPEEK   EQU 0A4H
+TPOKE   EQU 0A5H
+TMOD    EQU 0A6H
+TAND    EQU 0A7H
+TOR     EQU 0A8H
+TCHR    EQU 0A9H
+        ORG 0D
+        JMP START
+        ORG 40H
+START:
+        LAI 0D
+        ST STKP
+        ST MODE
+        ST LINKED
+        LDI HIGH BANNER
+        LEI LOW BANNER
+        CAL TEXT
+        JMP NEW
+PROMPT:
+        CAL UNBIND
+        LAI 0D
+        ST STKP
+        ST MODE
+        LAI 62D
+        OUT 10D
+        CAL READLINE
+        LBI HIGH RAW
+        LCI LOW RAW
+        CAL PEEK
+        NDA
+        JTZ PROMPT
+        CPI 48D
+        JTC DIRECT
+        CPI 58D
+        JFC DIRECT
+        CAL NUMBER
+        STW LINE
+        LAD
+        NDA
+        JTS SYNTAX
+        LAD
+        ORE
+        JTZ SYNTAX
+        CALL TOKENIZE
+        JMP STORELINE
+DIRECT:
+        LDI 0D
+        LEI 0D
+        STW LINE
+        CALL TOKENIZE
+        CAL CLEARCACHE
+        LBI HIGH TOKBUF
+        LCI LOW TOKBUF
+        JMP DISPATCH
+NEW:
+        LAI 0D
+        ST LINKED
+        LDI HIGH PROGRAM
+        LEI LOW PROGRAM
+        STW PE
+        LAI 0D
+        LDI 0D
+        LEI 0D
+        STW LAST
+        LDW PE
+        LHD
+        LLE
+        LMI 0D
+        INL
+        LMI 0D
+        CAL RESET
+        JMP PROMPT
+; Read a bounded console line, echoing input. LF and CRLF are accepted.
+READLINE:
+        LBI HIGH RAW
+        LCI 0D
+READLOOP:
+        INP 2D
+        NDI 7FH
+        CPI 10D
+        JTZ READEND
+        CPI 13D
+        JTZ READEND
+        CPI 8D
+        JTZ RUBOUT
+        CPI 127D
+        JTZ RUBOUT
+        OUT 10D
+        LHB
+        LLC
+        LMA
+        INC
+        LAC
+        CPI 240D
+        JTZ TOOLONG
+        JMP READLOOP
+RUBOUT:
+        LAC
+        NDA
+        JTZ READLOOP
+        DCC
+        LAI 8D
+        OUT 10D
+        LAI 32D
+        OUT 10D
+        LAI 8D
+        OUT 10D
+        JMP READLOOP
+READEND:
+        LHB
+        LLC
+        LMI 0D
+        JMP CRLF
+TOOLONG:
+        ; Drain the rest so a bad line cannot become a second command.
+        INP 2D
+        NDI 7FH
+        CPI 10D
+        JTZ LONGEND
+        CPI 13D
+        JFZ TOOLONG
+LONGEND:
+        CAL CRLF
+        JMP SYNTAX
+; GET/PEEK preserve DE and return A. Only GET advances BC.
+GET:
+        LHB
+        LLC
+        LAM
+        INC
+        RFZ
+        INB
+        RET
+PEEK:
+        LHB
+        LLC
+        LAM
+        RET
+SKIP:
+        CAL PEEK
+        CPI 32D
+        RFZ
+        CAL GET
+        JMP SKIP
+EXPECT:
+        ST EXPECTC
+        CAL GET
+        LHI HIGH EXPECTC
+        LLI LOW EXPECTC
+        CPM
+        JFZ SYNTAX
+        RET
+; Decimal reader. Arithmetic is deliberately modulo 65536.
+NUMBER:
+        LDI 0D
+        LEI 0D
+NUMLOOP:
+        CAL PEEK
+        CPI 48D
+        RTC
+        CPI 58D
+        RFC
+        SUI 48D
+        ST DIGIT
+        LAE
+        ADE
+        LEA
+        LAD
+        ACD
+        LDA
+        LHD
+        LLE
+        LAE
+        ADE
+        LEA
+        LAD
+        ACD
+        LDA
+        LAE
+        ADE
+        LEA
+        LAD
+        ACD
+        LDA
+        LAE
+        ADL
+        LEA
+        LAD
+        ACH
+        LDA
+        LD DIGIT
+        ADE
+        LEA
+        LAD
+        ACI 0D
+        LDA
+        CAL GET
+        JMP NUMLOOP
+; Tokenization happens on the 8008, not in the host build tools.
+TOKENIZE:
+        LAI 0D
+        ST TLEN
+TOKLOOP:
+        CAL SKIP
+        NDA
+        JTZ TOKDONE
+        CPI 34D
+        JTZ TOKSTRING
+        CPI 48D
+        JTC TOKWORD
+        CPI 58D
+        JFC TOKWORD
+        CAL NUMBER
+        LAI TNUM
+        CAL EMIT
+        LAE
+        CAL EMIT
+        LAD
+        CAL EMIT
+        JMP TOKLOOP
+TOKWORD:
+        CAL UPPER
+        CPI 65D
+        JTC TOKPUNCT
+        CPI 91D
+        JFC TOKPUNCT
+        LAC
+        ST RSTART
+        ; Uppercase this word in the raw input buffer.
+TOKCAP:
+        CAL GET
+        CAL UPPER
+        LHB
+        LLC
+        DCL
+        LMA
+        CAL PEEK
+        CAL UPPER
+        CPI 65D
+        JTC TOKFIND
+        CPI 91D
+        JTC TOKCAP
+TOKFIND:
+        LAC
+        ST KSAVE
+        LD RSTART
+        ADI 1D
+        CPC
+        JFZ TOKKEY
+        ; A one-letter name is always a scalar/array variable.
+        LD RSTART
+        LLA
+        LHI HIGH RAW
+        LAM
+        CAL EMIT
+        JMP TOKLOOP
+TOKKEY:
+        LDI HIGH KEYWORDS
+        LEI LOW KEYWORDS
+TOKTRY:
+        LHD
+        LLE
+        LAM
+        NDA
+        JTZ SYNTAX
+        ST KMATCH
+        INE
+        JFZ TOKTRY1
+        IND
+TOKTRY1:
+        LD RSTART
+        LCA
+TOKCMP:
+        CAL GET
+        ; Restore dictionary pointer into HL (D/E).
+        LHD
+        LLE
+        LAM
+        NDA
+        JTZ TOKMATCH
+        ; Compare with the raw character just consumed.
+        ST KSTART
+        LHB
+        LLC
+        DCL
+        LAM
+        CAL UPPER
+        LHI HIGH KSTART
+        LLI LOW KSTART
+        CPM
+        JFZ TOKMISS
+        INE
+        JFZ TOKCMP
+        IND
+        JMP TOKCMP
+TOKMATCH:
+        LD KSAVE
+        ADI 1D
+        CPC
+        JFZ TOKMISS
+        LD KSAVE
+        LCA
+        LD KMATCH
+        CAL EMIT
+        CPI TREM
+        JTZ TOKDONE
+        JMP TOKLOOP
+TOKMISS:
+        ; Skip to the following dictionary entry.
+        LHD
+        LLE
+        LAM
+        INE
+        JFZ TOKMISS1
+        IND
+TOKMISS1:
+        NDA
+        JFZ TOKMISS
+        JMP TOKTRY
+TOKSTRING:
+        CAL GET
+        CAL EMIT
+TOKSTR1:
+        CAL GET
+        NDA
+        JTZ SYNTAX
+        CAL EMIT
+        CPI 34D
+        JFZ TOKSTR1
+        JMP TOKLOOP
+TOKPUNCT:
+        CAL GET
+        CPI 60D
+        JTZ TOKLESS
+        CPI 62D
+        JTZ TOKMORE
+        CAL EMIT
+        JMP TOKLOOP
+TOKLESS:
+        CAL PEEK
+        CPI 61D
+        JTZ TOKLE
+        CPI 62D
+        JTZ TOKNE
+        LAI 60D
+        CAL EMIT
+        JMP TOKLOOP
+TOKLE:
+        CAL GET
+        LAI TLE
+        JMP TOKEM
+TOKNE:
+        CAL GET
+        LAI TNE
+        JMP TOKEM
+TOKMORE:
+        CAL PEEK
+        CPI 61D
+        JTZ TOKGE
+        LAI 62D
+        JMP TOKEM
+TOKGE:
+        CAL GET
+        LAI TGE
+TOKEM:
+        CAL EMIT
+        JMP TOKLOOP
+TOKDONE:
+        LAI 0D
+        CAL EMIT
+        RETURN
+UPPER:
+        CPI 97D
+        RTC
+        CPI 123D
+        RFC
+        SUI 32D
+        RET
+EMIT:
+        STW SAVEDE
+        LEA
+        LD TLEN
+        CPI 250D
+        JFC SYNTAX
+        LLA
+        LHI HIGH TOKBUF
+        LME
+        LD TLEN
+        ADI 1D
+        ST TLEN
+        LAE
+        LDW SAVEDE
+        RET
+; Program records: little-endian line number, byte record length, tokens, 0.
+; Lines may be replaced/deleted or inserted in any order (EDIT below).
+STORELINE:
+        JMP EDIT
+RESET:
+        LAI 0D
+        LHI HIGH VARS
+        LLI 0D
+CLEARV:
+        LAI 0D
+        LMA
+        INL
+        LAL
+        CPI 52D
+        JFZ CLEARV
+        LAI 0D
+        ST FSP
+        ST GSP
+        LHI HIGH DESC
+        LLI 0D
+CLEARD:
+        LMA
+        INL
+        JFZ CLEARD
+        LDW PE
+        LAE
+        ADI 2D
+        LEA
+        LAD
+        ACI 0D
+        LDA
+        STW HEAP
+        CAL CLEARCACHE
+        RET
+CLEARCACHE:
+        LAI 0D
+        LHI HIGH RAW
+        LLI 0D
+CLEARC1:
+        LMA
+        INL
+        JFZ CLEARC1
+        RET
+RUN:
+        CAL UNBIND
+        CAL RESET
+        CAL BIND
+        LAI 1D
+        ST MODE
+        LBI HIGH PROGRAM
+        LCI LOW PROGRAM
+        JMP ENTERLINE
+ENTERLINE:
+        CAL GET
+        LEA
+        CAL GET
+        LDA
+        STW CUR
+        LAD
+        ORE
+        JTZ PROMPT
+        CAL GET
+DISPATCH:
+        CAL GET
+        NDA
+        JTZ ENDLINE
+        CPI 58D
+        JTZ DISPATCH
+        CPI TPRINT
+        JTZ PRINT
+        CPI TLET
+        JTZ ASSIGN
+        CPI TIF
+        JTZ IF
+        CPI TGOTO
+        JTZ GOTO
+        CPI TGOSUB
+        JTZ GOSUB
+        CPI TRETURN
+        JTZ GRETURN
+        CPI TFOR
+        JTZ FOR
+        CPI TNEXT
+        JTZ NEXT
+        CPI TDIM
+        JTZ DIM
+        CPI TEND
+        JTZ PROMPT
+        CPI TREM
+        JTZ SKIPLINE
+        CPI TRUN
+        JTZ RUN
+        CPI TNEW
+        JTZ NEW
+        CPI TINPUT
+        JTZ INPUT
+        CPI TPOKE
+        JTZ POKE
+        CPI TLIST
+        JTZ LIST
+        LAC
+        SUI 1D
+        LCA
+        LAB
+        SBI 0D
+        LBA
+ASSIGN:
+        CALL LVALUE
+        STW DEST
+        ST AWIDTH
+        LAI 61D
+        CAL EXPECT
+        CALL EXPR
+STOREVALUE:
+        LD AWIDTH
+        CPI 1D
+        JTZ STOREBYTE
+        LHI HIGH DEST
+        LLI LOW DEST
+        LAM
+        INL
+        LHM
+        LLA
+        LME
+        INL
+        LMD
+        JMP FINISH
+STOREBYTE:
+        LHI HIGH DEST
+        LLI LOW DEST
+        LAM
+        INL
+        LHM
+        LLA
+        LME
+FINISH:
+        CAL PEEK
+        NDA
+        JTZ DISPATCH
+        CPI 58D
+        JTZ DISPATCH
+        JMP SYNTAX
+ENDLINE:
+        LD MODE
+        NDA
+        JTZ PROMPT
+        JMP ENTERLINE
+SKIPLINE:
+        CAL GET
+        NDA
+        JTZ ENDLINE
+        CPI TNUM
+        JTZ SKIPNUM
+        CPI TADDR
+        JTZ SKIPNUM
+        CPI 34D
+        JFZ SKIPLINE
+SKIPSTRING:
+        CAL GET
+        CPI 34D
+        JFZ SKIPSTRING
+        JMP SKIPLINE
+SKIPNUM:
+        CAL GET
+        CAL GET
+        JMP SKIPLINE
+IF:
+        CALL EXPR
+        LAI TTHEN
+        CAL EXPECT
+        LAD
+        ORE
+        JTZ SKIPLINE
+        CAL PEEK
+        CPI TNUM
+        JTZ GOTO
+        CPI TADDR
+        JTZ GOTOADDR
+        JMP DISPATCH
+GOTO:
+        CAL PEEK
+        CPI TADDR
+        JTZ GOTOADDR
+        CALL EXPR
+        CAL FINDLINE
+        JMP DISPATCH
+GOTOADDR:
+        CAL GET
+        CAL GET
+        LEA
+        CAL GET
+        LDA
+JUMPDE:
+        LBD
+        LCE
+        JMP DISPATCH
+GOSUB:
+        CAL PEEK
+        CPI TADDR
+        JTZ GOSUBADDR
+        CALL EXPR
+        CAL GSAVE
+        CAL FINDLINE
+        JMP DISPATCH
+GOSUBADDR:
+        CAL GET
+        CAL GET
+        LEA
+        CAL GET
+        LDA
+        CAL GSAVE
+        JMP JUMPDE
+GSAVE:
+        ; BC is the continuation, DE the target line or resolved address.
+        LD GSP
+        CPI 32D
+        JFC STACKERR
+        ADI 192D
+        LLA
+        LHI HIGH FRAMES
+        LMC
+        INL
+        LMB
+        LD GSP
+        ADI 2D
+        ST GSP
+        RET
+GRETURN:
+        LD GSP
+        NDA
+        JTZ STACKERR
+        SUI 2D
+        ST GSP
+        ADI 192D
+        LLA
+        LHI HIGH FRAMES
+        LCM
+        INL
+        LBM
+        JMP FINISH
+FINDLINE:
+        ; Exact search: a missing branch target is an error.
+        STW TMP
+        STW CUR
+        LAD
+        XRE
+        NDI 63D
+        RLC
+        RLC
+        ST CACHEIX
+        LLA
+        LHI HIGH RAW
+        LAE
+        CPM
+        JFZ FINDMISS
+        INL
+        LAD
+        CPM
+        JFZ FINDMISS
+        INL
+        LCM
+        INL
+        LBM
+        RET
+FINDMISS:
+        LBI HIGH PROGRAM
+        LCI LOW PROGRAM
+FINDLOOP:
+        CAL GET
+        LEA
+        CAL GET
+        LDA
+        LAD
+        ORE
+        JTZ LINEERR
+        LHI HIGH TMP
+        LLI LOW TMP
+        LAE
+        CPM
+        JFZ FINDNEXT
+        INL
+        LAD
+        CPM
+        JTZ FOUNDTARGET
+FINDNEXT:
+        CAL GET
+        SUI 3D
+        ADC
+        LCA
+        LAB
+        ACI 0D
+        LBA
+        JMP FINDLOOP
+FOUNDTARGET:
+        CAL GET
+        LD CACHEIX
+        LLA
+        LHI HIGH RAW
+        LME
+        INL
+        LMD
+        INL
+        LMC
+        INL
+        LMB
+        RET
+; Resolve bare literal branch operands once per RUN. No extra program bytes
+; are allocated: TNUM,line becomes TADDR,address. Expressions stay unchanged.
+; Missing literals stay TNUM so an untaken branch does not report an error.
+BIND:
+        LAI 1D
+        ST LINKED
+        LBI HIGH PROGRAM
+        LCI LOW PROGRAM
+BINDLINE:
+        CAL GET
+        LEA
+        CAL GET
+        LDA
+        LAD
+        ORE
+        RTZ
+        CAL GET
+BINDTOKEN:
+        CAL GET
+        NDA
+        JTZ BINDLINE
+        CPI TNUM
+        JTZ BINDSKIP
+        CPI TADDR
+        JTZ BINDSKIP
+        CPI 34D
+        JTZ BINDSTRING
+        CPI TGOTO
+        JTZ BINDTARGET
+        CPI TGOSUB
+        JTZ BINDTARGET
+        CPI TTHEN
+        JTZ BINDTARGET
+        JMP BINDTOKEN
+BINDSKIP:
+        CAL GET
+        CAL GET
+        JMP BINDTOKEN
+BINDSTRING:
+        CAL GET
+        CPI 34D
+        JFZ BINDSTRING
+        JMP BINDTOKEN
+BINDTARGET:
+        CAL PEEK
+        CPI TNUM
+        JFZ BINDTOKEN
+        LEC
+        LDB
+        STW BPATCH
+        CAL GET
+        CAL GET
+        LEA
+        CAL GET
+        LDA
+        CAL PEEK
+        NDA
+        JTZ BINDLOOK
+        CPI 58D
+        JFZ BINDTOKEN
+BINDLOOK:
+        CAL RESOLVE
+        LAD
+        ORE
+        JTZ BINDTOKEN
+        CAL PATCHADDR
+        JMP BINDTOKEN
+; Resolve without reporting errors. BC is preserved; DE returns the token
+; address or zero if absent. This lookup runs only during the binding pass.
+RESOLVE:
+        STW BLINE
+        LEC
+        LDB
+        STW BSCAN
+        LBI HIGH PROGRAM
+        LCI LOW PROGRAM
+RESLINE:
+        CAL GET
+        LEA
+        CAL GET
+        LDA
+        LAD
+        ORE
+        JTZ RESDONE
+        LHI HIGH BLINE
+        LLI LOW BLINE
+        LAE
+        CPM
+        JFZ RESNEXT
+        INL
+        LAD
+        CPM
+        JTZ RESFOUND
+RESNEXT:
+        CAL GET
+        SUI 3D
+        ADC
+        LCA
+        LAB
+        ACI 0D
+        LBA
+        JMP RESLINE
+RESFOUND:
+        CAL GET
+        LEC
+        LDB
+RESDONE:
+        LHI HIGH BSCAN
+        LLI LOW BSCAN
+        LCM
+        INL
+        LBM
+        RET
+; Unbind before returning to the editor/listing, while target records have
+; their original addresses. A target's line number is three bytes before its
+; resolved token address, so the original source is recovered without a table.
+UNBIND:
+        LD LINKED
+        NDA
+        RTZ
+        LAI 0D
+        ST LINKED
+        LBI HIGH PROGRAM
+        LCI LOW PROGRAM
+UNBLINE:
+        CAL GET
+        LEA
+        CAL GET
+        LDA
+        LAD
+        ORE
+        RTZ
+        CAL GET
+UNBTOKEN:
+        CAL GET
+        NDA
+        JTZ UNBLINE
+        CPI TNUM
+        JTZ UNBSKIP
+        CPI 34D
+        JTZ UNBSTRING
+        CPI TADDR
+        JFZ UNBTOKEN
+        LAC
+        SUI 1D
+        LEA
+        LAB
+        SBI 0D
+        LDA
+        STW BPATCH
+        CAL GET
+        LEA
+        CAL GET
+        LDA
+        LAE
+        SUI 3D
+        LEA
+        LAD
+        SBI 0D
+        LDA
+        LHD
+        LLE
+        LEM
+        INL
+        JFZ UNBHIGH
+        INH
+UNBHIGH:
+        LDM
+        CAL PATCHNUM
+        JMP UNBTOKEN
+UNBSKIP:
+        CAL GET
+        CAL GET
+        JMP UNBTOKEN
+UNBSTRING:
+        CAL GET
+        CPI 34D
+        JFZ UNBSTRING
+        JMP UNBTOKEN
+PATCHADDR:
+        LHI HIGH BPATCH
+        LLI LOW BPATCH
+        LAM
+        INL
+        LHM
+        LLA
+        LMI TADDR
+        JMP PATCHWORD
+PATCHNUM:
+        LHI HIGH BPATCH
+        LLI LOW BPATCH
+        LAM
+        INL
+        LHM
+        LLA
+        LMI TNUM
+PATCHWORD:
+        INL
+        JFZ PATCHLOW
+        INH
+PATCHLOW:
+        LME
+        INL
+        JFZ PATCHHIGH
+        INH
+PATCHHIGH:
+        LMD
+        RET
+; Expression parser: comparisons < additive/bitwise < multiplicative < unary.
+EXPR:
+        CALL SUM
+EXPR1:
+        CAL PEEK
+        CPI 60D
+        JTZ EXPRCMP
+        CPI 61D
+        JTZ EXPRCMP
+        CPI 62D
+        JTZ EXPRCMP
+        CPI TLE
+        JTZ EXPRCMP
+        CPI TGE
+        JTZ EXPRCMP
+        CPI TNE
+        JTZ EXPRCMP
+        RETURN
+EXPRCMP:
+        CAL GET
+        ST OP
+        CAL VPUSH
+        ; Save the operator across nested expressions.
+        LD OP
+        LDI 0D
+        LEA
+        CAL VPUSH
+        CALL SUM
+        CAL VPOP
+        LAL
+        ST OP
+        CAL LPOP
+        CAL COMPARE
+        JMP EXPR1
+SUM:
+        CALL TERM
+SUM1:
+        CAL PEEK
+        CPI 43D
+        JTZ SUMOP
+        CPI 45D
+        JTZ SUMOP
+        CPI TAND
+        JTZ SUMOP
+        CPI TOR
+        JTZ SUMOP
+        RETURN
+SUMOP:
+        CAL GET
+        ST OP
+        CAL VPUSH
+        LD OP
+        LDI 0D
+        LEA
+        CAL VPUSH
+        CALL TERM
+        CAL VPOP
+        LAL
+        ST OP
+        LD OP
+        CPI 43D
+        JTZ SUMADD
+        CPI 45D
+        JTZ SUMSUB
+        CPI TAND
+        JTZ SUMAND
+        CAL VPOP
+        LAE
+        ORL
+        LEA
+        LAD
+        ORH
+        LDA
+        JMP SUM1
+SUMAND:
+        CAL VPOP
+BAND:
+        LAE
+        NDL
+        LEA
+        LAD
+        NDH
+        LDA
+        JMP SUM1
+SUMADD:
+        CAL VPOP
+ADD:
+        LAE
+        ADL
+        LEA
+        LAD
+        ACH
+        LDA
+        JMP SUM1
+SUMSUB:
+        CAL VPOP
+SUB:
+        LAL
+        SUE
+        LEA
+        LAH
+        SBD
+        LDA
+        JMP SUM1
+TERM:
+        ; Common atomic operands do not need FACTOR/LVALUE return frames.
+        CAL PEEK
+        CPI TNUM
+        JTZ TERMCONST
+        CPI 65D
+        JTC TERMSLOW
+        CPI 91D
+        JFC TERMSLOW
+        CAL GET
+        SUI 65D
+        LEA
+        LDI 0D
+        CAL PEEK
+        CPI 40D
+        JTZ TERMARRAY
+        LAE
+        ADE
+        LLA
+        LHI HIGH VARS
+        LEM
+        INL
+        LDM
+        JMP TERM1
+TERMARRAY:
+        CALL INDEXED
+        CAL LOADVALUE
+        JMP TERM1
+TERMCONST:
+        CAL GET
+        CAL GET
+        LEA
+        CAL GET
+        LDA
+        JMP TERM1
+TERMSLOW:
+        CALL FACTOR
+TERM1:
+        CAL PEEK
+        CPI 42D
+        JTZ TERMOP
+        CPI 47D
+        JTZ TERMOP
+        CPI TMOD
+        JTZ TERMOP
+        RETURN
+TERMOP:
+        CAL GET
+        ST OP
+        CAL VPUSH
+        LD OP
+        LDI 0D
+        LEA
+        CAL VPUSH
+        CALL FACTOR
+        CAL VPOP
+        LAL
+        ST OP
+        LD OP
+        CPI 42D
+        JTZ TERMUL
+        CAL LPOP
+        CAL DIVIDE
+        LD OP
+        CPI TMOD
+        JFZ TERM1
+        LDW REMDR
+        JMP TERM1
+TERMUL:
+        CAL LPOP
+        CAL MULTIPLY
+        JMP TERM1
+FACTOR:
+        CAL GET
+        CPI TNUM
+        JTZ CONSTANT
+        CPI 40D
+        JTZ PAREN
+        CPI 45D
+        JTZ NEGATIVE
+        CPI 43D
+        JTZ FACTOR
+        CPI TABS
+        JTZ ABSVAL
+        CPI TPEEK
+        JTZ PEEKVAL
+        CPI 65D
+        JTC SYNTAX
+        CPI 91D
+        JFC SYNTAX
+FACTVAR:
+        ; The variable token is already consumed: avoid re-reading LVALUE.
+        SUI 65D
+        LEA
+        LDI 0D
+        CAL PEEK
+        CPI 40D
+        JTZ FACTARRAY
+        LAE
+        ADE
+        LLA
+        LHI HIGH VARS
+        LEM
+        INL
+        LDM
+        JMP FACTDONE
+FACTARRAY:
+        CALL INDEXED
+        CAL LOADVALUE
+FACTDONE:
+        RETURN
+CONSTANT:
+        CAL GET
+        LEA
+        CAL GET
+        LDA
+        RETURN
+PAREN:
+        CALL EXPR
+        LAI 41D
+        CAL EXPECT
+        RETURN
+NEGATIVE:
+        CALL FACTOR
+        CAL NEGATE
+        RETURN
+ABSVAL:
+        CALL FACTOR
+        LAD
+        NDA
+        JFS FACTDONE
+        CAL NEGATE
+        RETURN
+PEEKVAL:
+        CALL FACTOR
+        LHD
+        LLE
+        LAD
+        CPI 40H
+        JFC BOUNDS
+        LEM
+        LDI 0D
+        RETURN
+; Address DE, width A; load byte/word without adding parser return frames.
+LOADVALUE:
+        LHD
+        LLE
+        LEM
+        CPI 1D
+        LDI 0D
+        RTZ
+        INL
+        LDM
+        RET
+NEGATE:
+        LAI 0D
+        SUE
+        LEA
+        LAI 0D
+        SBD
+        LDA
+        RET
+; LVALUE returns address DE and width A; expression indexing is recursive.
+LVALUE:
+        CAL GET
+        SUI 65D
+        CPI 26D
+        JFC SYNTAX
+        LEA
+        LDI 0D
+        CAL PEEK
+        CPI 40D
+        JTZ INDEXED
+        LAE
+        ADE
+        LEA
+        LDI HIGH VARS
+        LAI 2D
+        RETURN
+INDEXED:
+        CAL VPUSH
+        CAL GET
+        CALL EXPR
+        LAI 41D
+        CAL EXPECT
+        CAL VPOP
+        LAL
+        CAL ARRAYADDR
+        RETURN
+ARRAYADDR:
+        ; A = array number; DE = zero-based index. Descriptor stride is 8.
+        RLC
+        RLC
+        RLC
+        ST ASLOT
+        ADI 4D
+        LLA
+        LHI HIGH DESC
+        LAM
+        NDA
+        JTZ BOUNDS
+        ST WIDTH
+        LD ASLOT
+        ADI 2D
+        LLA
+        LHI HIGH DESC
+        LAE
+        SUM
+        INL
+        LAD
+        SBM
+        JFC BOUNDS
+        LD WIDTH
+        CPI 2D
+        JFZ ARRAYBYTE
+        LAE
+        ADE
+        LEA
+        LAD
+        ACD
+        LDA
+ARRAYBYTE:
+        LD ASLOT
+        LLA
+        LHI HIGH DESC
+        LAE
+        ADM
+        LEA
+        INL
+        LAD
+        ACM
+        LDA
+        LD WIDTH
+        RET
+COMPARE:
+        ; Signed comparison biases high bytes, avoiding subtraction overflow.
+        ; LPOP (or FORTEST) has saved the left operand in LEFT.
+        LAD
+        XRI 80H
+        ST RIGHT
+        LD LEFT+1D
+        XRI 80H
+        LLI LOW RIGHT
+        CPM
+        JTC CMPLESS
+        JFZ CMPMORE
+        LD LEFT
+        CPE
+        JTC CMPLESS
+        JFZ CMPMORE
+        LAI 0D
+        JMP CMPFLAG
+CMPLESS:
+        LAI 1D
+        JMP CMPFLAG
+CMPMORE:
+        LAI 2D
+        JMP CMPFLAG
+CMPFLAG:
+        ST SIGN
+        LD OP
+        CPI 61D
+        JTZ CMPEQ
+        CPI TNE
+        JTZ CMPNE
+        CPI 60D
+        JTZ CMPLT
+        CPI 62D
+        JTZ CMPGT
+        CPI TLE
+        JTZ CMPLE
+        LD SIGN
+        CPI 1D
+        JMP CMPFALSEZ
+CMPEQ:
+        LD SIGN
+        NDA
+        JMP CMPTRUEZ
+CMPNE:
+        LD SIGN
+        NDA
+        JMP CMPFALSEZ
+CMPLT:
+        LD SIGN
+        CPI 1D
+        JMP CMPTRUEZ
+CMPGT:
+        LD SIGN
+        CPI 2D
+        JMP CMPTRUEZ
+CMPLE:
+        LD SIGN
+        CPI 2D
+CMPFALSEZ:
+        LDI 0D
+        LEI 0D
+        RTZ
+        INE
+        RET
+CMPTRUEZ:
+        LDI 0D
+        LEI 0D
+        RFZ
+        INE
+        RET
+; Checked software word stack for parser values and return addresses.
+VPUSH:
+        LD STKP
+        CPI 252D
+        JFC STACKERR
+        LLA
+        LHI HIGH CSTACK
+        LME
+        INL
+        LMD
+        INL
+        LAL
+        ST STKP
+        RET
+VPOP:
+        ; Most consumers need HL only, not a duplicate in LEFT.
+        LD STKP
+        CPI 2D
+        JTC STACKERR
+        SUI 2D
+        ST STKP
+        LLA
+        LHI HIGH CSTACK
+        LAM
+        INL
+        LHM
+        LLA
+        RET
+LPOP:
+        ; Comparisons and long multiply/divide consume LEFT in RAM instead.
+        LD STKP
+        CPI 2D
+        JTC STACKERR
+        SUI 2D
+        ST STKP
+        LLA
+        LHI HIGH CSTACK
+        LAM
+        ST LEFT
+        LD STKP
+        ADI 1D
+        LLA
+        LHI HIGH CSTACK
+        LAM
+        ST LEFT+1D
+        RET
+SRET:
+        ST RETA
+        LD STKP
+        CPI 2D
+        JTC STACKERR
+        SUI 2D
+        ST STKP
+        LLA
+        LHI HIGH CSTACK
+        LAM
+        ST RETJMP+1D
+        LD STKP
+        ADI 1D
+        LLA
+        LHI HIGH CSTACK
+        LAM
+        ST RETJMP+2D
+        LD RETA
+RETJMP:
+        JMP 0D
+; Text at DE, zero terminated. BC is preserved.
+TEXT:
+        LHD
+        LLE
+        LAM
+        NDA
+        RTZ
+        OUT 10D
+        INE
+        JFZ TEXT
+        IND
+        JMP TEXT
+CRLF:
+        LAI 10D
+        OUT 10D
+        RET
+SYNTAX:
+        LDI HIGH ESYN
+        LEI LOW ESYN
+        JMP ERROR
+BOUNDS:
+        LDI HIGH EBOUND
+        LEI LOW EBOUND
+        JMP ERROR
+STACKERR:
+        LDI HIGH ESTACK
+        LEI LOW ESTACK
+        JMP ERROR
+LINEERR:
+        LDI HIGH ELINE
+        LEI LOW ELINE
+        JMP ERROR
+MEMERR:
+        LDI HIGH EMEM
+        LEI LOW EMEM
+        JMP ERROR
+DIVZERO:
+        LDI HIGH EDIV
+        LEI LOW EDIV
+ERROR:
+        CAL TEXT
+        JMP PROMPT
+
+; Arithmetic operands/results are kept on one workspace page. This avoids
+; consuming the live BC text pointer or the 8008's hardware return stack.
+MULTIPLY:
+        STW RIGHT
+        LDI 0D
+        LEI 0D
+        STW RESULT
+        LAI 16D
+        ST COUNT
+MULLOOP:
+        LDW RIGHT
+        LAD
+        ORA
+        RAR
+        LDA
+        LAE
+        RAR
+        LEA
+        STW RIGHT
+        JFC MULSHIFT
+        LDW RESULT
+        LHI HIGH LEFT
+        LLI LOW LEFT
+        LAE
+        ADM
+        LEA
+        INL
+        LAD
+        ACM
+        LDA
+        STW RESULT
+MULSHIFT:
+        LHI HIGH LEFT
+        LLI LOW LEFT
+        LAM
+        ADA
+        LMA
+        INL
+        LAM
+        ACA
+        LMA
+        LD COUNT
+        SUI 1D
+        ST COUNT
+        JFZ MULLOOP
+        LDW RESULT
+        RET
+DIVIDE:
+        STW RIGHT
+        LAD
+        ORE
+        JTZ DIVZERO
+        LAD
+        NDI 80H
+        ST SIGN
+        LAD
+        NDA
+        JFS DIVPOSR
+        CAL NEGATE
+        STW RIGHT
+DIVPOSR:
+        LDW LEFT
+        LAD
+        NDI 80H
+        ST MSIGN
+        LD SIGN
+        XRD
+        NDI 80H
+        ST SIGN
+        LAD
+        NDA
+        JFS DIVPOSL
+        CAL NEGATE
+DIVPOSL:
+        STW RESULT
+        LDI 0D
+        LEI 0D
+        STW REMDR
+        LAI 16D
+        ST COUNT
+DIVLOOP:
+        ; Shift the dividend/quotient, then extend the partial remainder.
+        LHI HIGH RESULT
+        LLI LOW RESULT
+        LAM
+        ADA
+        LMA
+        INL
+        LAM
+        ACA
+        LMA
+        LLI LOW REMDR
+        LAM
+        ACA
+        LMA
+        LEA
+        INL
+        LAM
+        ACA
+        LMA
+        LDA
+        ; Unsigned remainder >= divisor? The 17th bit implies yes.
+        JTC DIVSUB
+        LLI LOW RIGHT
+        LAE
+        SUM
+        LEA
+        INL
+        LAD
+        SBM
+        LDA
+        JTC DIVNEXT
+        JMP DIVSTORE
+DIVSUB:
+        LLI LOW RIGHT
+        LAE
+        SUM
+        LEA
+        INL
+        LAD
+        SBM
+        LDA
+DIVSTORE:
+        STW REMDR
+        LLI LOW RESULT
+        LAM
+        ORI 1D
+        LMA
+DIVNEXT:
+        LD COUNT
+        SUI 1D
+        ST COUNT
+        JFZ DIVLOOP
+        LD MSIGN
+        NDA
+        JTZ DIVREMOK
+        LDW REMDR
+        CAL NEGATE
+        STW REMDR
+DIVREMOK:
+        LDW RESULT
+        LD SIGN
+        NDA
+        RTZ
+        JMP NEGATE
+PRINT:
+        CAL PEEK
+        NDA
+        JTZ PRINTEND
+        CPI 58D
+        JTZ PRINTEND
+        CPI 34D
+        JTZ PRINTSTR
+        CPI TCHR
+        JTZ PRINTCHR
+        CALL EXPR
+        CAL PRINTNUM
+        JMP PRINTSEP
+PRINTSTR:
+        CAL GET
+PRINTSTR1:
+        CAL GET
+        NDA
+        JTZ SYNTAX
+        CPI 34D
+        JTZ PRINTSEP
+        OUT 10D
+        JMP PRINTSTR1
+PRINTCHR:
+        CAL GET
+        CALL EXPR
+        LAE
+        OUT 10D
+PRINTSEP:
+        CAL PEEK
+        CPI 59D
+        JTZ PRINTMORE
+        CPI 44D
+        JFZ PRINTEND
+        LAI 32D
+        OUT 10D
+PRINTMORE:
+        CAL GET
+        CAL PEEK
+        NDA
+        JTZ DISPATCH
+        CPI 58D
+        JTZ DISPATCH
+        JMP PRINT
+PRINTEND:
+        CAL CRLF
+        JMP FINISH
+PRINTNUM:
+        STW DECNUM
+        LAD
+        NDA
+        JFS PRINTPOS
+        LAI 45D
+        OUT 10D
+        CAL NEGATE
+        STW DECNUM
+PRINTPOS:
+        LAI 0D
+        ST PRINTN
+PRINTDIV:
+        LDW DECNUM
+        STW LEFT
+        LDI 0D
+        LEI 10D
+        CAL UDIV
+        STW DECNUM
+        LD REMDR
+        ADI 48D
+        ST DIGIT
+        LD PRINTN
+        ADI 224D
+        LLA
+        LHI HIGH FRAMES
+        ; Digit is loaded before reconstructing this indexed address.
+        LAL
+        ST RCOUNT
+        LD DIGIT
+        LEA
+        LD RCOUNT
+        LLA
+        LHI HIGH FRAMES
+        LME
+        LD PRINTN
+        ADI 1D
+        ST PRINTN
+        LDW DECNUM
+        LAD
+        ORE
+        JFZ PRINTDIV
+PRINTDIG:
+        LD PRINTN
+        SUI 1D
+        ST PRINTN
+        ADI 224D
+        LLA
+        LHI HIGH FRAMES
+        LAM
+        OUT 10D
+        LD PRINTN
+        NDA
+        JFZ PRINTDIG
+        RET
+; Unsigned division is also needed to print the magnitude of -32768.
+UDIV:
+        STW RIGHT
+        LAI 0D
+        ST SIGN
+        ST MSIGN
+        LDW LEFT
+        JMP DIVPOSL
+; DIM A(n) allocates n+1 words; DIM BYTE B(n) allocates n+1 bytes.
+DIM:
+        LAI 2D
+        ST FORVAR
+        CAL PEEK
+        CPI TBYTE
+        JFZ DIMNAME
+        CAL GET
+        LAI 1D
+        ST FORVAR
+DIMNAME:
+        CAL GET
+        SUI 65D
+        CPI 26D
+        JFC SYNTAX
+        RLC
+        RLC
+        RLC
+        ST ASLOT
+        LDI 0D
+        LEA
+        CAL VPUSH
+        LD FORVAR
+        LEA
+        CAL VPUSH
+        LAI 40D
+        CAL EXPECT
+        CALL EXPR
+        LAI 41D
+        CAL EXPECT
+        INE
+        JFZ DIMSIZE
+        IND
+DIMSIZE:
+        LAD
+        NDA
+        JTS BOUNDS
+        LAD
+        ORE
+        JTZ BOUNDS
+        STW FORLIM
+        CAL VPOP
+        LAL
+        ST WIDTH
+        CAL VPOP
+        LAL
+        ST ASLOT
+        LDW FORLIM
+        LD WIDTH
+        CPI 2D
+        JFZ DIMBYTES
+        LAE
+        ADE
+        LEA
+        LAD
+        ACD
+        LDA
+        JTC MEMERR
+DIMBYTES:
+        LHI HIGH HEAP
+        LLI LOW HEAP
+        LAE
+        ADM
+        LEA
+        INL
+        LAD
+        ACM
+        LDA
+        JTC MEMERR
+        LAD
+        CPI HIGH RAW
+        JFC MEMERR
+        STW ENDPTR
+        LD ASLOT
+        ADI 4D
+        LLA
+        LHI HIGH DESC
+        LAM
+        NDA
+        JFZ BOUNDS
+        LD ASLOT
+        LLA
+        LHI HIGH DESC
+        LAL
+        ST RCOUNT
+        LDW HEAP
+        LD RCOUNT
+        LLA
+        LHI HIGH DESC
+        LME
+        INL
+        LMD
+        INL
+        LAL
+        ST RCOUNT
+        LDW FORLIM
+        LD RCOUNT
+        LLA
+        LHI HIGH DESC
+        LME
+        INL
+        LMD
+        INL
+        LAL
+        ST RCOUNT
+        LD WIDTH
+        LEA
+        LD RCOUNT
+        LLA
+        LHI HIGH DESC
+        LME
+        LDW HEAP
+DIMZERO:
+        LHD
+        LLE
+        LMI 0D
+        INE
+        JFZ DIMTEST
+        IND
+DIMTEST:
+        LHI HIGH ENDPTR
+        LLI LOW ENDPTR
+        LAE
+        CPM
+        JFZ DIMZERO
+        INL
+        LAD
+        CPM
+        JFZ DIMZERO
+        STW HEAP
+        CAL PEEK
+        CPI 44D
+        JFZ FINISH
+        CAL GET
+        JMP DIM
+; FOR frames: variable offset, limit(2), step(2), resume BC(2), padding.
+FOR:
+        CAL GET
+        SUI 65D
+        CPI 26D
+        JFC SYNTAX
+        ADA
+        ST FORVAR
+        LAI 61D
+        CAL EXPECT
+        CALL EXPR
+        LD FORVAR
+        LLA
+        LHI HIGH VARS
+        LME
+        INL
+        LMD
+        LAI TTO
+        CAL EXPECT
+        CALL EXPR
+        STW FORLIM
+        LDI 0D
+        LEI 1D
+        STW FORSTEP
+        CAL PEEK
+        CPI TSTEP
+        JFZ FORSAVE
+        CAL GET
+        CALL EXPR
+        LAD
+        ORE
+        JTZ BOUNDS
+        STW FORSTEP
+FORSAVE:
+        LD FSP
+        CPI 192D
+        JFC STACKERR
+        ST RCOUNT
+        LD FORVAR
+        LEA
+        LD RCOUNT
+        LLA
+        LHI HIGH FRAMES
+        LME
+        LDW FORLIM
+        LD RCOUNT
+        ADI 1D
+        LLA
+        LHI HIGH FRAMES
+        LME
+        INL
+        LMD
+        LDW FORSTEP
+        LD RCOUNT
+        ADI 3D
+        LLA
+        LHI HIGH FRAMES
+        LME
+        INL
+        LMD
+        LD RCOUNT
+        ADI 5D
+        LLA
+        LHI HIGH FRAMES
+        LMC
+        INL
+        LMB
+        LD FSP
+        ADI 8D
+        ST FSP
+        ; Initial bounds are tested too: FOR 2 TO 1 executes zero times.
+        LAI 0D
+        ST KSTART
+        JMP FORCHECK
+NEXT:
+        LD FSP
+        NDA
+        JTZ STACKERR
+        SUI 8D
+        ST RCOUNT
+        LLA
+        LHI HIGH FRAMES
+        LAM
+        ST FORVAR
+        CAL PEEK
+        CPI 65D
+        JTC NEXTGO
+        CPI 91D
+        JFC NEXTGO
+        CAL GET
+        SUI 65D
+        ADA
+        LHI HIGH FORVAR
+        LLI LOW FORVAR
+        CPM
+        JFZ STACKERR
+NEXTGO:
+        LAI 1D
+        ST KSTART
+        LD RCOUNT
+        ADI 3D
+        LLA
+        LHI HIGH FRAMES
+        LAM
+        CPI 1D
+        JFZ NEXTGENERAL
+        INL
+        LAM
+        NDA
+        JTZ NEXTONE
+NEXTGENERAL:
+        LD FORVAR
+        LLA
+        LHI HIGH VARS
+        LEM
+        INL
+        LDM
+        STW FOROLD
+        LD RCOUNT
+        ADI 3D
+        LLA
+        LHI HIGH FRAMES
+        LAE
+        ADM
+        LEA
+        INL
+        LAD
+        ACM
+        LDA
+        LD FORVAR
+        LLA
+        LHI HIGH VARS
+        LME
+        INL
+        LMD
+        LD RCOUNT
+        ADI 4D
+        LLA
+        LHI HIGH FRAMES
+        LAM
+        LHI HIGH FOROLD
+        LLI LOW FOROLD+1D
+        XRM
+        NDA
+        JTS FORTEST
+        LD FOROLD+1D
+        XRD
+        NDA
+        JTS FORDONE
+        JMP FORTEST
+; Positive unit steps dominate the sieve initialization/count loops. Update
+; the counter in place, then compare directly with the saved signed bound.
+NEXTONE:
+        LD FORVAR
+        LLA
+        LHI HIGH VARS
+        LAM
+        ADI 1D
+        LMA
+        LEA
+        INL
+        LAM
+        ACI 0D
+        LMA
+        LDA
+        CPI 80H
+        JFZ NEXT1CMP
+        LAE
+        NDA
+        JTZ FORDONE
+NEXT1CMP:
+        LD RCOUNT
+        ADI 2D
+        LLA
+        LHI HIGH FRAMES
+        LAD
+        XRM
+        JTS NEXT1SIGN
+        LAD
+        CPM
+        JTC NEXTRESUME
+        JFZ FORDONE
+        DCL
+        LAE
+        CPM
+        JTC NEXTRESUME
+        JTZ NEXTRESUME
+        JMP FORDONE
+NEXT1SIGN:
+        LAD
+        NDA
+        JTS NEXTRESUME
+        JMP FORDONE
+FORCHECK:
+        LD FSP
+        SUI 8D
+        ST RCOUNT
+FORTEST:
+        LD RCOUNT
+        LLA
+        LHI HIGH FRAMES
+        LAM
+        LLA
+        LHI HIGH VARS
+        LEM
+        INL
+        LDM
+        STW RIGHT
+        LD RCOUNT
+        ADI 1D
+        LLA
+        LHI HIGH FRAMES
+        LAM
+        ST LEFT
+        LD RCOUNT
+        ADI 2D
+        LLA
+        LHI HIGH FRAMES
+        LAM
+        ST LEFT+1D
+        LD RCOUNT
+        ADI 4D
+        LLA
+        LHI HIGH FRAMES
+        LAM
+        NDA
+        LAI TGE
+        JFS FOROP
+        LAI TLE
+FOROP:
+        ST OP
+        LDW RIGHT
+        CAL COMPARE
+        LAD
+        ORE
+        JTZ FORDONE
+        LD KSTART
+        NDA
+        JTZ FINISH
+NEXTRESUME:
+        LD RCOUNT
+        ADI 5D
+        LLA
+        LHI HIGH FRAMES
+        LCM
+        INL
+        LBM
+        JMP FINISH
+FORDONE:
+        LD FSP
+        SUI 8D
+        ST FSP
+        LD KSTART
+        NDA
+        JFZ FINISH
+        ; Skip a zero-trip body, tracking nested FOR/NEXT tokens.
+        LAI 1D
+        ST KSTART
+FORSCAN:
+        CAL GET
+        NDA
+        JTZ FORSCANLINE
+        CPI TNUM
+        JTZ FORSCANNUM
+        CPI TADDR
+        JTZ FORSCANNUM
+        CPI 34D
+        JTZ FORSCANSTR
+        CPI TFOR
+        JTZ FORSCANUP
+        CPI TNEXT
+        JFZ FORSCAN
+        LD KSTART
+        SUI 1D
+        ST KSTART
+        JFZ FORSCAN
+        CAL PEEK
+        CPI 65D
+        JTC FINISH
+        CPI 91D
+        JFC FINISH
+        CAL GET
+        JMP FINISH
+FORSCANUP:
+        LD KSTART
+        ADI 1D
+        ST KSTART
+        JMP FORSCAN
+FORSCANNUM:
+        CAL GET
+        CAL GET
+        JMP FORSCAN
+FORSCANSTR:
+        CAL GET
+        CPI 34D
+        JFZ FORSCANSTR
+        JMP FORSCAN
+FORSCANLINE:
+        CAL GET
+        LEA
+        CAL GET
+        LDA
+        LAD
+        ORE
+        JTZ STACKERR
+        CAL GET
+        JMP FORSCAN
+INPUT:
+        CALL LVALUE
+        STW DEST
+        ST AWIDTH
+        LEC
+        LDB
+        STW PSAVE
+        LAI 63D
+        OUT 10D
+        CAL READLINE
+        LBI HIGH RAW
+        LCI 0D
+        CAL SKIP
+        LAI 0D
+        ST KMATCH
+        CAL PEEK
+        CPI 45D
+        JFZ INPUTPOS
+        CAL GET
+        LAI 1D
+        ST KMATCH
+INPUTPOS:
+        CAL PEEK
+        CPI 48D
+        JTC SYNTAX
+        CPI 58D
+        JFC SYNTAX
+        CAL NUMBER
+        CAL SKIP
+        NDA
+        JFZ SYNTAX
+        LD KMATCH
+        NDA
+        JTZ INPUTVALUE
+        CAL NEGATE
+INPUTVALUE:
+        CAL CLEARCACHE
+        STW FORLIM
+        LDW PSAVE
+        LBD
+        LCE
+        LDW FORLIM
+        JMP STOREVALUE
+POKE:
+        CALL EXPR
+        LAD
+        CPI 40H
+        JFC BOUNDS
+        STW DEST
+        LAI 44D
+        CAL EXPECT
+        CALL EXPR
+        LHI HIGH DEST
+        LLI LOW DEST
+        LAM
+        INL
+        LHM
+        LLA
+        LME
+        JMP FINISH
+LIST:
+        CAL UNBIND
+        ; The listing uses the canonical token spelling.
+        LBI HIGH PROGRAM
+        LCI LOW PROGRAM
+LISTLINE:
+        CAL GET
+        LEA
+        CAL GET
+        LDA
+        LAD
+        ORE
+        JTZ PROMPT
+        CAL PRINTNUM
+        LAI 32D
+        OUT 10D
+        CAL GET
+LISTTOKEN:
+        CAL GET
+        NDA
+        JTZ LISTEND
+        CPI TNUM
+        JTZ LISTNUM
+        CPI 80H
+        JTC LISTCHAR
+        CPI TLE
+        JTZ LISTLE
+        CPI TGE
+        JTZ LISTGE
+        CPI TNE
+        JTZ LISTNE
+        ST KMATCH
+        LDI HIGH KEYWORDS
+        LEI LOW KEYWORDS
+LISTKEY:
+        LHD
+        LLE
+        LAM
+        LHI HIGH KMATCH
+        LLI LOW KMATCH
+        CPM
+        JTZ LISTFOUND
+LISTSKIP:
+        INE
+        JFZ LISTSKIP1
+        IND
+LISTSKIP1:
+        LHD
+        LLE
+        LAM
+        NDA
+        JFZ LISTSKIP
+        INE
+        JFZ LISTKEY
+        IND
+        JMP LISTKEY
+LISTFOUND:
+        INE
+        JFZ LISTFOUND1
+        IND
+LISTFOUND1:
+        CAL TEXT
+        LAI 32D
+        OUT 10D
+        JMP LISTTOKEN
+LISTNUM:
+        CAL GET
+        LEA
+        CAL GET
+        LDA
+        CAL PRINTNUM
+        JMP LISTTOKEN
+LISTLE:
+        LAI 60D
+        OUT 10D
+        LAI 61D
+        JMP LISTCHAR
+LISTGE:
+        LAI 62D
+        OUT 10D
+        LAI 61D
+        JMP LISTCHAR
+LISTNE:
+        LAI 60D
+        OUT 10D
+        LAI 62D
+LISTCHAR:
+        OUT 10D
+        CPI 34D
+        JTZ LISTSTRING
+        CPI 65D
+        JTC LISTTOKEN
+        CPI 91D
+        JFC LISTTOKEN
+        LAI 32D
+        OUT 10D
+        JMP LISTTOKEN
+LISTSTRING:
+        CAL GET
+        OUT 10D
+        CPI 34D
+        JFZ LISTSTRING
+        JMP LISTTOKEN
+LISTEND:
+        CAL CRLF
+        JMP LISTLINE
+; Ordered program editing. Workspaces are independent of the running program.
+EDIT:
+        LDW PE
+        STW OLDEND
+        LBI HIGH PROGRAM
+        LCI LOW PROGRAM
+EDITFIND:
+        LEC
+        LDB
+        STW INS
+        CAL GET
+        LEA
+        CAL GET
+        LDA
+        LAD
+        ORE
+        JTZ EDITINSERT
+        LHI HIGH LINE
+        LLI LOW LINE
+        LAE
+        SUM
+        INL
+        LAD
+        SBM
+        JTC EDITSKIP
+        JFZ EDITINSERT
+        LAE
+        LLI LOW LINE
+        CPM
+        JFZ EDITINSERT
+        ; Remove the existing record, including its header and terminator.
+        CAL GET
+        ST OLDLEN
+        SUI 3D
+        ADC
+        LEA
+        LAB
+        ACI 0D
+        LDA
+        STW SOURCE
+        LDW INS
+        STW TARGET
+        LDW OLDEND
+        INE
+        JFZ EDITEND
+        IND
+EDITEND:
+        INE
+        JFZ EDITEND1
+        IND
+EDITEND1:
+        STW ENDPTR
+        CAL MOVEFORWARD
+        LDW OLDEND
+        LHI HIGH OLDLEN
+        LLI LOW OLDLEN
+        LAE
+        SUM
+        LEA
+        LAD
+        SBI 0D
+        LDA
+        STW PE
+        JMP EDITINSERT
+EDITSKIP:
+        CAL GET
+        SUI 3D
+        ADC
+        LCA
+        LAB
+        ACI 0D
+        LBA
+        JMP EDITFIND
+EDITINSERT:
+        LD TLEN
+        CPI 1D
+        JTZ EDITDELETED
+        ADI 3D
+        ST NEWLEN
+        LDW PE
+        STW SOURCE
+        LHI HIGH NEWLEN
+        LLI LOW NEWLEN
+        LAE
+        ADM
+        LEA
+        LAD
+        ACI 0D
+        LDA
+        CPI HIGH RAW
+        JFC MEMERR
+        STW PE
+        ; Copy the trailing sentinel and suffix upward, from the end.
+        INE
+        JFZ EDITUP0
+        IND
+EDITUP0:
+        STW TARGET
+        LDW SOURCE
+        INE
+        JFZ EDITUP1
+        IND
+EDITUP1:
+        STW SOURCE
+EDITUP:
+        LDW SOURCE
+        LHD
+        LLE
+        LAM
+        ST DIGIT
+        LDW TARGET
+        LD DIGIT
+        LHD
+        LLE
+        LMA
+        LDW SOURCE
+        LHI HIGH INS
+        LLI LOW INS
+        LAE
+        CPM
+        JFZ EDITMORE
+        INL
+        LAD
+        CPM
+        JTZ EDITWRITE
+EDITMORE:
+        LAE
+        SUI 1D
+        LEA
+        LAD
+        SBI 0D
+        LDA
+        STW SOURCE
+        LDW TARGET
+        LAE
+        SUI 1D
+        LEA
+        LAD
+        SBI 0D
+        LDA
+        STW TARGET
+        JMP EDITUP
+EDITWRITE:
+        LDW INS
+        LBD
+        LCE
+        LDW LINE
+        LAE
+        CAL PUT
+        LAD
+        CAL PUT
+        LD NEWLEN
+        CAL PUT
+        LDI HIGH TOKBUF
+        LEI 0D
+        LD TLEN
+        ST RCOUNT
+EDITTOK:
+        LHD
+        LLE
+        LAM
+        CAL PUT
+        INE
+        JFZ EDITTOK1
+        IND
+EDITTOK1:
+        LD RCOUNT
+        SUI 1D
+        ST RCOUNT
+        JFZ EDITTOK
+EDITDELETED:
+        CAL RESET
+        JMP PROMPT
+PUT:
+        LHB
+        LLC
+        LMA
+        INC
+        RFZ
+        INB
+        RET
+MOVEFORWARD:
+        LDW SOURCE
+        LHI HIGH ENDPTR
+        LLI LOW ENDPTR
+        LAE
+        CPM
+        JFZ MOVEONE
+        INL
+        LAD
+        CPM
+        RTZ
+MOVEONE:
+        LHD
+        LLE
+        LAM
+        ST DIGIT
+        INE
+        JFZ MOVEONE1
+        IND
+MOVEONE1:
+        STW SOURCE
+        LDW TARGET
+        LD DIGIT
+        LHD
+        LLE
+        LMA
+        INE
+        JFZ MOVEONE2
+        IND
+MOVEONE2:
+        STW TARGET
+        JMP MOVEFORWARD
+BANNER: DATA "b8008 integer BASIC",10D,0D
+ESYN:   DATA "?SYNTAX",10D,0D
+EBOUND: DATA "?BOUNDS",10D,0D
+ESTACK: DATA "?STACK",10D,0D
+ELINE:  DATA "?LINE",10D,0D
+EMEM:   DATA "?MEMORY",10D,0D
+EDIV:   DATA "?DIVIDE BY ZERO",10D,0D
+KEYWORDS:
+        DATA TPRINT,"PRINT",0D
+        DATA TLET,"LET",0D
+        DATA TIF,"IF",0D
+        DATA TTHEN,"THEN",0D
+        DATA TGOTO,"GOTO",0D
+        DATA TGOSUB,"GOSUB",0D
+        DATA TRETURN,"RETURN",0D
+        DATA TFOR,"FOR",0D
+        DATA TTO,"TO",0D
+        DATA TSTEP,"STEP",0D
+        DATA TNEXT,"NEXT",0D
+        DATA TEND,"END",0D
+        DATA TRUN,"RUN",0D
+        DATA TNEW,"NEW",0D
+        DATA TLIST,"LIST",0D
+        DATA TDIM,"DIM",0D
+        DATA TBYTE,"BYTE",0D
+        DATA TREM,"REM",0D
+        DATA TINPUT,"INPUT",0D
+        DATA TABS,"ABS",0D
+        DATA TPEEK,"PEEK",0D
+        DATA TPOKE,"POKE",0D
+        DATA TMOD,"MOD",0D
+        DATA TAND,"AND",0D
+        DATA TOR,"OR",0D
+        DATA TCHR,"CHR",0D
+        DATA 0D
+PROGRAM:
+        END
