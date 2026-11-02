@@ -81,6 +81,31 @@ CHECK BYE
                                 b'0 0 0 1 1 0 1 1 2 0 2 1 3 2 1 '
                                 b'119 131 60000 \n')
 
+    def test_recursive_loop_indices_and_unloop(self):
+        source = """DECIMAL
+: WALK ( depth -- )
+  3 0 DO
+    DUP IF DUP 1- RECURSE THEN
+    I .
+  LOOP DROP ;
+: EARLY ( depth -- )
+  4 0 DO
+    DUP IF DUP 1- RECURSE THEN
+    I 1 = IF DROP UNLOOP EXIT THEN
+  LOOP DROP ;
+: INNER 5 0 DO I 2 = IF UNLOOP EXIT THEN LOOP ;
+: CHECK
+  1 WALK CR
+  1234 3 0 DO INNER I . LOOP . CR
+  5678 10 0 DO 4 EARLY I . LOOP . CR
+  DEPTH . CR ;
+CHECK BYE
+"""
+        output = self.execute(source).split(b'CHECK BYE\n', 1)[1]
+        self.assertEqual(output, b'0 1 2 0 0 1 2 1 0 1 2 2 \n'
+                                b'0 1 2 1234 \n'
+                                b'0 1 2 3 4 5 6 7 8 9 5678 \n0 \n')
+
     def test_native_packed_flags_and_shift(self):
         source="""DECIMAL
 VARIABLE A 300 ALLOT

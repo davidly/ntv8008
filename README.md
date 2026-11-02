@@ -228,7 +228,8 @@ installed benchmark with `-p`. To select a subset:
 ./perfrun.sh --languages assembly ack pascal modula2 smallc
 ```
 
-Measured from the included images on 2026-10-31. Values below are estimated
+Measured on 2026-11-01 from the bundled images and locally installed optional
+components (marked below). Values are estimated
 **seconds on a 500 kHz 8008**, not seconds elapsed on a modern host:
 
 | Implementation | Sieve | E | TTT per iteration |
@@ -241,6 +242,10 @@ Measured from the included images on 2026-10-31. Values below are estimated
 | ACK Occam 1 | 1,354.1 | 730.2 | 817.2 |
 | ACK integer BASIC | 2,568.7 | 617.0 | 489.2 |
 | b8008 integer BASIC interpreter | 5,452.0 | 1,144.5 | 2,809.1 |
+| Intel PL/M-8 (optional) | 335.1 | 645.8 | 93.1 |
+| Baker 8008-Forth (optional) | 6,046.8 | 1,181.8 | 3,233.3 |
+| SCELBAL floating-point BASIC (optional) | 286,415.9 | 16,176.1 | 118,046.0 |
+| Robson Tiny BASIC | Unsupported | Unsupported | Unsupported |
 
 ACK and SmallC share conservative native optimizations for byte locals,
 register/flag liveness, and frame addresses. Byte values can stay in otherwise
@@ -278,11 +283,23 @@ resume position only before descending. This reduces one iteration from
 16,111,346 to 14,457,102 clocks (10.3% fewer), with the same 6493-node search.
 
 Sieve includes all ten passes; E produces 192 digits. TTT is normalized to one
-iteration (6493 search nodes): compiled images run ten iterations, while the
-assembly image runs one. The raw `-p` reports contain total cycles/time, so divide
-compiled TTT's total runtime by ten to reproduce this table. Robson's Tiny BASIC
-cannot run these full workloads. Optional SCELBAL/Forth/PL/M results require their
-separate local setup and are not included in this default-image comparison.
+iteration (6493 search nodes). Assembly, b8008 and SCELBAL run one TTT iteration;
+ACK languages, SmallC, PL/M and Forth run ten, so divide their reported total
+TTT runtime by ten. Interpreter measurements include loading/compiling the
+example source. Forth includes the `DO`/`I` and `UNLOOP EXIT` TTT refactor.
+Robson's byte-only Tiny BASIC cannot run these full workloads.
+
+Optional results are measured from locally supplied components; their images
+are excluded from the published bundle. See the [Forth](forth/README.md),
+[PL/M](plm8/README.md), and [SCELBAL](scelbal/README.md) setup guides.
+SCELBAL uses a segmented sieve and a different fixed-point e algorithm to fit
+its floating-point arrays; its results are not a direct comparison of identical
+algorithms. Forth packs sieve flags into bits. All implementations retain the
+stated output sizes, sieve pass count, and TTT search workload.
+
+Run `./perfrun.sh` (Windows: `perfrun.bat`) to measure every installed integration;
+unavailable optional components are reported as skipped. For just the optional
+rows, use `--languages forth plm8 basic` (`basic` selects SCELBAL).
 
 The compiler backends use software stacks in RAM, direct constant/array access,
 constant arithmetic lowering, quotient reuse and register retention for recognized

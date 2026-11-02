@@ -1,4 +1,4 @@
-; Native additions for packed flags. Upstream files remain unchanged.
+; Native loop cleanup and packed flags. Upstream files remain unchanged.
 name_SHIFT3:    linklast CFAT
                 db 7,'3','R','S','H','I','F','T'
 cw_SHIFT3:      db lo(code_SHIFT3),hi(code_SHIFT3)
@@ -77,3 +77,15 @@ bit_mask_done: mov c,a
                 mov l,e
                 skip_ds
                 ret
+
+; Discard this definition's innermost DO frame before an early EXIT.
+; Four cells: loop address, limit, increment, index. Data stack is unchanged.
+name_UNLOOP:    linklast BITCLEAR
+                db 6,'U','N','L','O','O','P'
+cw_UNLOOP:      db lo(code_UNLOOP),hi(code_UNLOOP)
+code_UNLOOP:    rstackptr_get
+                mov a,l
+                adi 8
+                mov l,a
+                rstackptr_put
+                jmp next

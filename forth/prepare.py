@@ -188,7 +188,7 @@ def prepare():
     native = (ROOT / 'forth/native.inc').read_text()
     extra = extra.replace('LASTWORD_EXTRA:', native+'\nLASTWORD_EXTRA:')
     extra = extra.replace('name_SEE:       linklast CFAT',
-                          'name_SEE:       linklast BITCLEAR')
+                          'name_SEE:       linklast UNLOOP')
     source = source.replace('include "forth-extra.inc"', extra)
     source = source.replace('include "bufio.inc"',
                             (UPSTREAM / 'bufio.inc').read_text())

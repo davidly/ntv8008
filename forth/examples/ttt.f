@@ -9,10 +9,8 @@ DECIMAL
 (  board: 0 1 2 )
 (         3 4 5 )
 (         6 7 8 )
-(  notes: )
-(      I tried using a DO loop in MINMAX but apparently "I" isn't preserved on recursion. )
-(      Also, breaking out of the DO loop broke out across recursion stack frames, which won't work. )
-(      That's why I use the "10 boardIndex !" hack to break out of the loop instead. )
+( Each search owns a DO loop; I survives recursive calls. )
+( Pass the last move explicitly; UNLOOP EXIT ends only this search. )
 
 ( true global variables )
 VARIABLE board 9 ALLOT
@@ -24,7 +22,6 @@ VARIABLE alpha
 VARIABLE beta
 VARIABLE pieceMove
 VARIABLE val
-VARIABLE boardIndex
 
 6 CONSTANT scoreWin
 5 CONSTANT scoreTie
@@ -89,9 +86,8 @@ board 8 + CONSTANT B8
   DUP B2 C@ = IF DUP B5 C@ = IF EXIT THEN THEN
   DUP B0 C@ = IF DUP B4 C@ = IF EXIT THEN THEN
   DROP pieceBlank ;
-: LOOKFORWINNER
-    ( At entry, boardIndex is still the parent's last move. )
-    boardIndex @ DUP board + C@ SWAP
+: LOOKFORWINNER ( lastMove -- winner )
+    DUP board + C@ SWAP
     DUP 0 = IF DROP WIN0 EXIT THEN
     DUP 1 = IF DROP WIN1 EXIT THEN
     DUP 2 = IF DROP WIN2 EXIT THEN
@@ -110,7 +106,7 @@ board 8 + CONSTANT B8
     CR
     ;
 
-: MINMAX ( stack: alpha beta )
+: MINMAX ( alpha beta lastMove -- alpha beta score )
     1 moves +!
     0 val !
 
@@ -123,6 +119,8 @@ board 8 + CONSTANT B8
             DROP
             recursionDepth @ 8 = IF scoreTie val ! THEN
         THEN
+    ELSE
+        DROP
     THEN
 
     0 val @ = IF
@@ -135,19 +133,18 @@ board 8 + CONSTANT B8
         THEN
 
         2DUP beta ! alpha !
-        0 boardIndex !
 
-        BEGIN boardIndex @ 9 < WHILE
-            boardIndex @ board + DUP C@ 0 = IF
+        9 0 DO
+            I board + DUP C@ 0 = IF
                 pieceMove @ OVER C!
-                boardIndex @ pieceMove @ val @
+                pieceMove @ val @
                 1 recursionDepth +!
 
-                alpha @ beta @ RECURSE
+                alpha @ beta @ I RECURSE
 
                 -1 recursionDepth +!
                 >R
-                beta ! alpha ! val ! pieceMove ! boardIndex !
+                beta ! alpha ! val ! pieceMove !
                 pieceBlank SWAP C!
                 R>
 
@@ -155,7 +152,7 @@ board 8 + CONSTANT B8
                     DUP val @ > IF
                         DUP val !
                         DUP scoreWin = OVER beta @ >= OR IF
-                            10 boardIndex !
+                            DROP val @ UNLOOP EXIT
                         ELSE
                             DUP alpha @ > IF DUP alpha ! THEN
                         THEN
@@ -164,7 +161,7 @@ board 8 + CONSTANT B8
                     DUP val @ < IF
                         DUP val !
                         DUP scoreLose = OVER alpha @ <= OR IF
-                            10 boardIndex !
+                            DROP val @ UNLOOP EXIT
                         ELSE
                             DUP beta @ < IF DUP beta ! THEN
                         THEN
@@ -174,8 +171,7 @@ board 8 + CONSTANT B8
             ELSE
                 DROP
             THEN
-            1 boardIndex +!
-        REPEAT
+        LOOP
     THEN
 
     val @
@@ -185,7 +181,8 @@ board 8 + CONSTANT B8
     pieceX
     OVER board + C!       ( make the move )
     0 recursionDepth !
-    scoreMin scoreMax MINMAX
+    DUP >R
+    scoreMin scoreMax R> MINMAX
 
     scoreTie <> IF ." there's a bug somewhere" THEN
     DROP DROP             ( remove alpha and beta )

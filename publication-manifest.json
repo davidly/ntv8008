@@ -28,7 +28,7 @@
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "README.md": {
-      "sha256": "afac988b8dcb81c3210a13424e74631f0372a6e170bf6953e5098aef903527b9",
+      "sha256": "95df2a2a2b83cbe7c494a6591cc6891580d020229be9b9bf6dc2463a13378741",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
@@ -1218,7 +1218,7 @@
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "forth/README.md": {
-      "sha256": "91deada2c498d6e33ac6b1d55d4ce84495afcf70c8bda146f1edb45b445e32d0",
+      "sha256": "de461baa5988f9d158d830576508fc4b8fed9a54f7eee608ef0618df11c82b42",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
@@ -1238,17 +1238,17 @@
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
     "forth/examples/ttt.f": {
-      "sha256": "0981a61156d38f077142384c7b9bac7a5de1f2589889de404d52a9dd1b149eb3",
+      "sha256": "f3727b342492056f74166f4a6721be0039276fcb0a64870ad71932ed8a398cd7",
       "license": "BSD-3-Clause",
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
     "forth/native.inc": {
-      "sha256": "dcd9ad084dcbb602afe33df172ee102613f0254dd337e5f3aa978c280cfe0f67",
+      "sha256": "b8600c9b240fccfe4e928ee53063606255912180bd3d7addf0de6b3e42e64063",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "forth/prepare.py": {
-      "sha256": "0e3f0e77102a039b35911fffb4e9682e6fce5cb3e135e67e488c0bec6a47db43",
+      "sha256": "494d01c530766087d5a591415342133a3a541459d9556b2d7c8203b6f1cf4dff",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
@@ -1853,7 +1853,7 @@
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "tests/forth.py": {
-      "sha256": "0c23bfbffeb870c1a692770f79537c0cd97772eda1d8339998115482fca3c21a",
+      "sha256": "fcd593c74fe1ca76b77e157d0e69602e3b276d1fcfc20d6cf2c82b11a213253a",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },

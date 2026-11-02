@@ -73,8 +73,20 @@ Its address, count, and byte stay on the stacks instead of in global variables.
 Sieve uses native packed-bit access while retaining BYTE's marking order and
 starting multiple. E keeps its running accumulator on the stack and uses one
 `/MOD` for digit output. TTT checks winning lines through the last move, reuses
-the current board address, and keeps returned scores on the stack. Its ascending
-move order, alpha-beta pruning, and 6493-node count are unchanged.
+the current board address, and keeps returned scores on the stack. It passes the
+last move explicitly to each recursive search and enumerates moves with `DO`/`I`;
+alpha-beta cutoffs use `UNLOOP EXIT` to return from just the current search.
+Its ascending move order, alpha-beta pruning, and 6493-node count are unchanged.
+
+The loop refactor reduces the full ten-iteration TTT invocation from
+21,085,138,854 to 16,166,672,972 emulated clocks: **23.3% fewer clocks**
+(1.30x target throughput). On the same Linux host and emulator binary, median
+host time fell from 3.438 s to 2.716 s, **21.0% less time**. These are six
+measured runs per version after one warmup, alternating version order, without
+CPU pinning; host timings vary by machine. Both versions printed the same
+6,493-position result. Measurements include source loading/compilation and all
+ten searches, using `./ntv8008 -p -l:forth/examples/ttt.f a08/forth.hex`, with
+the matching source and kernel image saved for each version.
 
 ## Rebuild and test
 
@@ -134,7 +146,11 @@ stack; 0x0200 the downward-growing data stack; 0x0300 the line buffer;
 user dictionary have no overflow checks. Keep input lines below 256 characters
 and names at most 31 characters. Upstream `I`/`J` inspect fixed return-stack
 offsets, so use them directly in the definition containing their `DO`, rather
-than in a helper called from that loop. A `DO` loop must execute at least once;
+than in a helper called from that loop, and balance any temporary `>R` values
+before using them. Recursion preserves the parent loop index once the child
+returns. `UNLOOP` removes the innermost four-cell loop frame; use `UNLOOP EXIT`
+for an early return from that loop, in the definition owning the loop.
+A `DO` loop must execute at least once;
 avoid equal or inverted initial bounds. These examples do not require disks,
 floating point, CP/M calls, or hardware serial devices.
 
@@ -143,11 +159,12 @@ status. **No explicit license grant was found for Baker's rewrite.** Confirm
 its redistribution terms before publishing the upstream sources, adapted
 assembly, or HEX. This integration does not assign them a new license.
 
-## Native packed flags
+## Native loop cleanup and packed flags
 
-`native.inc` adds three words through the adapter, leaving all pinned upstream
+`native.inc` adds four words through the adapter, leaving all pinned upstream
 files unchanged:
 
+* `UNLOOP ( -- )` removes one loop frame without changing the data stack.
 * `3RSHIFT ( u -- u/8 )` shifts all 16 unsigned bits logically.
 * `BIT@ ( base index -- mask-or-zero )` reads one packed bit.
 * `BITCLR ( base index -- )` clears one packed bit, preserving its neighbors.
