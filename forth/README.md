@@ -88,6 +88,15 @@ CPU pinning; host timings vary by machine. Both versions printed the same
 ten searches, using `./ntv8008 -p -l:forth/examples/ttt.f a08/forth.hex`, with
 the matching source and kernel image saved for each version.
 
+Sieve keeps the prime count on the data stack and resets it each pass instead
+of accessing global `COUNT`. This reduces the full invocation from
+3,023,382,350 to 2,948,638,400 clocks (2.47% fewer): 5,897.276800 seconds at
+500 kHz. E replaces a redundant return-stack round trip with `SWAP OVER`,
+reducing 590,900,548 to 582,634,518 clocks (1.40% fewer): 1,165.269036 seconds.
+Both preserve their original output, array sizes and full workloads. These
+measurements include source loading/compilation, using the same `-p -l:` commands
+as above; they measure emulated clocks rather than host elapsed time.
+
 ## Rebuild and test
 
 Python 3 and the existing A08 C assembler are sufficient. No AS installation,

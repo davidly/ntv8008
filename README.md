@@ -243,7 +243,7 @@ components (marked below). Values are estimated
 | ACK integer BASIC | 2,568.7 | 617.0 | 489.2 |
 | b8008 integer BASIC interpreter | 5,452.0 | 1,144.5 | 2,809.1 |
 | Intel PL/M-8 (optional) | 335.1 | 645.8 | 93.1 |
-| Baker 8008-Forth (optional) | 6,046.8 | 1,181.8 | 3,233.3 |
+| Baker 8008-Forth (optional) | 5,897.3 | 1,165.3 | 3,233.3 |
 | SCELBAL floating-point BASIC (optional) | 286,415.9 | 16,176.1 | 118,046.0 |
 | Robson Tiny BASIC | Unsupported | Unsupported | Unsupported |
 

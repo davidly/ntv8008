@@ -7,19 +7,19 @@ DECIMAL
   DROP 2DROP ;
 8191 CONSTANT SIZE
 VARIABLE FLAGS 1022 ALLOT
-VARIABLE COUNT
 : SIEVE
+  0
   10 0 DO
     FLAGS 1024 255 FILL
-    0 COUNT !
+    DROP 0
     SIZE 0 DO
       FLAGS I BIT@ IF
         I I + 3 + DUP I +
         BEGIN DUP SIZE < WHILE FLAGS OVER BITCLR OVER + REPEAT
-        DROP DROP 1 COUNT +!
+        DROP DROP 1+
       THEN
     LOOP
   LOOP
-  ." count of primes: " COUNT @ . CR
+  ." count of primes: " . CR
   ." 10 iterations" CR ;
 SIEVE BYE

@@ -28,7 +28,7 @@
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "README.md": {
-      "sha256": "95df2a2a2b83cbe7c494a6591cc6891580d020229be9b9bf6dc2463a13378741",
+      "sha256": "a96d397adda7f7fa01aedb65c23ceea1f9f2b2c48362a3ad5d91674f3bb72874",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
@@ -1218,12 +1218,12 @@
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "forth/README.md": {
-      "sha256": "de461baa5988f9d158d830576508fc4b8fed9a54f7eee608ef0618df11c82b42",
+      "sha256": "6c4341a7e4dae55fc6b1474bb01c666c79c2c048902f3fe535dd47459af430ab",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "forth/examples/e.f": {
-      "sha256": "de033ba31270b0f82d2a3812b6ba600cd9219a7e074851941f3029ac4bf17f57",
+      "sha256": "f6633e3dbd8c9e58f9bb7a50d31b5f017de291337611302a7b0eb2744f2ac42a",
       "license": "BSD-3-Clause",
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
@@ -1233,7 +1233,7 @@
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
     "forth/examples/sieve.f": {
-      "sha256": "1c4fa346289dc52858932c472083f438e5477653fe92d01a572d70522dfc3bc0",
+      "sha256": "d5c93a6be34961405ec1b34d56bca5821a1c190982e7a5473b70d41f813f236a",
       "license": "BSD-3-Clause",
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },

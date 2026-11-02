@@ -17,8 +17,8 @@ VARIABLE ARRAY DIGITS ALLOT
         SWAP 1- SWAP OVER       ( high x n )
         BEGIN DUP WHILE
             DUP >R /MOD         ( high remainder quotient; save n )
-            SWAP R> DUP >R ARRAY + C!
-            R> 1- DUP ARRAY + C@ 10 * ROT + SWAP
+            SWAP R> SWAP OVER ARRAY + C!
+            1- DUP ARRAY + C@ 10 * ROT + SWAP
                                 ( high new-x n-1 )
         REPEAT
         DROP                    ( high x )
