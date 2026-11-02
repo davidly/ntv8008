@@ -7,15 +7,6 @@
 
 uint8_t memory[ 16384 ];
 
-// Keep the decoder in the bulk loop without duplicating its implementation.
-#if defined( _MSC_VER )
-#define I8008_FORCE_INLINE __forceinline
-#elif defined( __GNUC__ ) || defined( __clang__ )
-#define I8008_FORCE_INLINE inline __attribute__((always_inline))
-#else
-#define I8008_FORCE_INLINE inline
-#endif
-
 void I8008::power_on( uint16_t address )
 {
     memset( r, 0, sizeof( r ) );
@@ -31,14 +22,14 @@ void I8008::power_on( uint16_t address )
         m_tracer->Trace( "power on, pc %04x\n", pc() );
 } //power_on
 
-uint8_t I8008::fetch()
+I8008_FORCE_INLINE uint8_t I8008::fetch()
 {
     uint8_t value = memory[ pc() ];
     stack[ sp ] = ( pc() + 1 ) & 0x3fff;
     return value;
 } //fetch
 
-void I8008::set_reg( unsigned n, uint8_t value )
+I8008_FORCE_INLINE void I8008::set_reg( unsigned n, uint8_t value )
 {
     if ( 7 == n )
         memory[ address() ] = value;
@@ -46,17 +37,34 @@ void I8008::set_reg( unsigned n, uint8_t value )
         r[ n ] = value;
 } //set_reg
 
-void I8008::set_szp( uint8_t value )
+I8008_FORCE_INLINE void I8008::set_szp( uint8_t value )
 {
     fZero = ( 0 == value );
     fSign = ( 0 != ( value & 0x80 ) );
-    value ^= value >> 4;
-    value ^= value >> 2;
-    value ^= value >> 1;
-    fParity = ( 0 == ( value & 1 ) );
+    // A byte lookup beats XOR folding in measured GCC/MSVC emulator runs.
+    // True means an even number of set bits, including zero.
+    static const bool evenParity[ 256 ] = {
+        true, false, false, true, false, true, true, false, false, true, true, false, true, false, false, true,
+        false, true, true, false, true, false, false, true, true, false, false, true, false, true, true, false,
+        false, true, true, false, true, false, false, true, true, false, false, true, false, true, true, false,
+        true, false, false, true, false, true, true, false, false, true, true, false, true, false, false, true,
+        false, true, true, false, true, false, false, true, true, false, false, true, false, true, true, false,
+        true, false, false, true, false, true, true, false, false, true, true, false, true, false, false, true,
+        true, false, false, true, false, true, true, false, false, true, true, false, true, false, false, true,
+        false, true, true, false, true, false, false, true, true, false, false, true, false, true, true, false,
+        false, true, true, false, true, false, false, true, true, false, false, true, false, true, true, false,
+        true, false, false, true, false, true, true, false, false, true, true, false, true, false, false, true,
+        true, false, false, true, false, true, true, false, false, true, true, false, true, false, false, true,
+        false, true, true, false, true, false, false, true, true, false, false, true, false, true, true, false,
+        true, false, false, true, false, true, true, false, false, true, true, false, true, false, false, true,
+        false, true, true, false, true, false, false, true, true, false, false, true, false, true, true, false,
+        false, true, true, false, true, false, false, true, true, false, false, true, false, true, true, false,
+        true, false, false, true, false, true, true, false, false, true, true, false, true, false, false, true,
+    };
+    fParity = evenParity[ value ];
 } //set_szp
 
-bool I8008::condition( uint8_t op ) const
+I8008_FORCE_INLINE bool I8008::condition( uint8_t op ) const
 {
     // Pack C/Z/S/P in condition-code order, avoiding a temporary bool array
     // and its indexed stack access. Keep the public named flag fields intact.
@@ -65,7 +73,7 @@ bool I8008::condition( uint8_t op ) const
     return ( ( flags >> ( ( op >> 3 ) & 3 ) ) & 1 ) == ( ( op >> 5 ) & 1u );
 } //condition
 
-void I8008::alu( unsigned operation, uint8_t value )
+I8008_FORCE_INLINE void I8008::alu( unsigned operation, uint8_t value )
 {
     unsigned result = 0;
     switch ( operation )
@@ -84,18 +92,8 @@ void I8008::alu( unsigned operation, uint8_t value )
         r[ 0 ] = (uint8_t) result;
 } //alu
 
-I8008_FORCE_INLINE unsigned I8008::execute( uint8_t op, bool injected )
+I8008_FORCE_INLINE unsigned I8008::execute_decoded( uint8_t op )
 {
-    // The normal instruction path checks all stop/tracing conditions once.
-    if ( m_state )
-    {
-        if ( m_state & ( stateHalted | stateEnded ) )
-            return 0;
-        trace_state( pc(), injected ? op : memory[ pc() ], injected );
-    }
-    uint16_t instructionAddress = pc();
-    if ( !injected )
-        op = fetch();
     unsigned states = 5;
     if ( op >= 0xc0 ) // Lrr, LrM, LMr, HLT
     {
@@ -168,7 +166,7 @@ I8008_FORCE_INLINE unsigned I8008::execute( uint8_t op, bool injected )
                 }
                 else if ( d < 7 ) // INr, DCr: B, C, D, E, H, L only
                 {
-                    r[ d ] += ( 0 == ( op & 1 ) ) ? 1 : -1;
+                    r[ d ] = uint8_t( r[ d ] + ( ( 0 == ( op & 1 ) ) ? 1 : -1 ) );
                     set_szp( r[ d ] );
                 }
                 else
@@ -218,6 +216,61 @@ I8008_FORCE_INLINE unsigned I8008::execute( uint8_t op, bool injected )
             }
             case 7: sp = ( sp - 1 ) & 7; break; // RET
         }
+    }
+    return states;
+} //execute_decoded
+
+I8008_FORCE_INLINE unsigned I8008::execute( uint8_t op, bool injected )
+{
+    // The normal instruction path checks all stop/tracing conditions once.
+    if ( m_state )
+    {
+        if ( m_state & ( stateHalted | stateEnded ) )
+            return 0;
+        trace_state( pc(), injected ? op : memory[ pc() ], injected );
+    }
+    uint16_t instructionAddress = pc();
+    if ( !injected )
+        op = fetch();
+    // Constant operands let the compiler resolve register indices and ALU cases.
+    // All instruction bodies remain in execute_decoded(); RAM is fetched afresh.
+    unsigned states = 0;
+    switch ( op )
+    {
+#define I8008_CASE( instruction ) case instruction: states = execute_decoded( instruction ); break;
+        I8008_CASE( 0x00 ) I8008_CASE( 0x01 ) I8008_CASE( 0x02 ) I8008_CASE( 0x03 ) I8008_CASE( 0x04 ) I8008_CASE( 0x05 ) I8008_CASE( 0x06 ) I8008_CASE( 0x07 )
+        I8008_CASE( 0x08 ) I8008_CASE( 0x09 ) I8008_CASE( 0x0a ) I8008_CASE( 0x0b ) I8008_CASE( 0x0c ) I8008_CASE( 0x0d ) I8008_CASE( 0x0e ) I8008_CASE( 0x0f )
+        I8008_CASE( 0x10 ) I8008_CASE( 0x11 ) I8008_CASE( 0x12 ) I8008_CASE( 0x13 ) I8008_CASE( 0x14 ) I8008_CASE( 0x15 ) I8008_CASE( 0x16 ) I8008_CASE( 0x17 )
+        I8008_CASE( 0x18 ) I8008_CASE( 0x19 ) I8008_CASE( 0x1a ) I8008_CASE( 0x1b ) I8008_CASE( 0x1c ) I8008_CASE( 0x1d ) I8008_CASE( 0x1e ) I8008_CASE( 0x1f )
+        I8008_CASE( 0x20 ) I8008_CASE( 0x21 ) I8008_CASE( 0x22 ) I8008_CASE( 0x23 ) I8008_CASE( 0x24 ) I8008_CASE( 0x25 ) I8008_CASE( 0x26 ) I8008_CASE( 0x27 )
+        I8008_CASE( 0x28 ) I8008_CASE( 0x29 ) I8008_CASE( 0x2a ) I8008_CASE( 0x2b ) I8008_CASE( 0x2c ) I8008_CASE( 0x2d ) I8008_CASE( 0x2e ) I8008_CASE( 0x2f )
+        I8008_CASE( 0x30 ) I8008_CASE( 0x31 ) I8008_CASE( 0x32 ) I8008_CASE( 0x33 ) I8008_CASE( 0x34 ) I8008_CASE( 0x35 ) I8008_CASE( 0x36 ) I8008_CASE( 0x37 )
+        I8008_CASE( 0x38 ) I8008_CASE( 0x39 ) I8008_CASE( 0x3a ) I8008_CASE( 0x3b ) I8008_CASE( 0x3c ) I8008_CASE( 0x3d ) I8008_CASE( 0x3e ) I8008_CASE( 0x3f )
+        I8008_CASE( 0x40 ) I8008_CASE( 0x41 ) I8008_CASE( 0x42 ) I8008_CASE( 0x43 ) I8008_CASE( 0x44 ) I8008_CASE( 0x45 ) I8008_CASE( 0x46 ) I8008_CASE( 0x47 )
+        I8008_CASE( 0x48 ) I8008_CASE( 0x49 ) I8008_CASE( 0x4a ) I8008_CASE( 0x4b ) I8008_CASE( 0x4c ) I8008_CASE( 0x4d ) I8008_CASE( 0x4e ) I8008_CASE( 0x4f )
+        I8008_CASE( 0x50 ) I8008_CASE( 0x51 ) I8008_CASE( 0x52 ) I8008_CASE( 0x53 ) I8008_CASE( 0x54 ) I8008_CASE( 0x55 ) I8008_CASE( 0x56 ) I8008_CASE( 0x57 )
+        I8008_CASE( 0x58 ) I8008_CASE( 0x59 ) I8008_CASE( 0x5a ) I8008_CASE( 0x5b ) I8008_CASE( 0x5c ) I8008_CASE( 0x5d ) I8008_CASE( 0x5e ) I8008_CASE( 0x5f )
+        I8008_CASE( 0x60 ) I8008_CASE( 0x61 ) I8008_CASE( 0x62 ) I8008_CASE( 0x63 ) I8008_CASE( 0x64 ) I8008_CASE( 0x65 ) I8008_CASE( 0x66 ) I8008_CASE( 0x67 )
+        I8008_CASE( 0x68 ) I8008_CASE( 0x69 ) I8008_CASE( 0x6a ) I8008_CASE( 0x6b ) I8008_CASE( 0x6c ) I8008_CASE( 0x6d ) I8008_CASE( 0x6e ) I8008_CASE( 0x6f )
+        I8008_CASE( 0x70 ) I8008_CASE( 0x71 ) I8008_CASE( 0x72 ) I8008_CASE( 0x73 ) I8008_CASE( 0x74 ) I8008_CASE( 0x75 ) I8008_CASE( 0x76 ) I8008_CASE( 0x77 )
+        I8008_CASE( 0x78 ) I8008_CASE( 0x79 ) I8008_CASE( 0x7a ) I8008_CASE( 0x7b ) I8008_CASE( 0x7c ) I8008_CASE( 0x7d ) I8008_CASE( 0x7e ) I8008_CASE( 0x7f )
+        I8008_CASE( 0x80 ) I8008_CASE( 0x81 ) I8008_CASE( 0x82 ) I8008_CASE( 0x83 ) I8008_CASE( 0x84 ) I8008_CASE( 0x85 ) I8008_CASE( 0x86 ) I8008_CASE( 0x87 )
+        I8008_CASE( 0x88 ) I8008_CASE( 0x89 ) I8008_CASE( 0x8a ) I8008_CASE( 0x8b ) I8008_CASE( 0x8c ) I8008_CASE( 0x8d ) I8008_CASE( 0x8e ) I8008_CASE( 0x8f )
+        I8008_CASE( 0x90 ) I8008_CASE( 0x91 ) I8008_CASE( 0x92 ) I8008_CASE( 0x93 ) I8008_CASE( 0x94 ) I8008_CASE( 0x95 ) I8008_CASE( 0x96 ) I8008_CASE( 0x97 )
+        I8008_CASE( 0x98 ) I8008_CASE( 0x99 ) I8008_CASE( 0x9a ) I8008_CASE( 0x9b ) I8008_CASE( 0x9c ) I8008_CASE( 0x9d ) I8008_CASE( 0x9e ) I8008_CASE( 0x9f )
+        I8008_CASE( 0xa0 ) I8008_CASE( 0xa1 ) I8008_CASE( 0xa2 ) I8008_CASE( 0xa3 ) I8008_CASE( 0xa4 ) I8008_CASE( 0xa5 ) I8008_CASE( 0xa6 ) I8008_CASE( 0xa7 )
+        I8008_CASE( 0xa8 ) I8008_CASE( 0xa9 ) I8008_CASE( 0xaa ) I8008_CASE( 0xab ) I8008_CASE( 0xac ) I8008_CASE( 0xad ) I8008_CASE( 0xae ) I8008_CASE( 0xaf )
+        I8008_CASE( 0xb0 ) I8008_CASE( 0xb1 ) I8008_CASE( 0xb2 ) I8008_CASE( 0xb3 ) I8008_CASE( 0xb4 ) I8008_CASE( 0xb5 ) I8008_CASE( 0xb6 ) I8008_CASE( 0xb7 )
+        I8008_CASE( 0xb8 ) I8008_CASE( 0xb9 ) I8008_CASE( 0xba ) I8008_CASE( 0xbb ) I8008_CASE( 0xbc ) I8008_CASE( 0xbd ) I8008_CASE( 0xbe ) I8008_CASE( 0xbf )
+        I8008_CASE( 0xc0 ) I8008_CASE( 0xc1 ) I8008_CASE( 0xc2 ) I8008_CASE( 0xc3 ) I8008_CASE( 0xc4 ) I8008_CASE( 0xc5 ) I8008_CASE( 0xc6 ) I8008_CASE( 0xc7 )
+        I8008_CASE( 0xc8 ) I8008_CASE( 0xc9 ) I8008_CASE( 0xca ) I8008_CASE( 0xcb ) I8008_CASE( 0xcc ) I8008_CASE( 0xcd ) I8008_CASE( 0xce ) I8008_CASE( 0xcf )
+        I8008_CASE( 0xd0 ) I8008_CASE( 0xd1 ) I8008_CASE( 0xd2 ) I8008_CASE( 0xd3 ) I8008_CASE( 0xd4 ) I8008_CASE( 0xd5 ) I8008_CASE( 0xd6 ) I8008_CASE( 0xd7 )
+        I8008_CASE( 0xd8 ) I8008_CASE( 0xd9 ) I8008_CASE( 0xda ) I8008_CASE( 0xdb ) I8008_CASE( 0xdc ) I8008_CASE( 0xdd ) I8008_CASE( 0xde ) I8008_CASE( 0xdf )
+        I8008_CASE( 0xe0 ) I8008_CASE( 0xe1 ) I8008_CASE( 0xe2 ) I8008_CASE( 0xe3 ) I8008_CASE( 0xe4 ) I8008_CASE( 0xe5 ) I8008_CASE( 0xe6 ) I8008_CASE( 0xe7 )
+        I8008_CASE( 0xe8 ) I8008_CASE( 0xe9 ) I8008_CASE( 0xea ) I8008_CASE( 0xeb ) I8008_CASE( 0xec ) I8008_CASE( 0xed ) I8008_CASE( 0xee ) I8008_CASE( 0xef )
+        I8008_CASE( 0xf0 ) I8008_CASE( 0xf1 ) I8008_CASE( 0xf2 ) I8008_CASE( 0xf3 ) I8008_CASE( 0xf4 ) I8008_CASE( 0xf5 ) I8008_CASE( 0xf6 ) I8008_CASE( 0xf7 )
+        I8008_CASE( 0xf8 ) I8008_CASE( 0xf9 ) I8008_CASE( 0xfa ) I8008_CASE( 0xfb ) I8008_CASE( 0xfc ) I8008_CASE( 0xfd ) I8008_CASE( 0xfe ) I8008_CASE( 0xff )
+#undef I8008_CASE
     }
     unsigned clocks = states * 2;
     cycles += clocks;
