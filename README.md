@@ -5,6 +5,8 @@ The emulator implements the full instruction set, 16 KiB of RAM, console I/O,
 instruction tracing and cycle accounting. Programs execute 8008 machine code;
 compiler frontends and interpreters do not run inside the host as shortcuts.
 
+This builds and runs on Windows, MacOS, and Linux (tested on Ubuntu).
+
 Project code is **BSD-3-Clause**. Included third-party components retain their
 own permissive terms. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and
 [PROVENANCE.md](PROVENANCE.md) for the exact publication boundary. Historical
