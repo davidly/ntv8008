@@ -19,9 +19,11 @@ independent and unchanged.
 
 ## Build the compiler
 
-On Linux, macOS, or a Unix environment such as WSL, install Python 3, a C
-compiler available as `gcc`, GNU make, Ninja, flex, and yacc/Bison. macOS needs
-GNU make available as `make` for this upstream build. Then, from the repo root:
+On Linux, macOS, or a Unix environment such as WSL, install Python 3.9 or
+newer, a C compiler available as `gcc`, GNU Make 4.x, Ninja, flex, and
+yacc/Bison. On macOS, `brew install make ninja` supplies the normally missing
+tools; the bootstrap automatically finds Homebrew's `gmake`. Then, from the
+repo root:
 
 ```sh
 ./m.sh

@@ -8,7 +8,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
-from integration import ROOT, HOST, ASSEMBLER, run
+from integration import ROOT, HOST, ASSEMBLER, run, terminal_state
 
 COMPILE = '--compile' in sys.argv
 if COMPILE:
@@ -108,7 +108,7 @@ class Snake(unittest.TestCase):
         import termios
         import select
         master,slave=pty.openpty()
-        saved=termios.tcgetattr(slave)
+        saved=terminal_state(slave)
         process=None
         try:
             started=time.monotonic()
@@ -125,7 +125,7 @@ class Snake(unittest.TestCase):
             self.assertIn(b'Bye!\n',output)
             clocks=int(re.search(rb'(\d+) cycles',error)[1])
             self.assertGreaterEqual(elapsed,clocks/500000*0.9)
-            self.assertEqual(termios.tcgetattr(slave),saved)
+            self.assertEqual(terminal_state(slave),saved)
         finally:
             if process is not None and process.poll() is None:
                 process.kill();process.communicate()

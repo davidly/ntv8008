@@ -22,6 +22,16 @@ def run(*args, data=b'', cwd=None, timeout=10):
     return result
 
 
+def terminal_state(fd):
+    import termios
+    state = termios.tcgetattr(fd)
+    # Darwin sets this kernel-maintained bit when canonical mode is restored,
+    # even if tcsetattr receives an otherwise identical saved state.
+    if sys.platform == 'darwin':
+        state[3] &= ~termios.PENDIN
+    return state
+
+
 def record(address, kind, data=()):
     raw = bytes([len(data), address >> 8, address & 255, kind, *data])
     return ':' + (raw + bytes([-sum(raw) & 255])).hex().upper() + '\n'
@@ -408,7 +418,7 @@ TDATA:
         import signal
         import termios
         master, slave = pty.openpty()
-        saved = termios.tcgetattr(slave)
+        saved = terminal_state(slave)
         process = subprocess.Popen([str(HOST), str(ROOT / 'a08/echo.hex')],
                                    stdin=slave, stdout=slave, stderr=subprocess.PIPE)
         try:
@@ -419,7 +429,7 @@ TDATA:
             self.assertFalse(termios.tcgetattr(slave)[3] & termios.ICANON)
             process.send_signal(signal.SIGINT)
             self.assertEqual(process.wait(timeout=5), 130)
-            self.assertEqual(termios.tcgetattr(slave), saved)
+            self.assertEqual(terminal_state(slave), saved)
         finally:
             if process.poll() is None:
                 process.kill()

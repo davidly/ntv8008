@@ -3,6 +3,7 @@
 import hashlib
 import os
 import posixpath
+import re
 from pathlib import Path
 import shutil
 import subprocess
@@ -14,6 +15,20 @@ BUILD = HERE / 'build'
 REVISION = '7afa32a0a0f13e865fa2e8104e442689005cd627'
 ACK_SHA256 = '142ad8834ed5409dda0fed8e3ddb1e50f72c772858ef1e2cc9570f13e9cc6ad3'
 LUA_SHA256 = '9fbf5e28ef86c69858f6d3d34eccc32e911c1a28b4120ff3e84aaa70cfbf1e30'
+
+
+def find_make():
+    """Find GNU Make 4.x, including Homebrew's unprefixed-safe gmake."""
+    candidates = [os.environ.get('MAKE'), 'gmake', 'make']
+    for candidate in candidates:
+        if not candidate or not shutil.which(candidate):
+            continue
+        result = subprocess.run([candidate, '--version'], text=True,
+                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        match = re.search(r'^GNU Make (\d+)(?:\.|$)', result.stdout, re.MULTILINE)
+        if result.returncode == 0 and match and int(match.group(1)) >= 4:
+            return candidate
+    raise SystemExit('GNU Make 4.x is required (on macOS: brew install make)')
 
 
 def unpack(name, url, digest, variable):
@@ -65,6 +80,25 @@ def unpack(name, url, digest, variable):
 
 
 def patch_sources(ack):
+    # Xcode still supplies Python 3.9 on some supported macOS releases. ACK
+    # uses glob(root_dir=...), which Python did not add until 3.10.
+    glob_compat = ack / 'build/glob_compat.py'
+    glob_compat.write_text(
+        'from glob import glob as _glob\n'
+        'from os.path import join, relpath\n\n'
+        'def glob(pathname, *, root_dir=None, recursive=False):\n'
+        '    if root_dir is None:\n'
+        '        return _glob(pathname, recursive=recursive)\n'
+        '    return [relpath(path, root_dir) for path in\n'
+        '            _glob(join(root_dir, pathname), recursive=recursive)]\n')
+    for build_file in ack.rglob('*.py'):
+        if build_file == glob_compat:
+            continue
+        text = build_file.read_text()
+        if 'root_dir=' in text and 'from glob import glob' in text:
+            build_file.write_text(text.replace('from glob import glob',
+                                               'from build.glob_compat import glob'))
+
     # Match Pascal's runtime/ISO MOD semantics during constant folding too.
     # Upstream used C's negative remainder, producing a different constant.
     folding = ack / 'lang/pc/comp/cstoper.c'
@@ -87,7 +121,8 @@ def patch_sources(ack):
 
 
 def main():
-    for tool in ('make', 'ninja', 'gcc', 'flex', 'yacc'):
+    make = find_make()
+    for tool in ('ninja', 'gcc', 'flex', 'yacc'):
         if not shutil.which(tool):
             raise SystemExit('Missing build tool: ' + tool)
     BUILD.mkdir(exist_ok=True)
@@ -96,17 +131,17 @@ def main():
                  ACK_SHA256, 'ACK_ARCHIVE')
     patch_sources(ack)
     jobs = str(min(os.cpu_count() or 2, 8))
-    subprocess.run(['make', '-j' + jobs, 'posix'], cwd=lua, check=True)
+    subprocess.run([make, '-j' + jobs, 'posix'], cwd=lua, check=True)
     makefile = ack / 'Makefile'
     makefile.write_text(makefile.read_text().replace('PLATS = all', 'PLATS = em22'))
     environment = dict(os.environ)
     environment['PATH'] = str(lua / 'src') + os.pathsep + environment['PATH']
-    subprocess.run(['make', 'NINJA=ninja -j' + jobs,
+    subprocess.run([make, 'NINJA=ninja -j' + jobs,
                     'lang/cem/cemcom.ansi/+all', 'lang/cem/cpp.ansi/+all',
                     'lang/pc/comp/+all', 'lang/m2/comp/+all', 'lang/basic/src/+all',
                     'util/misc/+all', 'util/opt/+all'], cwd=ack,
                    env=environment, check=True)
-    subprocess.run(['make', 'NINJA=ninja -j'+jobs, 'lang/occam/comp/+all'],
+    subprocess.run([make, 'NINJA=ninja -j'+jobs, 'lang/occam/comp/+all'],
                    cwd=ack, env=environment, check=True)
     destination = BUILD / 'bin'
     destination.mkdir(exist_ok=True)
