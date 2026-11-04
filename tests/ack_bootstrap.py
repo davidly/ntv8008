@@ -44,5 +44,45 @@ class Prerequisites(unittest.TestCase):
         build.mkdir.assert_not_called()
 
 
+class Downloads(unittest.TestCase):
+    def test_connection_reset_and_incomplete_read_are_retried(self):
+        from unittest.mock import MagicMock
+        response=MagicMock()
+        response.__enter__.return_value=response
+        response.read.side_effect=[bootstrap.http.client.IncompleteRead(b'partial'),b'complete']
+        with patch.object(bootstrap.urllib.request,'urlopen',side_effect=[
+                bootstrap.urllib.error.URLError(ConnectionResetError()),response,response]) as fetch, \
+             patch.object(bootstrap.time,'sleep') as sleep:
+            self.assertEqual(bootstrap.download('https://example.invalid/archive'),b'complete')
+        self.assertEqual(fetch.call_count,3)
+        self.assertEqual([call.args[0] for call in sleep.call_args_list],[1,2])
+
+    def test_permanent_http_error_is_not_retried(self):
+        error=bootstrap.urllib.error.HTTPError('url',404,'not found',{},None)
+        with patch.object(bootstrap.urllib.request,'urlopen',side_effect=error) as fetch, \
+             patch.object(bootstrap.time,'sleep') as sleep:
+            with self.assertRaises(bootstrap.urllib.error.HTTPError):bootstrap.download('url')
+        self.assertEqual(fetch.call_count,1)
+        sleep.assert_not_called()
+        error.close()
+
+    def test_transient_http_errors_have_a_bounded_retry_count(self):
+        error=bootstrap.urllib.error.HTTPError('url',503,'unavailable',{},None)
+        with patch.object(bootstrap.urllib.request,'urlopen',side_effect=error) as fetch, \
+             patch.object(bootstrap.time,'sleep'):
+            with self.assertRaises(bootstrap.urllib.error.HTTPError):bootstrap.download('url')
+        self.assertEqual(fetch.call_count,3)
+
+    def test_checksum_mismatch_is_not_cached_or_retried(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as directory, \
+             patch.object(bootstrap,'BUILD',Path(directory)), \
+             patch.object(bootstrap,'download',return_value=b'wrong archive') as fetch:
+            with self.assertRaisesRegex(ValueError,'SHA-256 mismatch'):
+                bootstrap.unpack('lua','url','0'*64,'NTV8008_TEST_MISSING_ARCHIVE')
+            self.assertFalse(Path(directory,'lua.tar.gz').exists())
+        fetch.assert_called_once_with('url')
+
+
 if __name__=='__main__':
     unittest.main()

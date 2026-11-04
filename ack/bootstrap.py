@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Build pinned ACK host tools and Lua locally; no system installation."""
 import hashlib
+import http.client
 import os
 import posixpath
 import re
@@ -8,6 +9,8 @@ from pathlib import Path
 import shutil
 import subprocess
 import tarfile
+import time
+import urllib.error
 import urllib.request
 
 HERE = Path(__file__).resolve().parent
@@ -31,12 +34,33 @@ def find_make():
     raise SystemExit('GNU Make 4.x is required (on macOS: brew install make)')
 
 
+def download(url):
+    """Retry transient connection/read failures; verification stays in unpack."""
+    for attempt in range(3):
+        try:
+            with urllib.request.urlopen(url, timeout=60) as response:
+                return response.read()
+        except urllib.error.HTTPError as error:
+            if error.code not in (408, 429, 500, 502, 503, 504):
+                raise
+            error.close()
+            failure = error
+        except (urllib.error.URLError, ConnectionError, TimeoutError,
+                http.client.IncompleteRead) as error:
+            failure = error
+        if attempt == 2:
+            raise failure
+        delay = 2 ** attempt
+        print(f'Download interrupted; retrying in {delay}s: {url}', flush=True)
+        time.sleep(delay)
+
+
 def unpack(name, url, digest, variable):
     directory = BUILD / 'src' / name
     archive = Path(os.environ.get(variable, str(BUILD / (name + '.tar.gz'))))
     if not archive.exists():
         print('Downloading ' + url, flush=True)
-        data = urllib.request.urlopen(url, timeout=60).read()
+        data = download(url)
         if hashlib.sha256(data).hexdigest() != digest:
             raise ValueError('SHA-256 mismatch: ' + url)
         archive.write_bytes(data)

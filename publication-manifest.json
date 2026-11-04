@@ -263,7 +263,7 @@
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "ack/bootstrap.py": {
-      "sha256": "b78e30f71623e82455dd5594aabc9cf667fa555c7762123c0c1c6eb358010a8f",
+      "sha256": "403117cca108f5dda29a5f9bfeb99a2a7fb9919c60619d1d26a3f36fb6a6fb84",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
@@ -1843,7 +1843,7 @@
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "tests/ack_bootstrap.py": {
-      "sha256": "80d4a7ff34de8bfa40cbac56eb034a13f2b064aa2be9712f6e68d5684a3d1714",
+      "sha256": "3dd34437bc105cd2998ecbe173b557e941ca475e9891587d1e57922f69954802",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
