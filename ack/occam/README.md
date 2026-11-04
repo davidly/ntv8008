@@ -112,8 +112,9 @@ accesses, while regression tests compare this path with generic array support.
 
 ## Frontend repairs and regression coverage
 
-The historical frontend was absent from the current ACK build graph. Its build
-copy receives a generated build rule and compatibility repairs recorded in
+The historical frontend was absent from the current ACK build graph. Its Unix
+host build explicitly uses GNU C17 so its K&R declarations remain valid when
+GCC 15 or newer defaults to C23. Its build copy receives a generated build rule and compatibility repairs recorded in
 `patch.py`: missing C declarations/types, modern library prototypes, correct
 variadic diagnostics on 64-bit hosts, the TRUE keyword entry, syntax errors
 producing a failing status, and rejection of recursion/constant bad subscripts.

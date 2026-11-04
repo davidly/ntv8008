@@ -120,11 +120,23 @@ def patch_sources(ack):
     runpy.run_path(str(HERE/'occam/patch.py'))['apply'](ack)
 
 
-def main():
+def check_tools():
+    """Check every Unix host tool before downloading or building sources."""
     make = find_make()
-    for tool in ('ninja', 'gcc', 'flex', 'yacc'):
-        if not shutil.which(tool):
-            raise SystemExit('Missing build tool: ' + tool)
+    # ACK's yacc rules and optimizer's bison rules invoke different commands.
+    # Berkeley yacc satisfies the former, but cannot supply a missing bison.
+    missing = [tool for tool in ('ninja', 'gcc', 'flex', 'yacc', 'bison')
+               if not shutil.which(tool)]
+    if missing:
+        raise SystemExit(
+            'Missing ACK build tool(s): ' + ', '.join(missing) + '\n'
+            'Ubuntu/Debian: sudo apt install build-essential ninja-build flex bison\n'
+            'macOS: brew install make ninja flex bison; ensure their bin directories are on PATH')
+    return make
+
+
+def main():
+    make = check_tools()
     BUILD.mkdir(exist_ok=True)
     lua = unpack('lua', 'https://www.lua.org/ftp/lua-5.4.7.tar.gz', LUA_SHA256, 'LUA_ARCHIVE')
     ack = unpack('ack', 'https://codeload.github.com/davidgiven/ack/tar.gz/' + REVISION,

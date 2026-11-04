@@ -3,6 +3,7 @@ from pathlib import Path
 import re
 import tarfile
 
+# Keep K&R declarations valid when GCC defaults to C23 (GCC 15+).
 BUILD = '''from build.ab import export, simplerule
 from build.c import cprogram
 from glob import glob
@@ -12,7 +13,7 @@ simplerule(name="lexer", ins=["./lex.l"], outs=["=lex.yy.c"],
            commands=["flex --noyywrap -t $[ins] > $[outs]"])
 cprogram(name="em_occam", srcs=glob("lang/occam/comp/*.c")+glob("lang/occam/comp/*.h")+[".+llgen", ".+lexer"],
  deps=["h", "modules/h", "modules/src/system", "modules/src/em_code+lib_k", "modules/src/em_mes"],
- cflags=["-Wno-strict-prototypes", "-Wno-return-type", "-Wno-implicit-int", "-Wno-implicit-function-declaration"])
+ cflags=["-std=gnu17", "-Wno-strict-prototypes", "-Wno-return-type", "-Wno-implicit-int", "-Wno-implicit-function-declaration"])
 export(name="all", items={"$(PLATDEP)/em_occam$(EXT)": ".+em_occam"})
 '''
 

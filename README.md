@@ -96,10 +96,13 @@ downloads/builds pinned MIT Lua and ACK sources, and generates every parser/tabl
 locally. No WSL, MSYS2, GNU Make, GCC, flex, or bison installation is needed.
 See [the native Windows build guide](ack/MSVC.md).
 
-Unix ACK builds use GNU Make 4.x, `ninja`, `gcc`, `flex` and `yacc` (for
-example, bison's yacc compatibility command), plus the usual C/C++ tools.
-On macOS, install the normally missing build tools with `brew install make
-ninja`; setup automatically uses Homebrew's `gmake`. `ACK_TOOLS` can select an
+Unix ACK builds require GNU Make 4.x, `ninja`, `gcc`, `flex`, `yacc`, and
+`bison`, plus the usual C/C++ tools. ACK invokes both parser-generator commands;
+having Berkeley `yacc` alone does not satisfy its Bison requirement. On
+Ubuntu/Debian, install them with
+`sudo apt install build-essential ninja-build flex bison`. On macOS, use
+`brew install make ninja flex bison` and put the installed tools on PATH;
+setup automatically uses Homebrew's `gmake`. `ACK_TOOLS` can select an
 existing compatible host toolchain on either platform. Supplied HEX images run
 without any host compiler. Bundled generator notices are recorded in
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

@@ -28,7 +28,7 @@
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "README.md": {
-      "sha256": "1d6f30db64369ce022ace85ac7a7a3b47268f1e7ac179c42f4bf8ddc5a6de482",
+      "sha256": "397fd179ec91eaaa98b01ecdd6ca6d3a1507b5dc96d093aa8387bda5f56d949f",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
@@ -168,7 +168,7 @@
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "ack/README.md": {
-      "sha256": "1a972c8f2a82cb2e1969e837cd14fc07aeb13afde1d38c82d1fdb7c31d2cb2ce",
+      "sha256": "e977ea2181d2f73845f436272e01e604d17e7359e94ed8b1fb658bfdea32cacb",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
@@ -263,7 +263,7 @@
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "ack/bootstrap.py": {
-      "sha256": "261cab377f1c4c1233da6b7e423252c7305e89a919576ed1edd3879c20909798",
+      "sha256": "b78e30f71623e82455dd5594aabc9cf667fa555c7762123c0c1c6eb358010a8f",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
@@ -688,7 +688,7 @@
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "ack/occam/README.md": {
-      "sha256": "cdd1cca815833a588e7e3c77033b9a0d779b1eb543a6fc78728065c5fbd2cad7",
+      "sha256": "71afbbbb9d13935122dac1bb692d9b93b5c77d9fa9d29a9051c85f98a76b67f3",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
@@ -748,7 +748,7 @@
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
     "ack/occam/patch.py": {
-      "sha256": "bbb6e2d599970d4fcd59ebbdb8806e657da8ba28606e8c613c736a149912bc19",
+      "sha256": "f4ae1308b3002cb08f4b2ad9a12d73f974089ab24d859457b90bfffd82e1a132",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
@@ -1443,7 +1443,7 @@
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "setup.py": {
-      "sha256": "b1e235841a65ff9b4c41f91d7312d865c20dda78798acc97813ad4dbcc8f098c",
+      "sha256": "6a9a40253d97332177d56df087a682a299155dc7c5112cc997f45e4e4e74cbca",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
@@ -1822,6 +1822,11 @@
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
+    "tests/ack_bootstrap.py": {
+      "sha256": "80d4a7ff34de8bfa40cbac56eb034a13f2b064aa2be9712f6e68d5684a3d1714",
+      "license": "BSD-3-Clause",
+      "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
+    },
     "tests/ack_codegen.py": {
       "sha256": "12d3d90f7d768d89de27ebbeed70b8b05400cf7c69f2ec73ffa99d29ca2b6c8c",
       "license": "BSD-3-Clause",
@@ -1908,7 +1913,7 @@
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "tests/run.py": {
-      "sha256": "713e5fc292e5b7708028aa4ca825eabafd9a2576700f277f0762e2b55255dff6",
+      "sha256": "4e80ce63bd1bc364516ef3ac17fb973d40cf478d35f2128866c4bff7d2b69f7d",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },

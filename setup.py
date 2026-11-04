@@ -50,6 +50,11 @@ def main():
         parser.error('--scelbal requires --accept-scelbal-terms; read scelbal/NOTICE.txt')
     if args.plm_images and args.plm_tape:
         parser.error('choose --plm-images or --plm-tape')
+    # Fail before rebuilding any tools if the selected Unix ACK build cannot
+    # run. Native MSVC and externally supplied ACK_TOOLS have other prerequisites.
+    if (args.ack or args.all) and os.name != 'nt' and not os.environ.get('ACK_TOOLS'):
+        from ack.bootstrap import check_tools
+        check_tools()
     script('m.bat' if os.name=='nt' else 'm.sh')
     build_a08()
     python('robson/prepare.py')

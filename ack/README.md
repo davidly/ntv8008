@@ -20,9 +20,17 @@ independent and unchanged.
 ## Build the compiler
 
 On Linux, macOS, or a Unix environment such as WSL, install Python 3.9 or
-newer, a C compiler available as `gcc`, GNU Make 4.x, Ninja, flex, and
-yacc/Bison. On macOS, `brew install make ninja` supplies the normally missing
-tools; the bootstrap automatically finds Homebrew's `gmake`. Then, from the
+newer, a C compiler available as `gcc`, GNU Make 4.x, Ninja, flex, and both
+`yacc` and `bison`. ACK invokes Bison directly for its optimizer; Berkeley yacc
+alone is insufficient. On Ubuntu/Debian:
+
+```sh
+sudo apt install build-essential ninja-build flex bison
+```
+
+On macOS, use `brew install make ninja flex bison` and put the installed tools
+on PATH; the bootstrap automatically finds Homebrew's `gmake`. Setup checks
+these prerequisites before rebuilding tools or downloading ACK. Then, from the
 repo root:
 
 ```sh
