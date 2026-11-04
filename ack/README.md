@@ -495,3 +495,42 @@ saves the parent frame, retaining CD and the bounds check. LEAVE reads the
 adjacent saved FP/return words and releases both together, with an explicit
 page-crossing guard. Software calls may clobber CD; return values stay in RV.
 TTT drops from 761,427,614 to 726,710,020 clocks for ten iterations (4.6% fewer).
+
+### Assembly runtime pruning
+
+The final 8008 backend retains only reachable assembly runtime blocks. It seeds
+reachability from startup and symbolic references in the emitted application
+code/data, follows runtime dependencies and fall-through, and retains addresses
+loaded into registers or stored in tables. Equates remain available; consecutive
+data blocks are retained together for interior table labels. Application code
+and data are not removed by this pass. Arithmetic traps, stack checks, and the
+self-modifying indirect-call trampoline remain when reachable.
+
+This applies to ACK C, Pascal, Modula-2, BASIC, and Occam, after their existing
+EM optimizations and higher-level runtime selection. Small C shares the same
+pass; see `../smallc/README.md`.
+`tests/runtime_prune.py` checks reachability edge cases; the language and native
+code-generation suites exercise the resulting binaries.
+
+### Selective sequence sharing
+
+After native optimization, long frame-address-plus-load sequences may use one
+shared byte/word helper. Candidates must be outside backward-branch spans and
+outside functions on a known direct or mutual recursion cycle. Each helper
+requires at least eight eligible sites: replacing 17-byte sequences with
+seven-byte calls then saves at least 65 bytes after its 15-byte body. This is a
+static selection policy, not profile-guided proof that a site is infrequent.
+Simple loads, stores, byte operations, and short arithmetic remain inline.
+The helper preserves the original final registers and arithmetic flags; it
+adds one hardware CALL/RET level, with no nested calls or RAM-stack allocation.
+No helper is emitted when the threshold is not met. Frame outlining is disabled
+when the backend's native optimization is disabled.
+
+ACK also shares identical return-value stores through LEAVEVALUE immediately
+before LEAVE, when at least two occurrences make it smaller. The shared entry
+falls through into LEAVE, adding no executed instructions or CALL/RET pair.
+This runs after register allocation so the new entry does not inhibit it.
+
+Tests cover selection thresholds, loops, mutual recursion, byte/word loads,
+positive/negative offsets, and address-page carries. The benchmark size report
+records the rejected blanket-sharing experiment and the selected policy.

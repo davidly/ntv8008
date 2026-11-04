@@ -234,24 +234,16 @@ installed benchmark with `-p`. To select a subset:
 ./perfrun.sh --languages assembly ack pascal modula2 smallc
 ```
 
-Measured on 2026-11-01 from the bundled images and locally installed optional
-components (marked below). Values are estimated
-**seconds on a 500 kHz 8008**, not seconds elapsed on a modern host:
+Measured on 2026-11-04 from the current images and locally installed optional
+components. Values are estimated **seconds on a 500 kHz 8008**, independent of
+host speed. Sieve includes ten passes; TTT is normalized to one iteration.
 
-| Implementation | Sieve | E | TTT per iteration |
-| --- | ---: | ---: | ---: |
-| A08 assembly | 78.1 | 36.5 | 28.9 |
-| ACK C | 321.3 | 343.6 | 145.3 |
-| SmallC-85 C | 349.0 | 251.8 | 127.2 |
-| ACK Pascal | 639.2 | 575.7 | 475.2 |
-| ACK Modula-2 | 740.8 | 526.3 | 319.9 |
-| ACK Occam 1 | 1,354.1 | 730.2 | 817.2 |
-| ACK integer BASIC | 2,568.7 | 617.0 | 489.2 |
-| b8008 integer BASIC interpreter | 5,452.0 | 1,144.5 | 2,809.1 |
-| Intel PL/M-8 (optional) | 335.1 | 645.8 | 93.1 |
-| Baker 8008-Forth (optional) | 5,897.3 | 1,165.3 | 3,233.3 |
-| SCELBAL floating-point BASIC (optional) | 286,415.9 | 16,176.1 | 118,046.0 |
-| Robson Tiny BASIC | Unsupported | Unsupported | Unsupported |
+![8008 benchmark runtimes in seconds at 500 kHz; TTT values are per iteration](docs/8008-runtimes.jpg)
+
+[Download the formatted workbook](docs/8008-runtimes.xlsx) for the full-precision
+values, code/data/BSS RAM totals and notes, and the separate Z80 comparison.
+The image is exported from `Sheet1!B3:E16` of that workbook. The BA BASIC row
+uses the separate BA compiler's packed sieve, e, and one-dimensional TTT programs.
 
 ACK and SmallC share conservative native optimizations for byte locals,
 register/flag liveness, and frame addresses. Byte values can stay in otherwise
@@ -275,7 +267,8 @@ search, ascending moves, and 6493-node workload are unchanged.
 
 Pascal, Modula-2, and Occam also inline their last-move winner dispatch.
 This reduces TTT cycles by 8.0%, 13.3%, and 6.4%, respectively; their search
-structure and data types are unchanged. Occam retains explicit frames.
+structure and data types are unchanged. Occam retains explicit search-frame
+arrays instead of recursive search.
 
 The next compiler/runtime pass leaves those sources unchanged and reduces
 ACK C TTT from 152.3 to 145.3 seconds per iteration (4.6% fewer cycles), and
@@ -287,6 +280,12 @@ Assembly TTT retains its nine 16-byte RAM frames, passes the last move to the
 winner checker in E, and scans occupied cells in that register. It saves the
 resume position only before descending. This reduces one iteration from
 16,111,346 to 14,457,102 clocks (10.3% fewer), with the same 6493-node search.
+
+Occam now places eligible sequential procedure workspaces in static BSS,
+including ttt's search arrays. This reduces target cycles by 56.9% for sieve,
+9.8% for e, and 55.0% for ttt, without changing the algorithms, array sizes or
+outputs. Its driver falls back to stack storage when static workspace would
+leave insufficient RAM. The workbook includes the relocated arrays in BSS.
 
 Sieve includes all ten passes; E produces 192 digits. TTT is normalized to one
 iteration (6493 search nodes). Assembly, b8008 and SCELBAL run one TTT iteration;

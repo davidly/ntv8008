@@ -10,6 +10,8 @@ import sys
 if str(Path(__file__).resolve().parents[1]/'tools') not in sys.path:
     sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'tools'))
 from native8008 import optimize_functions
+from runtime_prune import prune_runtime
+from outline8008 import share_return_values, outline_frame_loads
 from ack_bytes import lower_bytes, dense_switches
 from division import reuse_quotients
 from memory import constant_byte_stores, local_updates, fill_loops, strided_loops, global_strided_loops
@@ -851,7 +853,13 @@ class Generator:
                     helpers += ['        RLC', '        LAB']
                 helpers += ['        RAR', '        LBA', '        LAE', '        RAR']
             helpers += ['        JMP '+name+'LOOP', name+'DONE: LAE', '        RET']
-        return runtime + '\n' + '\n'.join(helpers + (optimize_functions(self.cached_code(),self.data,aligned=True) if self.optimize else self.cached_code()) + self.data) + '\nACKEND:\nSTACKMIN EQU (ACKEND+255D) AND 0FF00H\n        END\n'
+        application = '\n'.join((optimize_functions(self.cached_code(),self.data,aligned=True) if self.optimize else self.cached_code()) + self.data)
+        application = share_return_values(application)
+        if self.optimize:
+            application, frame_helpers = outline_frame_loads(application, 'FP')
+            runtime += '\n' + frame_helpers
+        runtime = prune_runtime(runtime + '\n' + '\n'.join(helpers), application)
+        return runtime + '\n' + application + '\nACKEND:\nSTACKMIN EQU (ACKEND+255D) AND 0FF00H\n        END\n'
 
 
 def generate(units, *, pascal=False, optimize=True):

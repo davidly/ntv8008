@@ -12,6 +12,8 @@ if str(HERE) not in sys.path: sys.path.insert(0,str(HERE))
 from smallc_bytes import thread_booleans, byte_comparisons, stack_depths, local_stores
 if str(HERE.parent/'tools') not in sys.path: sys.path.insert(0,str(HERE.parent/'tools'))
 from native8008 import optimize_functions
+from runtime_prune import prune_runtime
+from outline8008 import outline_frame_loads
 
 class CodegenError(ValueError):
     pass
@@ -942,7 +944,12 @@ class Generator:
         if missing:
             raise CodegenError('unresolved symbols: ' + ', '.join(sorted(missing)))
         runtime = (HERE / 'runtime.asm').read_text()
-        return (runtime + '\n' + '\n'.join((optimize_functions(self.code,self.data) if self.optimize else self.code) + self.data) +
+        application = '\n'.join((optimize_functions(self.code,self.data) if self.optimize else self.code) + self.data)
+        if self.optimize:
+            application, frame_helpers = outline_frame_loads(application, 'RSP')
+            runtime += '\n' + frame_helpers
+        runtime = prune_runtime(runtime, application)
+        return (runtime + '\n' + application +
                 '\nSCEND: DB 0\nSTACKMIN EQU (SCEND+255D) AND 0FF00H\n        END\n')
 
 

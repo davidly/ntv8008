@@ -133,6 +133,11 @@ ENTER:  LHI HIGH FP
 ; The saved FP and return word are adjacent at FP. Release them together,
 ; then read both directly instead of calling the general POP twice.
 ; Software calls may clobber CD; the function result remains in RV.
+LEAVEVALUE: LHI HIGH RV
+        LLI LOW RV
+        LMA
+        INL
+        LMB
 LEAVE:  LHI HIGH FP
         LLI LOW FP
         LAM

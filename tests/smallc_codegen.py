@@ -11,6 +11,14 @@ spec=importlib.util.spec_from_file_location('smallc_codegen',ROOT/'smallc/codege
 codegen=importlib.util.module_from_spec(spec);spec.loader.exec_module(codegen)
 
 class Codegen(unittest.TestCase):
+    def test_unused_runtime_helpers_are_pruned(self):
+        ir = 'TEXT\nmain:\nIMM 0\nRETURN\n'
+        assembly = codegen.generate(ir)
+        for label in ('MUL:', 'UDIV:', 'SCSWITCH:', 'SCPRINT:'):
+            self.assertNotIn(label, assembly)
+        self.assertIn('SCRETURN:', assembly)
+        self.differential(ir, b'')
+
     def differential(self,ir,expected,table_offset=None):
         for optimize in (False,True):
             with self.subTest(optimize=optimize), tempfile.TemporaryDirectory() as directory:

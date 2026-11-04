@@ -142,3 +142,25 @@ procedure call. The IF dispatch is inside the explicit-frame search and writes i
 The search order, data types, three drawn openings, 6493 nodes per iteration,
 and ten iterations are unchanged. TTT uses 4,086,062,652 clocks instead of
 4,364,965,452 (6.4% fewer). This is source inlining, not automatic compiler inlining.
+
+### Static sequential workspaces
+
+By default the Occam driver prefers static storage for provably non-reentrant
+Occam procedure workspaces. Arrays, scalars, and temporaries keep their original
+relative layout in a private BSS block. Frame parameters, saved links, and return
+addresses remain on the RAM stack. References from nested procedures are
+rewritten only when their lexical owner is known. Recursive, indirect, escaped,
+or unresolved frame cases remain on the stack. The sequential frontend still
+rejects unsupported concurrency and recursion.
+
+`--workspace auto` tries eligible procedure workspaces, then only the main
+workspace, then the original stack layout if needed to fit RAM. Static layouts
+reserve at least 512 bytes above the page-aligned stack floor for remaining
+software calls. `--workspace stack` retains the old layout for comparison;
+`--workspace main` and `--workspace all` request the respective safe candidates
+without automatic memory fallback. No source program names or benchmark-specific
+array addresses are special-cased.
+
+All three benchmarks use the static layout selected by auto. This includes
+ttt's search arrays: they have one live instance in this sequential, nonrecursive
+search procedure. Algorithms and source array sizes are unchanged.

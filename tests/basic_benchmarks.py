@@ -25,6 +25,12 @@ class BasicBenchmarks(unittest.TestCase):
             expected = str(Decimal(1).exp()).replace('.', '')[:192]
         self.assertEqual(self.execute('e'), (expected + '\nDONE').encode())
 
+    def test_e_spigot(self):
+        with localcontext() as context:
+            context.prec = 220
+            expected = str(Decimal(1).exp()).replace('.', '')[:192]
+        self.assertEqual(self.execute('e_spigot'), (expected + '\nDONE').encode())
+
     def test_sieve(self):
         # Independent trial division, without the port's segmentation strategy.
         def prime(n):

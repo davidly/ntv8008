@@ -48,10 +48,10 @@ class Runtime(unittest.TestCase):
 
 @unittest.skipUnless(COMPILE,'use --compile after building ACK Occam host tools')
 class Compiler(unittest.TestCase):
-    def execute(self,text,data=b'',optimize_arrays=True):
+    def execute(self,text,data=b'',optimize_arrays=True,workspace='auto'):
         with tempfile.TemporaryDirectory(prefix='Occam regression ') as directory:
             source=Path(directory,'program.ocm');source.write_text(text)
-            image,_,_=compiler.compile_source(source,optimize_arrays=optimize_arrays)
+            image,_,_=compiler.compile_source(source,optimize_arrays=optimize_arrays,workspace=workspace)
             target=source.with_suffix('.hex');target.write_text(image)
             result=run('-n:200000000',target,data=data,timeout=30)
             self.assertEqual(result.returncode,0,result.stderr)
@@ -188,6 +188,53 @@ seq
         before={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in files}
         apply(root)
         self.assertEqual(before,{p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in files})
+
+    def test_workspace_modes_preserve_lexical_arrays_and_repeated_calls(self):
+        text="""var result:
+proc work(value n, var answer) =
+  var a[byte 4], b[3], local:
+  proc inner =
+    seq
+      a[byte 0] := n
+      b[1] := a[byte 0] + local
+      answer := b[1]
+  :
+  seq
+    local := 7
+    inner
+:
+seq
+  work(35, result)
+  output ! result
+  work(36, result)
+  output ! result
+"""
+        for mode in ('auto','all','main','stack'):
+            with self.subTest(workspace=mode):
+                self.assertEqual(self.execute(text,workspace=mode),b'*+')
+
+    def test_static_workspace_fallback_keeps_reusable_large_frames(self):
+        text="""proc first =
+  var a[byte 8000]:
+  seq
+    a[byte 0] := 65
+    output ! a[byte 0]
+:
+proc second =
+  var b[byte 8000]:
+  seq
+    b[byte 0] := 66
+    output ! b[byte 0]
+:
+seq
+  first
+  second
+"""
+        self.assertEqual(self.execute(text),b'AB')
+        with tempfile.TemporaryDirectory() as directory:
+            source=Path(directory,'large.ocm');source.write_text(text)
+            with self.assertRaisesRegex(compiler.CodegenError,'stack'):
+                compiler.compile_source(source,workspace='all')
 
     def test_main_frame_limit(self):
         with tempfile.TemporaryDirectory() as directory:

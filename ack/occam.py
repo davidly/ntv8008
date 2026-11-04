@@ -9,6 +9,7 @@ import tempfile
 from codegen import CodegenError, generate
 from compile import ROOT, HERE, TOOLS, SUFFIX, run, compile_c_unit
 from wirth import trim_runtime, lower_fixed_arrays
+from occam_storage import static_workspaces
 
 
 def normalize(program):
@@ -46,7 +47,9 @@ def lower_arrays(program):
     return lower_fixed_arrays(program)
 
 
-def compile_source(source, *, optimize_arrays=True):
+def compile_source(source, *, optimize_arrays=True, workspace='auto'):
+    if workspace not in ('auto','all','main','stack'):
+        raise CodegenError('invalid Occam workspace mode')
     for tool in ('em_occam','cpp.ansi','em_cemcom.ansi','em_opt','em_decode'):
         if not (TOOLS/(tool+SUFFIX)).is_file():
             raise CodegenError('ACK Occam tools not built; run ack/build.sh')
@@ -63,22 +66,37 @@ def compile_source(source, *, optimize_arrays=True):
         unsupported=set(re.findall(r'^ cal (\S+)',program,re.M))-procedures-allowed
         if unsupported:
             raise CodegenError('unsupported Occam runtime operation: '+', '.join(sorted(unsupported)))
-        if optimize_arrays:program=lower_arrays(program)
         support=[compile_c_unit(HERE/'occam/runtime.c',work,'runtime'),
                  compile_c_unit(HERE/'pascal/runtime.c',work,'arrays'),
                  compile_c_unit(HERE/'console.c',work,'console')]
-        units=[program,*trim_runtime(program,support)]
-        assembly=generate(units,pascal=True)
-        (work/'program.asm').write_bytes(assembly.encode('ascii'))
-        run([ROOT/'a08'/('a08'+SUFFIX),work/'program.asm','-o'+str(work/'program.hex')])
-        image=(work/'program.hex').read_text()
-        end=max(int(line[3:7],16)+int(line[1:3],16) for line in image.splitlines() if line[7:9]=='00')
-        main=re.search(r'^ pro \$main,(\d+)$',program,re.M)
-        if main and end+int(main[1])+512>0x3f00:
-            raise CodegenError('code/data and main frame leave less than 512 bytes of stack')
-        if end>0x3d00:
-            raise CodegenError('code/data exceed 15616 bytes; at least 512 bytes of stack required')
-        return image,assembly,'\n'.join(units)
+        modes=('all','main','stack') if workspace=='auto' else (workspace,)
+        last_error=None
+        for mode in modes:
+            candidate=static_workspaces(program,mode)
+            if optimize_arrays:candidate=lower_arrays(candidate)
+            units=[candidate,*trim_runtime(candidate,support)]
+            # Avoid assembling definitely oversized static arenas before
+            # trying the stack fallback, where separate procedures reuse RAM.
+            if mode!='stack' and sum(map(int,re.findall(r'^ bss (\d+),',candidate,re.M)))>0x3c00:
+                last_error=CodegenError('static workspace leaves insufficient RAM for stack')
+                continue
+            assembly=generate(units,pascal=True)
+            (work/'program.asm').write_bytes(assembly.encode('ascii'))
+            run([ROOT/'a08'/('a08'+SUFFIX),work/'program.asm','-o'+str(work/'program.hex')])
+            image=(work/'program.hex').read_text()
+            end=max(int(line[3:7],16)+int(line[1:3],16) for line in image.splitlines() if line[7:9]=='00')
+            main=re.search(r'^ pro \$main,(\d+)$',candidate,re.M)
+            frame=int(main[1]) if main else 0
+            floor=(end+255)&~255 if mode!='stack' else end
+            if floor+frame+512>0x3f00:
+                last_error=CodegenError('code/data and main frame leave less than 512 bytes of stack')
+                continue
+            if end>0x3d00:
+                last_error=CodegenError('code/data exceed 15616 bytes; at least 512 bytes of stack required')
+                continue
+            return image,assembly,'\n'.join(units)
+        raise last_error
+
 
 
 def main():
@@ -87,9 +105,11 @@ def main():
     parser.add_argument('-o','--output',type=Path)
     parser.add_argument('--assembly',type=Path)
     parser.add_argument('--em',type=Path)
+    parser.add_argument('--workspace',choices=('auto','all','main','stack'),default='auto',
+                        help='prefer safe static workspaces, falling back to stack when needed')
     args=parser.parse_args()
     try:
-        image,assembly,em=compile_source(args.source)
+        image,assembly,em=compile_source(args.source,workspace=args.workspace)
         for destination,text in ((args.output or args.source.with_suffix('.hex'),image),
                                  (args.assembly,assembly),(args.em,em)):
             if destination:destination.write_bytes(text.encode('ascii'))

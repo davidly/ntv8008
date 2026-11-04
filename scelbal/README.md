@@ -223,3 +223,38 @@ The checks independently count the primes, compare all 192 e digits with Python
 Decimal, and verify TTT's result against the Python minimax reference. The full suite has passed on Linux and Windows (Visual Studio 2022). Each run
 has both a cycle limit and a host timeout. The usual Python 3 requirement and
 Windows `PYTHON` override apply.
+
+### Packed-array e spigot alternative
+
+`examples/e_spigot.bas` is a second e benchmark. It preserves the descending
+200-cell remainder spigot used by the native and b8008 versions and prints the
+same first 192 digits, followed by `DONE`. The original `e.bas` remains the
+base-10000 factorial-series implementation and the default perfrun example.
+
+SCELBAL's 256-byte array page cannot hold 200 ordinary floating-point elements.
+The alternative packs logical cells 0..31 four at a time in radix 32 (eight
+elements), and cells 32..199 three at a time in radix 200 (56 elements). Thus
+`DIM A(64)` uses the full page. All packed integers are below 8,000,000, within
+the 23-bit significand's exact integer range. A remainder at index n is less
+than n; the initial values also fit their assigned radix.
+
+Each outer pass scans the groups downward, unpacks their old values, and builds
+replacement groups from the new remainders. The partial highest group discards
+cells above the shrinking active limit. Cell zero remains zero; cell one starts
+at two. Quotient estimates from `INT` are corrected by product comparisons
+before remainders are formed, avoiding floating-point division boundary errors.
+
+Packing adds interpreter work, so this is an algorithm-matched comparison with
+a constrained storage representation, rather than a direct unmodified-array
+comparison. No interpreter changes or machine-code helpers are required.
+
+```sh
+./ntv8008 -p -l:scelbal/examples/e_spigot.bas a08/scelbal.hex
+```
+
+```bat
+ntv8008.exe -p -l:scelbal\examples\e_spigot.bas a08\scelbal.hex
+```
+
+`tests/basic_benchmarks.py` checks both e implementations independently against
+Python Decimal's first 192 digits.

@@ -6,3 +6,7 @@
 /licenses/CC0-1.0.txt -text
 /ack/generators/byacc/upstream/** -text
 /ack/generators/reflex/upstream/** -text
+
+# Preserve binary documentation assets.
+*.jpg -text
+*.xlsx -text

@@ -399,3 +399,36 @@ wrap and negative offsets. Signed-byte operations retain their original path.
 SCRETURN consumes the return word directly instead of calling POP, retaining
 AB in CD and preserving the odd-address/page-crossing guards.
 TTT drops from 656,075,244 to 635,817,708 clocks for ten iterations (3.1% fewer).
+
+### Assembly runtime pruning
+
+Small C uses the same reachability-based assembly runtime pruning as ACK,
+implemented in `tools/runtime_prune.py`. Only runtime blocks are removed;
+application code and data remain intact. Startup, direct calls, fall-through,
+address-taken helpers, switch/indirect-call tables, and referenced diagnostics
+retain their dependencies. Stack checks and arithmetic traps remain when used.
+The compiler and native code-generation tests exercise these paths, including
+Snake's nonblocking input and timer helpers.
+
+### Selective sequence sharing
+
+After native optimization, long frame-address-plus-load sequences may use one
+shared byte/word helper. Candidates must be outside backward-branch spans and
+outside functions on a known direct or mutual recursion cycle. Each helper
+requires at least eight eligible sites: replacing 17-byte sequences with
+seven-byte calls then saves at least 65 bytes after its 15-byte body. This is a
+static selection policy, not profile-guided proof that a site is infrequent.
+Simple loads, stores, byte operations, and short arithmetic remain inline.
+The helper preserves the original final registers and arithmetic flags; it
+adds one hardware CALL/RET level, with no nested calls or RAM-stack allocation.
+No helper is emitted when the threshold is not met. Frame outlining is disabled
+when the backend's native optimization is disabled.
+
+ACK also shares identical return-value stores through LEAVEVALUE immediately
+before LEAVE, when at least two occurrences make it smaller. The shared entry
+falls through into LEAVE, adding no executed instructions or CALL/RET pair.
+This runs after register allocation so the new entry does not inhibit it.
+
+Tests cover selection thresholds, loops, mutual recursion, byte/word loads,
+positive/negative offsets, and address-page carries. The benchmark size report
+records the rejected blanket-sharing experiment and the selected policy.
