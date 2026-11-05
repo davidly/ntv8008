@@ -258,12 +258,14 @@ def cache_frame_addresses(lines,data,aligned,serial):
 
 
 # Keep the public entry point small: every function is independently analyzed.
-def optimize_functions(code,data,aligned=False):
+def optimize_functions(code,data,aligned=False,defer=False):
     result=[];block=[];serial=[0]
     def finish(block):
-        from register8008 import cache_bytes, cache_frame_registers, join_values
+        from register8008 import cache_bytes, cache_frame_registers, join_values, defer_byte_updates
         block=allocate_leaf(join_values(block,data),data)
-        block=cache_frame_registers(cache_bytes(block,data),data)
+        block=cache_bytes(block,data)
+        if defer:block=defer_byte_updates(block,data)
+        block=cache_frame_registers(block,data)
         from peephole8008 import shorten
         return shorten(simplify_values(cache_frame_addresses(block,data,aligned,serial),data),data)
     for line in code:

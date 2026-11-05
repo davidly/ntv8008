@@ -57,15 +57,19 @@ def compile_source(source):
         (work / 'unit.c').write_bytes(text.encode('ascii'))
         run([tool, '-a', 'unit.c'], cwd=work)
         ir = (work / 'unit.s').read_text()
-        assembly = generate(ir)
-        (work / 'program.asm').write_bytes(assembly.encode('ascii'))
-        run([assembler, 'program.asm', '-oprogram.hex'], cwd=work)
-        image = (work / 'program.hex').read_text()
-        end = 0
-        for line in image.splitlines():
-            record = bytes.fromhex(line[1:])
-            if record[3] == 0:
-                end = max(end, int.from_bytes(record[1:3], 'big') + record[0])
+        # Prefer speed; retry with compact calls when the image doesn't fit.
+        for compact in (False, True):
+            assembly = generate(ir, compact=compact)
+            (work / 'program.asm').write_bytes(assembly.encode('ascii'))
+            run([assembler, 'program.asm', '-oprogram.hex'], cwd=work)
+            image = (work / 'program.hex').read_text()
+            end = 0
+            for line in image.splitlines():
+                record = bytes.fromhex(line[1:])
+                if record[3] == 0:
+                    end = max(end, int.from_bytes(record[1:3], 'big') + record[0])
+            if end <= 0x3d00:
+                break
         if end > 0x3d00:
             raise CodegenError('code/data exceed 15616 bytes; at least 512 bytes of stack required')
         return image, assembly, ir

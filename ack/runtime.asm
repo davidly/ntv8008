@@ -292,48 +292,39 @@ MULDONE:
         LAE
         RET
 ; Raw division: AB dividend, CD divisor; returns AB quotient and REM.
+; HL counts the quotient. C/D, E and HL are clobbered.
 DIVIDE: LEA
         LAC
         ORD
         JTZ DIVZERO
         LAE
-        LHI HIGH Q
-        LLI LOW Q
-        LMI 0
-        INL
-        LMI 0
+        LHI 0
+        LLI 0
 DIVLOOP:
-        LEA
         SUC
-        LLA
+        LEA                    ; low byte of the trial difference
         LAB
         SBD
         JTC DIVDONE
         LBA
-        LAL
-        LEA
-        LHI HIGH Q
-        LLI LOW Q
-        LAM
-        ADI 1
-        LMA
-        INL
-        LAM
-        ACI 0
-        LMA
         LAE
+        INL
+        JFZ DIVLOOP
+        INH
         JMP DIVLOOP
 DIVDONE:
         LAE
+        ADC                    ; undo the failed low-byte subtraction
+        LEA                    ; B still holds the remainder's high byte
+        LCL
+        LDH
         LHI HIGH REM
         LLI LOW REM
-        LMA
+        LME
         INL
         LMB
-        LLI LOW Q
-        LAM
-        INL
-        LBM
+        LAC
+        LBD
         RET
 UDIV:
         LCA

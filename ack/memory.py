@@ -5,7 +5,7 @@ import re
 def constant_byte_stores(text):
     # A literal below a pure address expression can become a memory-immediate
     # store. Neither expression evaluation order nor any memory read changes.
-    address = r' lae [^\n]+\n(?: (?:lol|loe|loc) [^\n]+\n ads 2\n)?'
+    address = r' lae [^\n]+\n(?:(?: (?:lol|loe|loc) [^\n]+| lal -?\d+\n loi 1)\n ads 2\n)?'
     return re.sub(r'^ loc (-?\d+)\n('+address+r') sti 1$',
                   lambda m:m[2]+' stc '+m[1], text, flags=re.M)
 
@@ -20,8 +20,11 @@ def local_updates(text):
     text=re.sub(r'^ lol (-?\d+)\n lol (-?\d+)\n (adi|adu) 2\n stl (-?\d+)$',
                 add,text,flags=re.M)
     # The C frontend also spells ++local as 1+local followed by a store.
-    return re.sub(r'^ loc 1\n lol (-?\d+)\n adu 2\n stl \1$',
-                  lambda m:' inl '+m[1],text,flags=re.M)
+    text=re.sub(r'^ loc 1\n lol (-?\d+)\n adu 2\n stl \1$',
+                lambda m:' inl '+m[1],text,flags=re.M)
+    # Likewise ++global, possibly with ACK's ina declaration in between.
+    return re.sub(r'^ loc 1\n( ina [^\n]+\n)? loe ([^\n]+)\n adu 2\n ste \2$',
+                  lambda m:(m[1] or '')+' ine '+m[2],text,flags=re.M)
 
 
 def fill_loops(text):

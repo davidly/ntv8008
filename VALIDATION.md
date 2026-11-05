@@ -765,3 +765,30 @@ openings with 6493 nodes. The exhaustive winner test now passes the board
 address in E and checks the Z-flag result; a deliberately broken line check
 makes it fail. The workbook and runtime image were refreshed from these runs.
 
+
+## SmallC and ACK code generation — 2026-11-05
+
+SmallC and the shared ACK backend gain several optimizations:
+
+- constant-address `main` frames
+- a divide loop that counts in HL
+- rotated marking loops
+- deferred byte-counter updates, which now also apply on conditional `continue` edges
+
+SmallC also stores call arguments and indirect-store addresses directly. When an
+image would not fit, it falls back to pushed arguments. ACK adds inline
+multiplication by constants, direct local adds and byte stores, and in-place
+`++global`.
+
+| Compiler | sieve | e | ttt (10 iterations) |
+| --- | ---: | ---: | ---: |
+| SmallC | 125,903,494 → 84,165,050 | 124,262,362 → 86,463,540 | 586,743,914 → 471,672,546 |
+| ACK C | 148,559,868 → 83,422,156 | 171,318,508 → 81,860,644 | 725,540,982 → 571,062,078 |
+
+Pascal, Modula-2, Occam and BASIC change by 0% to -40.9%; see
+[ack/README.md](ack/README.md). All benchmark outputs are unchanged.
+`tests/run.py --compile` passes, with every frontend's example images rebuilt.
+Hunt the Wumpus builds with SmallC's compact fallback (14,245 bytes). The workbook
+and runtime image were refreshed from these runs. RAM code figures apply each
+image's measured change in emitted bytes to the previous breakdown. SmallC e
+and TTT also count the 2-byte `SADDR` scratch.

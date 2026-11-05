@@ -515,6 +515,257 @@ RETURN
                 self.assertEqual(result.returncode,0,result.stderr)
                 self.assertEqual(result.stdout,expected)
 
+    def test_static_main_frame_keeps_page_carry_and_falls_back(self):
+        # main starts at SP=3EFEH. With a 257-byte frame, local word 2 is
+        # 3DFFH/3E00H: its constant address must still carry into H.
+        body = '''ADJSP -257
+ADDRSP 2
+PUSH
+IMM 4660
+STIND 2
+ADDRSP 2
+PUSH
+LOAD 2
+OFFSET 257
+STIND 2
+ADDRSP 2
+LOAD 2
+PUSH
+IMM 4917
+NE
+JTRUE fail
+IMM 15871
+LOAD 1
+PUSH
+IMM 53
+NE
+JTRUE fail
+IMM 15872
+LOAD 1
+PUSH
+IMM 19
+NE
+JTRUE fail
+IMM 75
+JUMP out
+fail:
+IMM 70
+out:
+PUSH
+CALL putchar
+ADJSP 2
+ADJSP 257
+IMM 0
+RETURN
+'''
+        for referenced in (False, True):
+            ir = 'TEXT\nmain:\n' + body + ('DATA\nentry:\nDW main\n' if referenced else '')
+            with self.subTest(referenced=referenced):
+                assembly = codegen.generate(ir)
+                # Constant frame addresses use page 3DH; a referenced main
+                # may be re-entered, so it keeps SP-relative addressing.
+                self.assertEqual('LHI 61D' in assembly, not referenced)
+                self.differential(ir, b'K')
+
+    def test_saved_store_addresses_and_stored_arguments(self):
+        # An odd frame: word local at 0 (1234), byte local at 2 (7).
+        # buffer+1 = word % byte keeps the address in SADDR across MODU.
+        # g(3, byte, word+1) = 3*100 + 7*10 + 1235 = 1605. Then
+        # 1000 + g(3, g(1,2,3), word) = 1000 + 300 + 1230 + 1234 = 3764: a
+        # nested call in the argument list, and a pushed left operand that
+        # stays below the batched arguments.
+        ir = '''TEXT
+g:
+ADDRSP 6
+LOAD 2
+PUSH
+IMM 100
+MUL
+PUSH
+ADDRSP 6
+LOAD 2
+PUSH
+IMM 10
+MUL
+ADD
+PUSH
+ADDRSP 4
+LOAD 2
+ADD
+RETURN
+main:
+ADJSP -3
+ADDRSP 0
+PUSH
+IMM 1234
+STIND 2
+ADDRSP 2
+PUSH
+IMM 7
+STIND 1
+IMM buffer
+OFFSET 1
+PUSH
+ADDRSP 2
+LOAD 2
+PUSH
+ADDRSP 6
+LOAD 1
+MODU
+STIND 2
+PUSH
+IMM 2
+NE
+JTRUE fail
+IMM buffer+1
+LOAD 2
+PUSH
+IMM 2
+NE
+JTRUE fail
+IMM 3
+PUSH
+ADDRSP 4
+LOAD 1
+PUSH
+ADDRSP 4
+LOAD 2
+OFFSET 1
+PUSH
+CALL g
+ADJSP 6
+PUSH
+IMM 1605
+NE
+JTRUE fail
+IMM 1000
+PUSH
+IMM 3
+PUSH
+IMM 1
+PUSH
+IMM 2
+PUSH
+IMM 3
+PUSH
+CALL g
+ADJSP 6
+PUSH
+ADDRSP 6
+LOAD 2
+PUSH
+CALL g
+ADJSP 6
+ADD
+PUSH
+IMM 3764
+NE
+JTRUE fail
+ADDRSP 0
+LOAD 2
+PUSH
+IMM 1234
+NE
+JTRUE fail
+IMM 75
+JUMP out
+fail:
+IMM 70
+out:
+PUSH
+CALL putchar
+ADJSP 2
+ADJSP 3
+IMM 0
+RETURN
+DATA
+buffer:
+DB 0,0,0,0
+'''
+        assembly = codegen.generate(ir)
+        self.assertIn('LHI HIGH SADDR', assembly)
+        self.assertLess(assembly.count('CAL PUSH'), codegen.generate(ir, optimize=False).count('CAL PUSH'))
+        self.differential(ir, b'K')
+
+    def test_page_contained_byte_arrays(self):
+        # Unsigned byte indices into a small array use an 8-bit address add.
+        # The array is placed six bytes before a page end; padding must move
+        # it, or the constant-address checks below would read other bytes.
+        checks = []
+        for index in (0, 8):
+            checks.append(f'''ADDRSP 0
+PUSH
+IMM {index}
+STIND 1
+IMM board
+PUSH
+ADDRSP 2
+LOAD 1
+ADD
+PUSH
+ADDRSP 2
+LOAD 1
+OFFSET 1
+STIND 1
+IMM board+{index}
+LOAD 1
+PUSH
+IMM {index+1}
+NE
+JTRUE fail
+IMM board
+PUSH
+ADDRSP 2
+LOAD 1
+ADD
+LOAD 1
+PUSH
+IMM {index+1}
+NE
+JTRUE fail
+IMM board
+PUSH
+ADDRSP 2
+LOAD 1
+ADD
+PUSH
+IMM 0
+STIND 1
+IMM board+{index}
+LOAD 1
+JTRUE fail
+''')
+        ir = 'TEXT\nmain:\nADJSP -1\n' + ''.join(checks) + '''IMM 75
+JUMP out
+fail:
+IMM 70
+out:
+PUSH
+CALL putchar
+ADJSP 2
+ADJSP 1
+IMM 0
+RETURN
+DATA
+board:
+DB 0,0,0,0,0,0,0,0,0
+'''
+        symbol = codegen.Generator().symbol('board')
+        for optimize in (False, True):
+            with self.subTest(optimize=optimize), tempfile.TemporaryDirectory() as directory:
+                assembly = codegen.generate(ir, optimize=optimize)
+                pad = '        DS (((LOW ($))+8D) SHR 8D)*(256D-(LOW ($)))\n'+symbol+':'
+                self.assertEqual(pad in assembly, optimize)
+                anchor = pad if optimize else symbol+':'
+                assembly = assembly.replace(anchor, '_SC_NEAR_PAGE:\n        ORG ((_SC_NEAR_PAGE+255D) AND 0FF00H)+250D\n'+anchor)
+                source = Path(directory,'test.asm');image = source.with_suffix('.hex')
+                source.write_text(assembly)
+                result = subprocess.run([str(ASSEMBLER),str(source),'-o'+str(image)],capture_output=True,timeout=10)
+                self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+                result = run('-n:10000000',image,timeout=30)
+                self.assertEqual(result.returncode,0,result.stderr)
+                self.assertEqual(result.stdout,b'K')
+
     def test_byte_updates_keep_promoted_result_and_older_stack(self):
         body=[]
         for offset in (0,255,256):

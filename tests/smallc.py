@@ -191,6 +191,80 @@ main() {
 }
 """), b'1002,255,65535,0,7')
 
+    def test_deferred_byte_updates(self):
+        # ++i on a skip path stays in a register. The value must reach RAM
+        # before a call whose continuation reads i, before recursion, and on
+        # any exit path that still reads it.
+        source = """unsigned char hits[12];
+unsigned char mask[5];
+noise(n) int n; { unsigned char z; z = n; return z + 1; }
+scan()
+{
+ unsigned char i, n;
+ n = 0;
+ for (i = 0; i < 12; ++i) {
+  if (hits[i]) continue;
+  noise(99);
+  n = n + i;
+ }
+ return n;
+}
+first()
+{
+ unsigned char i;
+ for (i = 0; i < 12; ++i) {
+  if (hits[i]) continue;
+  break;
+ }
+ return i;
+}
+rec(d)
+unsigned char d;
+{
+ unsigned char i, sum;
+ sum = 0;
+ for (i = 0; i < 5; ++i) {
+  if (mask[i]) continue;
+  mask[i] = 1;
+  if (d) sum = sum + rec(d - 1) + i; else sum = sum + i;
+  mask[i] = 0;
+ }
+ return sum;
+}
+main()
+{
+ unsigned char k;
+ for (k = 0; k < 12; ++k) hits[k] = k % 3 != 1;
+ putu(scan()); putchar(',');
+ putu(first()); putchar(',');
+ for (k = 0; k < 12; ++k) hits[k] = 1;
+ putu(first()); putchar(',');
+ mask[2] = 1;
+ putu(rec(3));
+ return 0;
+}
+"""
+        mask = [0, 0, 1, 0, 0]
+
+        def rec(d):
+            total = 0
+            for i in range(5):
+                if mask[i]:
+                    continue
+                mask[i] = 1
+                total = (total + (rec(d - 1) if d else 0) + i) & 255
+                mask[i] = 0
+            return total
+
+        expected = f'22,1,12,{rec(3)}'.encode()
+        with tempfile.TemporaryDirectory(prefix='smallc C test ') as directory:
+            path = Path(directory, 'program.c')
+            path.write_text(source)
+            _, assembly, _ = compiler.compile_source(path)
+        # scan and first defer; rec's i is not register-cached, so only its result is checked.
+        self.assertGreaterEqual(assembly.count('; deferred byte update'), 2)
+        self.assertEqual(self.compile_run(source), expected)
+
     def test_console_and_ansi_arguments(self):
         self.assertEqual(self.compile_run('''
 add(int a, int b) { return a+b; }

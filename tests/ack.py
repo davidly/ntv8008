@@ -148,6 +148,82 @@ class Compiler(unittest.TestCase):
                 image, _, _ = compiler.compile_sources([ROOT / f'ack/examples/{name}.c'])
                 self.assertEqual(image, (ROOT / f'ack/examples/{name}.hex').read_text())
 
+    def test_deferred_byte_updates(self):
+        # ++i reached through a conditional skip stays in a register. RAM
+        # must be current before calls, recursion, and exits that read i.
+        source = '''#include <stdio.h>
+static unsigned char hits[12];
+static unsigned char mask[5];
+static int noise(int n) { unsigned char z; z = n; return z + 1; }
+static int scan(void)
+{
+    unsigned char i, n;
+    n = 0;
+    for (i = 0; i < 12; ++i) {
+        if (hits[i]) continue;
+        noise(99);
+        n = n + i;
+    }
+    return n;
+}
+static int first(void)
+{
+    unsigned char i;
+    for (i = 0; i < 12; ++i) {
+        if (hits[i]) continue;
+        break;
+    }
+    return i;
+}
+static int rec(unsigned char d)
+{
+    unsigned char i, sum;
+    sum = 0;
+    for (i = 0; i < 5; ++i) {
+        if (mask[i]) continue;
+        mask[i] = 1;
+        if (d) sum = sum + rec(d - 1) + i; else sum = sum + i;
+        mask[i] = 0;
+    }
+    return sum;
+}
+int main(void)
+{
+    unsigned char k;
+    for (k = 0; k < 12; ++k) hits[k] = k % 3 != 1;
+    putu(scan()); putchar(',');
+    putu(first()); putchar(',');
+    for (k = 0; k < 12; ++k) hits[k] = 1;
+    putu(first()); putchar(',');
+    mask[2] = 1;
+    putu(rec(3));
+    return 0;
+}
+'''
+        mask = [0, 0, 1, 0, 0]
+
+        def rec(d):
+            total = 0
+            for i in range(5):
+                if mask[i]:
+                    continue
+                mask[i] = 1
+                total = (total + (rec(d - 1) if d else 0) + i) & 255
+                mask[i] = 0
+            return total
+
+        with tempfile.TemporaryDirectory(prefix='ack C test ') as directory:
+            path = Path(directory, 'program.c')
+            path.write_text(source)
+            image, assembly, _ = compiler.compile_sources([path])
+            # ACK's byte cache holds i on entry to first's step only.
+            self.assertGreaterEqual(assembly.count('; deferred byte update'), 1)
+            path = path.with_suffix('.hex')
+            path.write_text(image)
+            result = run('-n:200000000', path, timeout=60)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout, f'22,1,12,{rec(3)}'.encode())
+
     def test_calls_switch_and_input(self):
         text = '''#include <stdio.h>
 static int deep(int n) { int local = n; return n ? local + deep(n-1) : 0; }

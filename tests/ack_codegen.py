@@ -889,4 +889,141 @@ buffer
 '''
         self.differential(em,b'K')
 
+    def test_constant_multiply(self):
+        from codegen import multiply_constant
+        self.assertTrue(multiply_constant(10).startswith('@MUL_CONST'))
+        self.assertIsNone(multiply_constant(12345))
+        body=[]
+        for value in (0,1,3,255,256,32767,32768,65535):
+            for factor in (0,3,5,10,16,100,255,1000,65535,12345):
+                body.append(f''' loc 4321
+ loc {value}
+ loc {factor}
+ mli 2
+ loc {(value*factor)&65535}
+ cmi 2
+ zne *9
+ loc 4321
+ cmi 2
+ zne *9
+''')
+        em=' pro $main,0\n'+''.join(body)+''' loc 75
+ cal $putchar
+ asp 2
+ loc 0
+ ret 2
+9
+ loc 33
+ cal $putchar
+ asp 2
+ loc 0
+ ret 2
+ end 0
+'''
+        self.differential(em,b'K')
+
+    def frame_checks(self):
+        # Local adds, byte stores through an index, ++global, and byte truth
+        # tests: B must stay zero where a signed test reads its sign.
+        return ''' loc 300
+ stl -2
+ loc 1000
+ lol -2
+ adu 2
+ loc 1300
+ cmi 2
+ zne *9
+ loc 5
+ lal -4
+ sti 1
+ loc 2
+ lal -3
+ sti 1
+ lal -4
+ loi 1
+ lae buf
+ lal -3
+ loi 1
+ ads 2
+ sti 1
+ lae buf+2
+ loi 1
+ loc 5
+ cmi 2
+ zne *9
+ lae buf+1
+ loi 1
+ zne *9
+ lae buf+3
+ loi 1
+ zne *9
+ loc 1
+ ina counter
+ loe counter
+ adu 2
+ ste counter
+ loc 200
+ lal -4
+ sti 1
+ lal -4
+ loi 1
+ zle *9
+ loc 128
+ lal -4
+ sti 1
+ lal -4
+ loi 1
+ zlt *9
+ loc 0
+ lal -4
+ sti 1
+ lal -4
+ loi 1
+ zne *9
+'''
+
+    def test_frames_and_byte_operations(self):
+        # main has a constant frame; g keeps FP-relative addressing.
+        em=' pro $g,4\n'+self.frame_checks()+''' loc 0
+ ret 2
+9
+ loc 1
+ ret 2
+ end 4
+ pro $main,4
+'''+self.frame_checks()+''' loc 300
+ lol -2
+ adu 2
+ stl -2
+ cal $g
+ lfr 2
+ zne *9
+ lol -2
+ loc 600
+ cmi 2
+ zne *9
+ loe counter
+ zne *9
+ loc 75
+ cal $putchar
+ asp 2
+ loc 0
+ ret 2
+9
+ loc 33
+ cal $putchar
+ asp 2
+ loc 0
+ ret 2
+ end 4
+counter
+ con 65534
+buf
+ bss 4,0,0
+'''
+        self.differential(em,b'K')
+        self.assertIn('LHI 62D',generate([em]))
+        reentrant=em.replace(' pro $main,4\n',' pro $h,0\n lpi $main\n asp 2\n ret 0\n end 0\n pro $main,4\n')
+        self.assertNotIn('LHI 62D',generate([reentrant]))
+
 if __name__=='__main__': unittest.main()

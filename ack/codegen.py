@@ -21,6 +21,22 @@ class CodegenError(ValueError):
     pass
 
 
+# Startup pushes STOP and jumps to F_MAIN, whose ENTER pushes the old FP.
+MAIN_FP = 0x3F00 - 4
+
+
+def multiply_constant(value):
+    """Return an inline multiply for short shift/add sequences, else None."""
+    value &= 65535
+    if value in (0, 65535):
+        return '@MUL_CONST ' + str(value)
+    if value & (value-1) == 0 and value <= 8:
+        return '@DOUBLE ' + str(value.bit_length()-1)
+    if value.bit_length()-1 + bin(value).count('1')-1 <= 8:
+        return '@MUL_CONST ' + str(value)
+    return None
+
+
 def split_args(text):
     return re.findall(r"'(?:\\.|[^'\\])*'|[^,]+", text)
 
@@ -57,6 +73,8 @@ class Generator:
         self.exports = set()
         self.locals = set()
         self.data_definitions = set()
+        # A main reached only from startup has the constant frame MAIN_FP.
+        self.static_main = False
 
     def emit(self, *lines):
         self.code += ['        ' + line for line in lines]
@@ -101,12 +119,27 @@ class Generator:
         self.immediate(value)
         self.emit('CAL PUSH')
 
+    def static_frame(self, function, offset):
+        """Return HL loads for a constant main frame address, else None."""
+        if not self.static_main or function != 'F_MAIN':
+            return None
+        address = (MAIN_FP + offset + (4 if offset >= 0 else 0)) & 65535
+        return [f'LHI {address >> 8}D', f'LLI {address & 255}D']
+
     def local(self, offset):
+        static = self.static_frame(self.function, offset)
+        if static:
+            self.emit(*static)
+            return
         self.immediate(offset + (4 if offset >= 0 else 0))
         self.emit('CAL LOCAL')
 
     def frame_address(self, offset):
         # HL = FP + displacement. CD survive for native local updates.
+        static = self.static_frame(self.function, offset)
+        if static:
+            self.emit(*static)
+            return
         offset = (offset+(4 if offset>=0 else 0)) & 65535
         self.emit('LHI HIGH FP','LLI LOW FP','LAM',f'ADI {offset & 255}D',
                   'LEA','INL','LAM',f'ACI {offset >> 8}D','LHA','LLE')
@@ -221,8 +254,8 @@ class Generator:
                 actions.append('@ADD_CONST ' + str(value & 65535))
                 cursor += 2
             elif (len(current) == 2 and current[0] == 'loc' and
-                  following in (['mlu','2'],['mli','2']) and int(current[1]) in (1,2,4,8)):
-                actions.append('@DOUBLE ' + str(int(current[1]).bit_length()-1))
+                  following in (['mlu','2'],['mli','2']) and multiply_constant(int(current[1]))):
+                actions.append(multiply_constant(int(current[1])))
                 cursor += 2
             else:
                 return None
@@ -317,8 +350,8 @@ class Generator:
                             self.emit('@' + arithmetic.upper() + '_CONST ' + str(value & 65535))
                             index += 1
                             continue
-                        if arithmetic in ('mli','mlu') and value in (1,2,4,8):
-                            self.emit('@DOUBLE ' + str(value.bit_length()-1))
+                        if arithmetic in ('mli','mlu') and multiply_constant(value):
+                            self.emit(multiply_constant(value))
                             index += 1
                             continue
                         if (arithmetic in ('dvi','dvu','rmi','rmu') and
@@ -337,6 +370,23 @@ class Generator:
                     continue
             if op=='ubinc':
                 self.emit('@BYTE_INC '+arg)
+                continue
+            if (self.optimize and op == 'lol' and index < len(lines) and
+                    lines[index].strip() in ('adi 2','adu 2','ads 2')):
+                self.emit('@ADD_LOCAL '+arg)
+                index += 1
+                continue
+            # A byte stored through a simple index waits in D instead of
+            # taking a RAM-stack round trip under the address.
+            if (self.optimize and op in ('llb','lol') and index+3 < len(lines) and
+                    lines[index].strip().startswith('lae ') and
+                    lines[index+1].strip().split()[0] in ('llb','lol') and
+                    lines[index+2].strip() == 'ads 2' and lines[index+3].strip() == 'sti 1'):
+                source = lines[index+1].strip().split()
+                self.emit('@LOCAL_'+('LOAD1 ' if op == 'llb' else 'LOAD2 ')+arg, '@SAVE_BYTE 0',
+                          '@LOCAL_'+('LOAD1 ' if source[0] == 'llb' else 'LOAD2 ')+source[1],
+                          '@INDEX_STORED1 '+self.address(lines[index].strip().split()[1]))
+                index += 4
                 continue
             if op in ('llb','slb'):
                 self.emit('@LOCAL_'+('LOAD1 ' if op=='llb' else 'STORE1 ')+arg)
@@ -540,14 +590,15 @@ class Generator:
                               'LAE',f'CPI {count&255}D','JFC '+done)
                     self.label(pointer)
                     self.emit('LAE','ADI LOW ('+base+')','LLA','LAD',
-                              'ACI HIGH ('+base+')','LHA')
+                              'ACI HIGH ('+base+')','LHA','JMP '+mark)
+                    # Test at the bottom: each mark costs no extra jump.
+                    self.label(mark+'BODY')
+                    self.emit(f'LMI {int(byte)&255}D','LAL','ADC','LLA',
+                              'LAH','ACB','LHA')
                     self.label(mark)
                     self.emit('LAH',f'CPI HIGH (({base})+{count}D)',
                               'JTC '+mark+'BODY','JFZ '+finish,
-                              'LAL',f'CPI LOW (({base})+{count}D)','JFC '+finish)
-                    self.label(mark+'BODY')
-                    self.emit(f'LMI {int(byte)&255}D','LAL','ADC','LLA',
-                              'LAH','ACB','LHA','JMP '+mark)
+                              'LAL',f'CPI LOW (({base})+{count}D)','JTC '+mark+'BODY')
                     self.label(finish)
                     self.emit('LAL','SUI LOW ('+base+')','LEA','LAH',
                               'SBI HIGH ('+base+')','LDA','JMP '+done)
@@ -677,8 +728,11 @@ class Generator:
                    'ALD1', 'ALD2', 'AST1', 'AST2', 'PMODI', 'RMISAVE', 'RMUSAVE', 'PMODSAVE'}
         pending = False
         output = []
+        function = ''
         for line in self.code:
             instruction = line.strip()
+            if instruction.startswith('; function '):
+                function = instruction.split()[2]
             if instruction.startswith('@'):
                 operation, argument = instruction.split(None, 1)
                 if operation in ('@BYTE_CMP','@BYTE_INC'):
@@ -689,10 +743,13 @@ class Generator:
                 elif not pending:
                     output.append('        CAL POP')
                 if operation=='@BYTE_INC':
-                    offset=int(argument);offset=(offset+(4 if offset>=0 else 0))&65535
-                    native=['; local byte update '+argument,'LHI HIGH FP','LLI LOW FP','LAM',
+                    offset=int(argument)
+                    address=self.static_frame(function,offset)
+                    offset=(offset+(4 if offset>=0 else 0))&65535
+                    address=address or ['LHI HIGH FP','LLI LOW FP','LAM',
                             f'ADI {offset&255}D','LEA','INL','LAM',f'ACI {offset>>8}D',
-                            'LHA','LLE','LAM','ADI 1D','LMA','; end local byte']
+                            'LHA','LLE']
+                    native=['; local byte update '+argument,*address,'LAM','ADI 1D','LMA','; end local byte']
                     output+=['        '+s for s in native];pending=False
                     continue
                 if operation == '@DENSE_SWITCH':
@@ -714,10 +771,13 @@ class Generator:
                             address=value
                             native+=['LHI HIGH ('+address+')','LLI LOW ('+address+')','LAM']
                         else:
-                            offset=int(value);offset=(offset+(4 if offset>=0 else 0))&65535
-                            native+=['; local byte load '+value,'LHI HIGH FP','LLI LOW FP','LAM',
+                            offset=int(value)
+                            address=self.static_frame(function,offset)
+                            offset=(offset+(4 if offset>=0 else 0))&65535
+                            address=address or ['LHI HIGH FP','LLI LOW FP','LAM',
                                      f'ADI {offset&255}D','LEA','INL','LAM',f'ACI {offset>>8}D',
-                                     'LHA','LLE','LAM','; end local byte']
+                                     'LHA','LLE']
+                            native+=['; local byte load '+value,*address,'LAM','; end local byte']
                         if operand_number==0: native+=['LDA']
                     native+=['CPD']
                     if condition in ('eq','ne','lt','ge'):
@@ -728,6 +788,28 @@ class Generator:
                     output+=[item if item.endswith(':') else '        '+item for item in native]
                     pending=False
                     continue
+                if operation == '@SAVE_BYTE':
+                    output.append('        LDA')
+                    pending = False
+                    continue
+                if operation == '@INDEX_STORED1':
+                    native = ['ADI LOW ('+argument+')','LLA','LAB','ACI HIGH ('+argument+')','LHA','LMD']
+                    output += ['        '+item for item in native]
+                    pending = False
+                    continue
+                if operation == '@ADD_LOCAL':
+                    offset = int(argument)
+                    address = self.static_frame(function, offset)
+                    if not address:
+                        # Keep the low byte in C while forming FP+offset.
+                        offset = (offset+(4 if offset >= 0 else 0)) & 65535
+                        address = ['LCA','LHI HIGH FP','LLI LOW FP','LAM',f'ADI {offset&255}D',
+                                   'LEA','INL','LAM',f'ACI {offset>>8}D','LHA','LLE','LAC']
+                    native = ['; local word add '+argument,*address,
+                              'ADM','LEA','INL','LAB','ACM','LBA','LAE']
+                    output += ['        '+item for item in native]
+                    pending = True
+                    continue
                 if operation.startswith(('@INDEX_', '@GLOBAL_', '@LOCAL_')):
                     if operation == '@INDEX_CONST1':
                         argument,byte = argument.rsplit(',',1)
@@ -737,8 +819,11 @@ class Generator:
                     elif operation.startswith('@LOCAL_'):
                         # Form FP+constant without destroying a cached store value.
                         offset = int(argument)
+                        static = self.static_frame(function, offset)
                         offset = (offset+(4 if offset >= 0 else 0)) & 65535
-                        if 'LOAD' in operation or operation.endswith('1'):
+                        if static:
+                            native = static
+                        elif 'LOAD' in operation or operation.endswith('1'):
                             native = ([] if 'LOAD' in operation else ['LBA']) + [
                                 'LHI HIGH FP','LLI LOW FP','LAM',f'ADI {offset&255}D',
                                 'LEA','INL','LAM',f'ACI {offset>>8}D','LHA','LLE']
@@ -772,6 +857,22 @@ class Generator:
                 elif operation == '@DOUBLE':
                     output += ['        ' + item for _ in range(value) for item in
                                ('ADA','LEA','LAB','RAL','LBA','LAE')]
+                elif operation == '@MUL_CONST':
+                    # Shift and add from the top bit; CD keeps the multiplicand.
+                    native = []
+                    if value == 0:
+                        native = ['LAI 0','LBI 0']
+                    elif value == 65535:
+                        native = ['CAL NEG']
+                    elif value != 1:
+                        bits = bin(value)[3:]
+                        if '1' in bits:
+                            native = ['LCA','LDB']
+                        for bit in bits:
+                            native += ['ADA','LEA','LAB','RAL','LBA','LAE']
+                            if bit == '1':
+                                native += ['ADC','LEA','LAB','ACD','LBA','LAE']
+                    output += ['        '+item for item in native]
                 elif operation in ('@SDIV_SHIFT','@UDIV_SHIFT'):
                     if value and operation == '@SDIV_SHIFT':
                         # Bias negative dividends before arithmetic shifting:
@@ -835,7 +936,19 @@ class Generator:
                 output.append(line)
         if pending:
             output.append('        CAL PUSH')
-        return output
+        # A zero-extended byte tests as its low byte; branches consume AB.
+        for i in range(2, len(output)):
+            # Signed gt/le tests read B's sign after the zero test.
+            if (output[i].strip().split()[:1] in (['JTZ'],['JFZ']) and
+                    output[i-1].strip() == 'ORB' and
+                    (i+1 == len(output) or output[i+1].strip() != 'LAB')):
+                j = i-2
+                while j >= 0 and output[j].strip().startswith('; end local byte'):
+                    j -= 1
+                if j >= 0 and output[j].strip() == 'LBI 0':
+                    output[j] = None
+                    output[i-1] = '        NDA'
+        return [line for line in output if line is not None]
 
     def finish(self):
         builtins = {'F_PUTCHAR', 'F_GETCHAR', 'F_PUTS'}
@@ -880,7 +993,7 @@ class Generator:
                     helpers += ['        RLC', '        LAB']
                 helpers += ['        RAR', '        LBA', '        LAE', '        RAR']
             helpers += ['        JMP '+name+'LOOP', name+'DONE: LAE', '        RET']
-        application = '\n'.join((optimize_functions(self.cached_code(),self.data,aligned=True) if self.optimize else self.cached_code()) + self.data)
+        application = '\n'.join((optimize_functions(self.cached_code(),self.data,aligned=True,defer=True) if self.optimize else self.cached_code()) + self.data)
         application = share_return_values(application)
         if self.optimize:
             application, frame_helpers = outline_frame_loads(application, 'FP')
@@ -891,6 +1004,8 @@ class Generator:
 
 def generate(units, *, pascal=False, optimize=True):
     generator = Generator(pascal=pascal, optimize=optimize)
+    generator.static_main = optimize and not any(
+        re.search(r'^\s*(?:cal|lpi)\s+\$(?:main|_m_a_i_n)\s*$', unit, re.M) for unit in units)
     for unit in units:
         generator.unit_code(unit)
     return generator.finish()

@@ -293,6 +293,15 @@ to **19.05** (47.9%), and TTT from 28.91 to **15.44** per iteration (46.6%).
 Outputs and workloads, including TTT's 6493-node search, are unchanged; see
 [the a08 notes](a08/README.md) for details.
 
+A further code-generation pass applies the same ideas to SmallC and the shared
+ACK backend. It adds constant-address frames for `main`, a faster divide loop, rotated marking
+loops, direct argument and indirect-store setup (SmallC), and byte loop counters kept in
+registers across `continue`. ACK also gains inline constant multiplication and direct
+byte stores. SmallC now takes **168.33**, **172.93** and **94.33 seconds** for
+sieve, e and TTT (33.2%, 30.4% and 19.6% fewer clocks); ACK C takes **166.84**,
+**163.72** and **114.21** (43.8%, 52.2% and 21.3% fewer). The other ACK frontends
+improve by up to 40.9% (Modula-2 sieve). Outputs and benchmark sources are unchanged.
+
 Occam now places eligible sequential procedure workspaces in static BSS,
 including ttt's search arrays. This reduces target cycles by 56.9% for sieve,
 9.8% for e, and 55.0% for ttt, without changing the algorithms, array sizes or

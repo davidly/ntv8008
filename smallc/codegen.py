@@ -18,20 +18,36 @@ from outline8008 import outline_frame_loads
 class CodegenError(ValueError):
     pass
 
+# runtime.asm starts the RAM stack at RSP EQU 3F00H and pushes STOP before
+# jumping to main.
+MAIN_SP = 0x3F00 - 2
+
 class Generator:
-    def __init__(self, optimize=True):
+    def __init__(self, optimize=True, compact=False):
         self.optimize = optimize
+        # Compact output keeps PUSHes: each stored argument is ~20 bytes inline.
+        self.compact = compact
         self.code = []
         self.data = []
         self.output = self.code
         self.serial = 0
         self.defined = set()
         self.references = set()
+        self.function = None
+        self.static_main = False
+        self.frame_depth = None
+        self.hl_address = None
+        self.paged = {}
 
     def emit(self, *lines):
+        for line in lines:
+            op = line.split()[0] if line.split() else ''
+            if op[:2] in ('LH','LL') or op in ('INH','INL','DCH','DCL','CAL','JMP'):
+                self.hl_address = None
         self.output.extend('        ' + line for line in lines)
 
     def label(self, name):
+        self.hl_address = None
         self.output.append(name + ':')
 
     def unique(self):
@@ -57,6 +73,11 @@ class Generator:
         self.emit('LAI LOW (' + value + ')', 'LBI HIGH (' + value + ')')
 
     def inc_hl(self):
+        if self.hl_address is not None and self.hl_address & 255 != 255:
+            # A known address that cannot carry into H needs no page check.
+            self.output.append('        INL')
+            self.hl_address += 1
+            return
         done = self.unique()
         self.emit('INL', 'JFZ ' + done, 'INH')
         self.label(done)
@@ -78,6 +99,14 @@ class Generator:
     def stack_address(self, offset):
         # Constant SP-relative addresses need neither a general 16-bit add
         # helper nor its register shuffling. Preserve CD for callers.
+        if (self.static_main and self.function == 'main' and
+                self.frame_depth is not None):
+            # main is entered once, with SP = MAIN_SP; the exact transient
+            # depth makes every SP-relative address a constant.
+            address = (MAIN_SP - self.frame_depth + offset) & 65535
+            self.emit(f'LHI {address >> 8}D', f'LLI {address & 255}D')
+            self.hl_address = address
+            return
         offset &= 65535
         self.emit('LHI HIGH RSP','LLI LOW RSP','LAM',
                   f'ADI {offset & 255}D','LEA','INL','LAM',
@@ -347,6 +376,118 @@ class Generator:
                     continue
             current=None
         return allocations
+
+    def saved_addresses(self, text):
+        """Hold an indirect store's address in SADDR instead of the RAM stack.
+
+        The value expression between PUSH and its STIND must be straight-line,
+        call-free and store-free, so nothing else can reuse SADDR meanwhile.
+        Its SP-relative operands move down by the removed word.
+        """
+        lines = [x.split(';')[0].strip() for x in text.splitlines()]
+        lines = [x for x in lines if x]
+        binary = {'ADD','SUB','MUL','DIVI','DIVU','MODI','MODU','BOR','BXOR',
+                  'BAND','SHRI','SHRU','LSHIFT','EQ','NE','LT','LE','GT','GE',
+                  'ULT','ULE','UGT','UGE','RMISAVE','RMUSAVE','ADDLOAD'}
+        pure = {'IMM','LOAD','LOADQUOT','OFFSET','DOUBLE','HALF','SCALE','NEGATE',
+                'COMPLEMENT','BOOL','NOT','ARITH_CONST','ADD_CONST','DIRECT_LOAD'}
+        shifted = {'STACK_LOAD','INDEX_LOAD','ADD_LOCAL'}
+        index = 0
+        while index < len(lines):
+            if lines[index] != 'PUSH':
+                index += 1
+                continue
+            depth, cursor, adjusted, matched = 0, index+1, [], False
+            while cursor < len(lines):
+                fields = lines[cursor].split(None, 1)
+                op = fields[0]
+                if op == 'STIND' and depth == 0:
+                    matched = True
+                    break
+                if op == 'PUSH':
+                    depth += 1
+                elif op in binary:
+                    if not depth:
+                        break
+                    depth -= 1
+                elif op in shifted:
+                    values = fields[1].split(',')
+                    if int(values[0]) < 2:
+                        break
+                    values[0] = str(int(values[0])-2)
+                    adjusted.append(op+' '+','.join(values))
+                    cursor += 1
+                    continue
+                elif op not in pure:
+                    break
+                adjusted.append(lines[cursor])
+                cursor += 1
+            if matched:
+                lines[index:cursor+1] = (['SAVE_ADDRESS']+adjusted+
+                                         ['STIND_SAVED '+lines[cursor].split()[1]])
+            index += 1
+        return '\n'.join(lines)
+
+    def stored_arguments(self, text):
+        """Reserve a direct call's trailing argument words with one ADJSP.
+
+        Straight-line argument pushes before CALL become stores into their
+        final slots, and the call stores its return word at SP+0. Operands
+        between pushes see the lower SP, so their offsets grow accordingly.
+        """
+        lines = [x.split(';')[0].strip() for x in text.splitlines()]
+        lines = [x for x in lines if x]
+        pure = {'IMM','LOAD','LOADQUOT','OFFSET','DOUBLE','COMPLEMENT',
+                'ARITH_CONST','ADD_CONST','DIRECT_LOAD'}
+        shifted = {'STACK_LOAD','INDEX_LOAD'}
+        index = 0
+        while index < len(lines):
+            fields = lines[index].split()
+            if fields[0] != 'CALL' or index == 0 or lines[index-1] != 'PUSH':
+                index += 1
+                continue
+            start = index-1
+            while start > 0 and (lines[start-1] == 'PUSH' or
+                                 lines[start-1].split()[0] in pure|shifted):
+                start -= 1
+            pushes = [i for i in range(start, index) if lines[i] == 'PUSH']
+            total = 2*len(pushes)+2
+            output, done = [], 0
+            for i in range(start, index):
+                op = lines[i].split(None, 1)
+                if lines[i] == 'PUSH':
+                    if not done:
+                        output.append('ADJSP -'+str(total))
+                    done += 1
+                    output.append('STACK_STORE '+str(total-2*done)+',2')
+                elif op[0] in shifted and done:
+                    values = op[1].split(',')
+                    values[0] = str(int(values[0])+total-2*done)
+                    output.append(op[0]+' '+','.join(values))
+                else:
+                    output.append(lines[i])
+            output.append('CALL_STORED '+fields[1])
+            lines[start:index+1] = output
+            index = start+len(output)
+        return '\n'.join(lines)
+
+    def paged_arrays(self, text):
+        """Byte arrays of at most one page that unsigned byte indices address.
+
+        The data section pads each so it cannot cross a page; its indexed
+        addresses then need no carry into the high byte.
+        """
+        sizes=self.allocations(text);lines=text.splitlines();paged={}
+        for i,line in enumerate(lines):
+            f=line.split(None,1);name=None
+            if f and f[0]=='INDEX_LOAD':
+                fields=f[1].split(',')
+                if fields[2]=='1' and fields[3:]==['byte']:name=fields[1]
+            elif (f and f[0]=='ADD_CONST' and i and
+                  re.fullmatch(r'STACK_LOAD -?\d+,1',lines[i-1].strip())):
+                name=f[1].strip()
+            if name and 1<sizes.get(name,0)<=256:paged[name]=sizes[name]
+        return paged
 
     def fill_loops(self, text):
         """Replace canonical unsigned byte fills; keep live final indices."""
@@ -704,10 +845,23 @@ class Generator:
             # Also catches loads exposed by indexed-address folding.
             text = re.sub(r'(?m)^ADDRSP (-?\d+)\nLOAD (-?\d+)$',
                           r'STACK_LOAD \1,\2', text)
-            text=byte_comparisons(local_stores(text))
+            text=self.saved_addresses(byte_comparisons(local_stores(text)))
+            if not self.compact:
+                text=self.stored_arguments(text)
         depths=stack_depths(text,function_names) if self.optimize else {}
+        # Startup reaches main through one pushed return word; nothing else
+        # may call it or take its address.
+        self.static_main = (self.optimize and bool(depths) and
+                            len(re.findall(r'(?m)\bmain\b', text)) ==
+                            len(re.findall(r'(?m)^main:|^\s*;\s*FUNCTION\s+main\b', text)))
+        self.paged = self.paged_arrays(text) if self.optimize else {}
+        previous = ''
         for line_number,raw in enumerate(text.splitlines()):
             self.frame_depth=depths.get(line_number)
+            if raw.split(';')[0].strip():
+                previous, current = raw.split(';')[0].strip(), previous
+            else:
+                current = previous
             line = raw.split(';')[0].strip()
             if not line:
                 continue
@@ -717,7 +871,13 @@ class Generator:
                 if name in self.defined:
                     raise CodegenError('duplicate symbol: ' + name)
                 self.defined.add(name)
+                if name in self.paged and self.output is self.data:
+                    # Keep the array within one page: pad to the next page
+                    # only when it would otherwise cross.
+                    size = self.paged[name]
+                    self.emit(f'DS (((LOW ($))+{size-1}D) SHR 8D)*(256D-(LOW ($)))')
                 if name in function_names and self.output is self.code:
+                    self.function = name
                     self.emit('; function '+self.symbol(name))
                 self.label(self.symbol(name))
                 line = line.strip()
@@ -728,7 +888,12 @@ class Generator:
             if op in ('TEXT', 'DATA'):
                 self.output = self.code if op == 'TEXT' else self.data
             elif op == 'ADD_CONST':
-                self.add_constant(arg)
+                if arg in self.paged and re.fullmatch(r'STACK_LOAD -?\d+,1', current):
+                    # Unsigned byte index into a single-page array.
+                    base = self.value(arg)
+                    self.emit('ADI LOW ('+base+')','LBI HIGH ('+base+')')
+                else:
+                    self.add_constant(arg)
             elif op == 'ARITH_CONST':
                 operation, value = arg.split(',')
                 value = int(value)
@@ -823,14 +988,15 @@ class Generator:
                               'LAE',f'CPI {count&255}D','JFC '+done)
                     self.label(pointer)
                     self.emit('LAE','ADI LOW ('+base+')','LLA','LAD',
-                              'ACI HIGH ('+base+')','LHA')
+                              'ACI HIGH ('+base+')','LHA','JMP '+mark)
+                    # Test at the bottom: each store needs no loop-back JMP.
+                    self.label(mark+'BODY')
+                    self.emit(f'LMI {int(byte)&255}D','LAL','ADC','LLA',
+                              'LAH','ACB','LHA')
                     self.label(mark)
                     self.emit('LAH',f'CPI HIGH (({base})+{count}D)',
                               'JTC '+mark+'BODY','JFZ '+finish,
-                              'LAL',f'CPI LOW (({base})+{count}D)','JFC '+finish)
-                    self.label(mark+'BODY')
-                    self.emit(f'LMI {int(byte)&255}D','LAL','ADC','LLA',
-                              'LAH','ACB','LHA','JMP '+mark)
+                              'LAL',f'CPI LOW (({base})+{count}D)','JTC '+mark+'BODY')
                     self.label(finish)
                     self.emit('LAL','SUI LOW ('+base+')','LEA','LAH',
                               'SBI HIGH ('+base+')','LDA','JMP '+done)
@@ -934,6 +1100,15 @@ class Generator:
                     if fields[2] == '2':
                         self.inc_hl()
                         self.emit('LMB')
+            elif op == 'SAVE_ADDRESS':
+                self.emit('LHI HIGH SADDR','LLI LOW SADDR','LMA','INL','LMB')
+            elif op == 'STIND_SAVED':
+                # Like STIND, leave the stored value in AB.
+                self.emit('LCA','LHI HIGH SADDR','LLI LOW SADDR','LEM','INL',
+                          'LHM','LLE','LAC','LMA')
+                if int(arg) == 2:
+                    self.inc_hl()
+                    self.emit('LMB')
             elif op == 'CONST_STORE1':
                 self.emit('LHB','LLA','LMI '+str(int(arg)&255)+'D')
                 self.immediate(self.value(arg))
@@ -967,6 +1142,10 @@ class Generator:
                 self.emit('LAM')
                 if byte:
                     self.emit('; end local byte')
+                if byte and fields[1] in self.paged:
+                    self.emit('ADI LOW ('+base+')','LLA','LHI HIGH ('+base+')')
+                    self.load(int(width),address=False)
+                    continue
                 self.emit('ADI LOW ('+base+')','LEA')
                 if byte:
                     self.emit('LAI HIGH ('+base+')','ACI 0D','LHA','LLE')
@@ -1063,6 +1242,19 @@ class Generator:
             elif op == 'SCALESECOND':
                 self.emit('LCA', 'LDB', 'CAL POP', 'ADA', 'LEA', 'LAB', 'RAL',
                           'LBA', 'LAE', 'CAL PUSH', 'LAC', 'LBD')
+            elif op == 'CALL_STORED':
+                # Arguments are already in place; store the return word at
+                # SP+0 as PUSH would have, then enter the function.
+                resume = self.unique()
+                self.immediate(resume)
+                self.emit('LCA')
+                self.stack_address(0)
+                self.emit('LAC','LMA')
+                self.inc_hl()
+                self.emit('LMB')
+                self.references.add(arg)
+                self.emit('JMP ' + self.symbol(arg))
+                self.label(resume)
             elif op in ('CALL','CALLIND'):
                 resume = self.unique()
                 if op == 'CALLIND':
@@ -1080,7 +1272,14 @@ class Generator:
             elif op == 'JUMP':
                 self.emit('JMP ' + self.value(arg))
             elif op in ('JTRUE','JFALSE'):
-                self.emit('ORB', ('JFZ ' if op == 'JTRUE' else 'JTZ ') + self.value(arg))
+                if self.output[-1].strip() == 'LBI 0':
+                    # A zero-extended byte: test A alone, and leave LBI 0
+                    # for dead-load removal when B is unused.
+                    self.output[-1] = '        NDA'
+                    self.emit('LBI 0')
+                else:
+                    self.emit('ORB')
+                self.emit(('JFZ ' if op == 'JTRUE' else 'JTZ ') + self.value(arg))
             elif op == 'DENSE_SWITCH':
                 fields = arg.split(',')
                 name,low,high,default = fields[:4]
@@ -1105,7 +1304,7 @@ class Generator:
         if missing:
             raise CodegenError('unresolved symbols: ' + ', '.join(sorted(missing)))
         runtime = (HERE / 'runtime.asm').read_text()
-        application = '\n'.join((optimize_functions(self.code,self.data) if self.optimize else self.code) + self.data)
+        application = '\n'.join((optimize_functions(self.code,self.data,defer=True) if self.optimize else self.code) + self.data)
         if self.optimize:
             application, frame_helpers = outline_frame_loads(application, 'RSP')
             runtime += '\n' + frame_helpers
@@ -1114,5 +1313,5 @@ class Generator:
                 '\nSCEND: DB 0\nSTACKMIN EQU (SCEND+255D) AND 0FF00H\n        END\n')
 
 
-def generate(text, *, optimize=True):
-    return Generator(optimize=optimize).render(text)
+def generate(text, *, optimize=True, compact=False):
+    return Generator(optimize=optimize, compact=compact).render(text)

@@ -119,6 +119,7 @@ def stack_depths(text,function_names):
         depth=depths[i]
         if op=='ADJSP':depth-=int(arg)
         elif op=='PUSH':depth+=2
+        elif op=='CALL_STORED':depth-=2       # the callee pops its stored return word
         elif op in binary:depth-=2
         elif op in ('COMPARE','CMPBRANCH'):
             fields=arg.split(',')
@@ -129,6 +130,9 @@ def stack_depths(text,function_names):
         elif op=='BYTE_CMP':
             fields=arg.split(',')
             if fields[1] in ('JTRUE','JFALSE') and fields[2] in labels:successors.append(labels[fields[2]])
+        elif op=='CMPBRANCH':
+            fields=arg.split(',')
+            if fields[2] in labels:successors.append(labels[fields[2]])
         elif op in ('RETURN','DATA'):successors=[]
         elif op in ('DENSE_SWITCH','SWITCH'):
             successors=[labels[t] for t in data_targets if t in labels]

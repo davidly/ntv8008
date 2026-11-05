@@ -574,3 +574,42 @@ Rebuilt benchmarks produce identical output with the following cycle counts:
 This saves 0.15% to 0.65% across these workloads. Stack tests cover pointer page
 crossings, preserved AB/CD registers, stored words and overflow on both paths;
 all five frontend suites also pass with compilation enabled.
+
+## Constant multiplication, fixed main frames and deferred counters
+
+- **Constant multiplication.** `x * constant` uses inline shifts and adds when
+  that takes at most eight steps. Factors 0 and -1 become a clear or `NEG`. Other
+  factors still call the repeated-addition `MUL`.
+- **Division.** The runtime divide loop counts the quotient in HL, matching SmallC.
+- **Fixed main frame.** Startup reaches `F_MAIN` with a constant frame pointer.
+  When no unit calls `main` or takes its address, `main`'s locals use constant
+  addresses.
+- **Other lowering changes:**
+  - `x + local` adds directly from the frame.
+  - A byte stored through a simple index waits in D instead of on the RAM stack.
+  - `++global` becomes an in-place increment.
+  - A zero-extended byte tested for zero skips loading a zero high byte. Signed
+    `gt`/`le` tests read that byte, so they keep it.
+  - Pointer marking loops test at the bottom.
+- **Deferred byte updates.** The shared deferred-update pass now also copies a
+  step reached by a conditional jump. TTT's `++pos` therefore stays in a register on
+  the occupied-cell path.
+
+Rebuilt benchmarks produce identical output:
+
+| Frontend | Sieve | E | TTT (ten iterations) |
+| --- | ---: | ---: | ---: |
+| C | 83,422,156 (-43.8%) | 81,860,644 (-52.2%) | 571,062,078 (-21.3%) |
+| Pascal | 315,372,124 (-0.5%) | 271,948,964 (-5.1%) | 2,291,398,212 (-2.7%) |
+| Modula-2 | 217,585,250 (-40.9%) | 247,899,190 (-5.6%) | 1,566,758,444 (-1.4%) |
+| Occam | 289,288,974 (-0.5%) | 299,499,678 (-8.9%) | 1,831,265,794 (0.0%) |
+| BASIC | 1,103,876,654 (-13.7%) | 291,442,914 (-5.3%) | 2,436,737,834 (0.0%) |
+
+New tests cover:
+
+- multiplication by constants against generic EM
+- constant and FP-relative frames
+- a `main` whose address is taken, which keeps FP-relative addressing
+- byte stores, local adds and global increments
+- signed byte zero tests
+- deferred counters across calls and recursion

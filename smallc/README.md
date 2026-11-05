@@ -582,3 +582,36 @@ TTT improves from 596,795,114 to **586,743,914 cycles** for ten iterations
 6493 positions per iteration. Differential indexed-load tests cover byte and word
 indices, byte truncation, signed/unsigned byte and word results, frame and array
 page crossings and older stack operands.
+
+## Fixed main frames, faster division and direct calls
+
+- **Fixed main frame.** A `main` reached only from startup has a constant frame.
+  Its local addresses become constants instead of SP-relative sums.
+- **Division.** The runtime divide loop counts the quotient in HL rather than in RAM.
+- **Byte arrays.** Byte arrays of 2–256 bytes indexed by unsigned bytes are
+  placed so that they never cross a page.
+- **Pointer marking loops.** These loops test at the bottom.
+- **Indirect stores.** A store whose address is computed first keeps that address
+  in the `SADDR` scratch word instead of on the RAM stack.
+- **Direct calls.** These reserve their argument block once, store each argument
+  in place, and store the return word directly.
+- **Deferred byte updates.** A byte local's `+constant` update on a `continue` path
+  can stay in its cache register. The RAM copy is written back before any RAM
+  read, unmarked store or call that might observe it.
+
+Each stored argument costs about 20 bytes of code compared with a 3-byte `PUSH`.
+When an image would exceed the 15,616-byte limit, the compiler therefore
+retries with pushed arguments. Hunt the Wumpus builds that way, at 14,245 bytes.
+
+| Benchmark | Previous cycles | New cycles | Reduction |
+| --- | ---: | ---: | ---: |
+| sieve | 125,903,494 | 84,165,050 | 33.15% |
+| e | 124,262,362 | 86,463,540 | 30.42% |
+| TTT (ten iterations) | 586,743,914 | 471,672,546 | 19.61% |
+
+Outputs are unchanged. The tests cover:
+
+- frames with and without a constant address
+- page-contained arrays
+- saved store addresses and stored arguments
+- deferred updates across calls, recursion and exits
