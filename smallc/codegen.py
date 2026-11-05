@@ -1304,7 +1304,7 @@ class Generator:
         if missing:
             raise CodegenError('unresolved symbols: ' + ', '.join(sorted(missing)))
         runtime = (HERE / 'runtime.asm').read_text()
-        application = '\n'.join((optimize_functions(self.code,self.data,defer=True) if self.optimize else self.code) + self.data)
+        application = '\n'.join((optimize_functions(self.code,self.data,defer=True,anchor=not self.compact) if self.optimize else self.code) + self.data)
         if self.optimize:
             application, frame_helpers = outline_frame_loads(application, 'RSP')
             runtime += '\n' + frame_helpers

@@ -615,3 +615,35 @@ Outputs are unchanged. The tests cover:
 - page-contained arrays
 - saved store addresses and stored arguments
 - deferred updates across calls, recursion and exits
+
+## Register-anchored recursion
+
+Most of a recursive function's time went to addressing its frame. Each local
+access loaded the 16-bit stack or frame pointer from RAM and added an offset with
+carry, about 68 states. `tools/anchor8008.py` gives each self-recursive function
+a second, fast copy:
+
+- **Entry check.** The original entry tests whether every anchored address
+  (locals, arguments, and the lowest stack pointer reached) lies in the stack's
+  first page (3Eh). If so it enters the fast copy; otherwise the unchanged
+  original code runs, so deep recursion stays correct.
+- **Anchored accesses.** In the copy, D holds the frame base's low byte, and a
+  local's address is `LAD; ADI k; LLA; LHI 3EH`.
+- **Validity of D.** A must-analysis inserts a reload wherever any path may have
+  changed D. An access is converted only where the original sequence's other
+  results are dead.
+- **Tracked depth.** The stack depth below the anchor is followed through
+  adjustments and call returns. A known adjustment stores only the pointer's low
+  byte and needs no stack-floor check, because 3E00h is above any program image.
+- **Other cleanups in the copy:** carry fix-ups for in-page addresses are
+  dropped, and jump tables get renamed copies so dispatch stays in the fast copy.
+
+Byte stores that saved their address in `SADDR` keep it in registers in the copy.
+A new jump-threading peephole copies short tails and inverted loop tests in
+place of jumps, which helps `continue` paths.
+
+TTT falls from 471,672,546 to **351,117,402 cycles** for ten iterations
+(25.6% fewer), or **70.22 seconds per iteration**: under the 72 seconds WOPR
+took to show that tic-tac-toe can't be won. Outputs and node counts are unchanged.
+A test recurses 60 levels, so the walk leaves the stack page and runs both
+copies, a switch and a `continue` scan, and checks the result against a model.

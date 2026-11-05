@@ -819,3 +819,26 @@ All benchmark outputs are unchanged, and `tests/run.py --compile` passes with
 every frontend's example images rebuilt. The workbook and runtime image were
 refreshed. RAM code figures add each image's measured change in emitted bytes;
 BSS adds the 2-byte SPILL word where used and drops CSA's TAB where no longer linked.
+
+## Register-anchored recursion — 2026-11-05
+
+Self-recursive functions get a fast copy that addresses locals from a frame
+low byte in D when an entry check proves the whole activation is in the
+stack's first page; otherwise the original code runs. ACK's copy also inlines
+ENTER, ADDSP, argument stores and LEAVE. Byte compares use CPI/CPM, ACK byte
+arrays indexed by byte locals are page-contained, and short tails and loop
+tests are threaded into jumps.
+
+| Benchmark | Before (clocks) | After (clocks) | Seconds per iteration |
+| --- | ---: | ---: | ---: |
+| SmallC TTT (10 iterations) | 471,672,546 | 351,117,402 | 70.22 |
+| ACK C TTT (10 iterations) | 540,176,488 | 355,097,342 | 71.02 |
+| ACK Modula-2 TTT | 986,412,804 | 837,331,202 | 167.47 |
+| ACK Pascal TTT | 1,079,021,212 | 960,295,952 | 192.06 |
+
+All benchmark outputs are unchanged, and `tests/run.py --compile` passes with
+every example image rebuilt. New tests recurse 60 levels so both the fast and
+the original copies run, and check the results against a Python model. The
+workbook and runtime image were refreshed. RAM code figures add each image's
+measured change in emitted bytes; the page padding is an address hole and is
+excluded.

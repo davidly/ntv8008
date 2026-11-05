@@ -258,7 +258,7 @@ def cache_frame_addresses(lines,data,aligned,serial):
 
 
 # Keep the public entry point small: every function is independently analyzed.
-def optimize_functions(code,data,aligned=False,defer=False):
+def optimize_functions(code,data,aligned=False,defer=False,anchor=False):
     result=[];block=[];serial=[0]
     def finish(block):
         from register8008 import cache_bytes, cache_frame_registers, join_values, defer_byte_updates
@@ -266,8 +266,12 @@ def optimize_functions(code,data,aligned=False,defer=False):
         block=cache_bytes(block,data)
         if defer:block=defer_byte_updates(block,data)
         block=cache_frame_registers(block,data)
-        from peephole8008 import shorten
-        return shorten(simplify_values(cache_frame_addresses(block,data,aligned,serial),data),data)
+        from peephole8008 import shorten, thread_jumps
+        block=shorten(simplify_values(cache_frame_addresses(block,data,aligned,serial),data),data)
+        if anchor:
+            from anchor8008 import anchor_frames
+            block=anchor_frames(block,data)
+        return thread_jumps(block)
     for line in code:
         if line.strip().startswith('; function '):
             if block:result+=finish(block)

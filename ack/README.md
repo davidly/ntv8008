@@ -672,3 +672,48 @@ Reusing a repeated Occam element address within a block was evaluated and not
 adopted. Keeping it costs a store and reload (about 72 states) against about
 112 states per reuse, so it pays only for three or more uses, and it needs
 alias tracking across Occam's shared workspace.
+
+## Register-anchored recursion
+
+Most of a recursive function's time went to addressing its frame. Each local
+access loaded the 16-bit stack or frame pointer from RAM and added an offset with
+carry, about 68 states. `tools/anchor8008.py` gives each self-recursive function
+a second, fast copy:
+
+- **Entry check.** The original entry tests whether every anchored address
+  (locals, arguments, and the lowest stack pointer reached) lies in the stack's
+  first page (3Eh). If so it enters the fast copy; otherwise the unchanged
+  original code runs, so deep recursion stays correct.
+- **Anchored accesses.** In the copy, D holds the frame base's low byte, and a
+  local's address is `LAD; ADI k; LLA; LHI 3EH`.
+- **Validity of D.** A must-analysis inserts a reload wherever any path may have
+  changed D. An access is converted only where the original sequence's other
+  results are dead.
+- **Tracked depth.** The stack depth below the anchor is followed through
+  adjustments and call returns. A known adjustment stores only the pointer's low
+  byte and needs no stack-floor check, because 3E00h is above any program image.
+- **Other cleanups in the copy:** carry fix-ups for in-page addresses are
+  dropped, and jump tables get renamed copies so dispatch stays in the fast copy.
+
+ACK's entry check runs before `ENTER`, taking the new FP as RSP-2. The fast copy
+also inlines `ENTER`, `ADDSP` (as a low-byte store), stored-argument writes and
+`LEAVE`. Further shared changes:
+
+- **Byte compares.** Compares against a constant use `CPI`; compares against
+  memory hold the left byte in B and use `CPM`, so D stays free.
+- **Byte stores.** A stored byte waits in E instead of D where E is free.
+- **Byte-index switches.** A switch on a zero-extended byte skips its
+  high-byte test.
+- **Page-contained arrays.** As in SmallC, static byte arrays of 2-256 bytes
+  indexed by unsigned byte locals are padded to stay within one page.
+- **Jump threading.** Short tails and inverted loop tests replace jumps.
+
+| Frontend | TTT before | TTT after | Seconds per iteration |
+| --- | ---: | ---: | ---: |
+| C | 540,176,488 | 355,097,342 (-34.3%) | 71.02 |
+| Pascal | 1,079,021,212 | 960,295,952 (-11.0%) | 192.06 |
+| Modula-2 | 986,412,804 | 837,331,202 (-15.1%) | 167.47 |
+
+Sieve changes by under 0.2%; e, Occam and BASIC are unchanged, and all outputs
+are unchanged. The fast copies add code: ttt grows by about 1.4K bytes for C and
+4K for Pascal and Modula-2. Images that would not fit regenerate without them.

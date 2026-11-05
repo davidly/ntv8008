@@ -191,6 +191,80 @@ main() {
 }
 """), b'1002,255,65535,0,7')
 
+    def test_anchored_recursive_frames(self):
+        # A self-recursive function gets a register-anchored fast copy;
+        # 60 levels leave the stack page, so the original code runs too.
+        source = '''static unsigned char marks[12];
+walk(d, n)
+unsigned char d;
+int n;
+
+{
+    unsigned char i, used;
+    int total;
+    if (d == 0) return n & 1023;
+    switch (d & 3) {
+    case 0: total = 1; break;
+    case 1: total = 4; break;
+    case 2: total = 9; break;
+    default: total = 16; break;
+    }
+    used = 0;
+    for (i = 0; i < 12; ++i) {
+        if (marks[i]) continue;
+        if (used) { total = total + i; continue; }
+        used = 1;
+        marks[i] = 1;
+        total = total + walk(d - 1, n + i * 3);
+        marks[i] = 0;
+    }
+    if (!used) total = total + walk(d - 1, n + 1);
+    return total & 4095;
+}
+main()
+{
+    marks[1] = 1; marks[4] = 1; marks[6] = 1;
+    putu(walk(3, 7)); putchar(',');
+    putu(walk(60, 0)); putchar(',');
+    putu(walk(3, 7));
+    return 0;
+}
+'''
+        marks = [0] * 12
+        for i in (1, 4, 6):
+            marks[i] = 1
+
+        def walk(d, n):
+            if d == 0:
+                return n & 1023
+            total = [1, 4, 9, 16][d & 3]
+            used = False
+            for i in range(12):
+                if marks[i]:
+                    continue
+                if used:
+                    total += i
+                    continue
+                used = True
+                marks[i] = 1
+                total += walk(d - 1, n + i * 3)
+                marks[i] = 0
+            if not used:
+                total += walk(d - 1, n + 1)
+            return total & 4095
+        expected = f'{walk(3, 7)},{walk(60, 0)},{walk(3, 7)}'.encode()
+        with tempfile.TemporaryDirectory(prefix='smallc anchor ') as directory:
+            path = Path(directory, 'program.c')
+            path.write_text(source)
+            image, assembly, _ = compiler.compile_source(path)
+            self.assertIn('SC_77616C6B_A:', assembly)
+            self.assertIn('SC_77616C6B_S:', assembly)
+            path = path.with_suffix('.hex')
+            path.write_text(image)
+            result = run('-n:200000000', path, timeout=60)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout, expected)
+
     def test_deferred_byte_updates(self):
         # ++i on a skip path stays in a register. The value must reach RAM
         # before a call whose continuation reads i, before recursion, and on

@@ -314,6 +314,15 @@ iteration. All ACK frontends also gain the following:
 
 ACK C e and TTT improve by 11.6% and 5.4%. See the [ACK notes](ack/README.md).
 
+TTT now beats the 72 seconds WOPR needed in *WarGames* to conclude that
+tic-tac-toe can't be won: SmallC takes **70.22 seconds** per iteration and ACK C
+**71.02** (25.6% and 34.3% fewer clocks than before). Self-recursive functions
+get a fast copy that addresses their frame from a low byte held in a register
+whenever the whole activation lies in the stack's first page. Original code
+runs when it doesn't. ACK also inlines its frame entry, exit, stack adjustments
+and argument stores in that copy. The same fast copies take Modula-2 TTT from
+197.28 to 167.47 seconds and Pascal from 215.80 to 192.06.
+
 Occam now places eligible sequential procedure workspaces in static BSS,
 including ttt's search arrays. This reduces target cycles by 56.9% for sieve,
 9.8% for e, and 55.0% for ttt, without changing the algorithms, array sizes or

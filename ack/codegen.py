@@ -109,12 +109,12 @@ def stored_arguments(code):
         first,*rest=sorted(pushes)
         serial+=1;carry='ARGS%d' % serial;total=2*count+2
         lines[first]='\n'.join('        '+item if not item.endswith(':') else item for item in
-            ('LCA','LDB',f'LAI {(-total)&255}D',f'LBI {((-total)>>8)&255}D','CAL ADDSP',
+            ('; argument block %d' % total,'LCA','LDB',f'LAI {(-total)&255}D',f'LBI {((-total)>>8)&255}D','CAL ADDSP',
              'LAL',f'ADI {total-2}D','LLA','JFC '+carry,'INH',carry+':',
              'LMC','INL','LMD','DCL','LCL','LDH'))
-        for index in rest:
+        for slot,index in zip(range(total-4,-1,-2),rest):
             lines[index]='\n'.join('        '+item for item in
-                ('LEA','LAC','SUI 2','LLA','LAD','SBI 0','LHA','LME','INL','LMB','DCL')+
+                ('; argument slot %d' % slot,'LEA','LAC','SUI 2','LLA','LAD','SBI 0','LHA','LME','INL','LMB','DCL')+
                 (('LCL','LDH') if index!=rest[-1] else ()))
     return '\n'.join(lines).split('\n')
 
@@ -158,6 +158,7 @@ class Generator:
         self.exports = set()
         self.locals = set()
         self.data_definitions = set()
+        self.paged = {}
         # A main reached only from startup has the constant frame MAIN_FP.
         self.static_main = False
 
@@ -324,11 +325,14 @@ class Generator:
                 else:
                     self.constant(int(load[1]))
                 self.emit(*actions)
+                paged = 'P' if load[0] == 'llb' and not actions and base in self.paged else ''
                 if constant:
-                    self.emit('@INDEX_CONST1 '+self.address(base)+','+following[1])
+                    self.emit('@'+paged+'INDEX_CONST1 '+self.address(base)+','+following[1])
                 else:
                     operation = 'LOAD' if following[0] == 'loi' else 'STORE'
-                    self.emit('@INDEX_' + operation + following[1] + ' ' + self.address(base))
+                    if following[1] != '1':
+                        paged = ''
+                    self.emit('@' + paged + 'INDEX_' + operation + following[1] + ' ' + self.address(base))
                 return cursor+2
             if current in (['inc'],['dec']):
                 actions.append('@ADD_CONST ' + ('1' if current == ['inc'] else '65535'))
@@ -394,7 +398,8 @@ class Generator:
             self.emit(save+'c:'+str(int(value[1]) & 65535))
         else:
             self.emit(load(*value), save+'0')
-        self.emit(load(*source), *actions, '@INDEX_STORED'+width+' '+self.address(base[1]))
+        paged = 'P' if source[0] == 'llb' and not actions and width == '1' and base[1] in self.paged else ''
+        self.emit(load(*source), *actions, '@'+paged+'INDEX_STORED'+width+' '+self.address(base[1]))
         return cursor+2
 
     def unit_code(self, text):
@@ -402,6 +407,14 @@ class Generator:
         lines = (indexed_operands(dense_switches(lower_bytes(constant_byte_stores(local_updates(fill_loops(strided_loops(global_strided_loops(reuse_quotients(variable_steps(stacked_for_loops(branching_conditions(fold_addresses(commute_constants(stored_address_temporaries(materialized_conditions(text)))))))))))))))) if self.optimize else text).splitlines()
         self.exports = {line.strip().split()[1] for line in lines
                         if line.strip().startswith(('exp ', 'exa '))}
+        # Byte arrays of 2-256 bytes indexed by unsigned byte locals are
+        # padded so they never cross a page; their indexing then needs no
+        # carry into H. Out-of-bounds indices are undefined in the sources.
+        text_lines = '\n'.join(lines)
+        sizes = {m[1]: int(m[2]) for m in re.finditer(r'^(\S+)\n bss (\d+),', text_lines, re.M)}
+        indexed = set(re.findall(r'^ lae ([^\s+-]+)\n llb [^\n]+\n ads 2\n (?:loi 1|sti 1|stc -?\d+)$',
+                                 text_lines, re.M)) if self.optimize else set()
+        self.paged = {name: sizes[name] for name in indexed if 2 <= sizes.get(name, 0) <= 256}
         self.locals = ({line.strip().split()[1].split(',')[0] for line in lines
                         if line.strip().startswith(('pro ', 'inp ', 'ina '))} |
                        {line.strip() for line in lines if line and not line.startswith(' ')
@@ -421,9 +434,14 @@ class Generator:
                     if symbol in self.data_definitions:
                         raise CodegenError('duplicate data: ' + line)
                     self.data_definitions.add(symbol)
-                    self.data += [symbol + '_ALIGN:',
-                                  '        ORG (' + symbol + '_ALIGN+1) AND 0FFFEH',
-                                  symbol + ':']
+                    if line in self.paged:
+                        size = self.paged[line]
+                        self.data += [f'        DS (((LOW ($))+{size-1}D) SHR 8D)*(256D-(LOW ($)))',
+                                      symbol + ':']
+                    else:
+                        self.data += [symbol + '_ALIGN:',
+                                      '        ORG (' + symbol + '_ALIGN+1) AND 0FFFEH',
+                                      symbol + ':']
                 else:
                     self.label(symbol)
                 continue
@@ -898,6 +916,9 @@ class Generator:
                 function = instruction.split()[2]
             if instruction.startswith('@'):
                 operation, argument = instruction.split(None, 1)
+                paged = operation.startswith('@PINDEX_')
+                if paged:
+                    operation = '@' + operation[2:]
                 if operation in ('@SAVE_BYTE','@SAVE_WORD') and argument.startswith('c:'):
                     # A constant needs no stack operand; any cached word stays.
                     value = int(argument[2:])
@@ -925,7 +946,13 @@ class Generator:
                     table,low,count,default=argument.split(',')
                     low=int(low);native=[]
                     if low:native+=['SUI %dD'%(low&255),'LEA','LAB','SBI %dD'%(low>>8),'LBA','LAE']
-                    native+=['LEA','LAB','NDA','JFZ '+default,'LAE','CPI '+count+'D',
+                    previous=[line.strip() for line in output if line.strip() and not line.strip().startswith(';')]
+                    if not low and previous and previous[-1]=='LBI 0':
+                        # A zero-extended byte selector needs no high-byte test.
+                        native+=['CPI '+count+'D']
+                    else:
+                        native+=['LEA','LAB','NDA','JFZ '+default,'LAE','CPI '+count+'D']
+                    native+=[
                              'JFC '+default,'ADA','ADI LOW ('+table+'+6D)','LLA',
                              'LAI HIGH ('+table+'+6D)','ACI 0','LHA','LAM','INL','LBM','JMP JUMPAB']
                     output+=['        '+item for item in native]
@@ -933,22 +960,24 @@ class Generator:
                 if operation == '@BYTE_CMP':
                     condition,target,left,right=argument.split(',')
                     native=[]
-                    for operand_number,operand in enumerate((right,left)):
+                    def address(operand):
                         kind,value=operand.split(':',1)
-                        if kind=='i': native+=['LAI '+value+'D']
-                        elif kind=='g':
-                            address=value
-                            native+=['LHI HIGH ('+address+')','LLI LOW ('+address+')','LAM']
-                        else:
-                            offset=int(value)
-                            address=self.static_frame(function,offset)
-                            offset=(offset+(4 if offset>=0 else 0))&65535
-                            address=address or ['LHI HIGH FP','LLI LOW FP','LAM',
-                                     f'ADI {offset&255}D','LEA','INL','LAM',f'ACI {offset>>8}D',
-                                     'LHA','LLE']
-                            native+=['; local byte load '+value,*address,'LAM','; end local byte']
-                        if operand_number==0: native+=['LDA']
-                    native+=['CPD']
+                        if kind=='g':
+                            return ['LHI HIGH ('+value+')','LLI LOW ('+value+')']
+                        offset=int(value)
+                        static=self.static_frame(function,offset)
+                        offset=(offset+(4 if offset>=0 else 0))&65535
+                        return static or ['LHI HIGH FP','LLI LOW FP','LAM',f'ADI {offset&255}D',
+                                          'LEA','INL','LAM',f'ACI {offset>>8}D','LHA','LLE']
+                    kind,value=left.split(':',1)
+                    if kind=='i': native+=['LAI '+value+'D']
+                    elif kind=='g': native+=address(left)+['LAM']
+                    else: native+=['; local byte load '+value,*address(left),'LAM','; end local byte']
+                    if right.startswith('i:'):
+                        native+=['CPI '+right[2:]+'D']
+                    else:
+                        # Hold the left byte in B and compare with memory: no D.
+                        native+=['LBA',*address(right),'LAB','CPM']
                     if condition in ('eq','ne','lt','ge'):
                         native+=[{'eq':'JTZ','ne':'JFZ','lt':'JTC','ge':'JFC'}[condition]+' '+target]
                     elif condition=='le': native+=['JTC '+target,'JTZ '+target]
@@ -962,7 +991,8 @@ class Generator:
                     pending = False
                     continue
                 if operation in ('@INDEX_STORED1','@INDEX_STORED2'):
-                    native = ['ADI LOW ('+argument+')','LLA','LAB','ACI HIGH ('+argument+')','LHA']
+                    native = (['ADI LOW ('+argument+')','LLA','LHI HIGH ('+argument+')'] if paged else
+                              ['ADI LOW ('+argument+')','LLA','LAB','ACI HIGH ('+argument+')','LHA'])
                     native += ['LMD'] if operation.endswith('1') else ['LMC','INL','LMD']
                     output += ['        '+item for item in native]
                     pending = False
@@ -1000,7 +1030,9 @@ class Generator:
                 if operation.startswith(('@INDEX_', '@GLOBAL_', '@LOCAL_')):
                     if operation == '@INDEX_CONST1':
                         argument,byte = argument.rsplit(',',1)
-                    if operation.startswith('@INDEX_'):
+                    if operation.startswith('@INDEX_') and paged:
+                        native = ['ADI LOW ('+argument+')', 'LLA', 'LHI HIGH ('+argument+')']
+                    elif operation.startswith('@INDEX_'):
                         native = ['ADI LOW ('+argument+')', 'LLA', 'LAB',
                                   'ACI HIGH ('+argument+')', 'LHA']
                     elif operation.startswith('@LOCAL_'):
@@ -1180,7 +1212,7 @@ class Generator:
                     helpers += ['        RLC', '        LAB']
                 helpers += ['        RAR', '        LBA', '        LAE', '        RAR']
             helpers += ['        JMP '+name+'LOOP', name+'DONE: LAE', '        RET']
-        application = '\n'.join((optimize_functions(self.cached_code() if self.compact else stored_arguments(spill_pairs(self.cached_code())),self.data,aligned=True,defer=True) if self.optimize else self.cached_code()) + self.data)
+        application = '\n'.join((optimize_functions(self.cached_code() if self.compact else stored_arguments(spill_pairs(self.cached_code())),self.data,aligned=True,defer=True,anchor=not self.compact) if self.optimize else self.cached_code()) + self.data)
         application = share_return_values(application)
         if self.optimize:
             application, frame_helpers = outline_frame_loads(application, 'FP')
