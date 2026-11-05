@@ -534,3 +534,22 @@ This runs after register allocation so the new entry does not inhibit it.
 Tests cover selection thresholds, loops, mutual recursion, byte/word loads,
 positive/negative offsets, and address-page carries. The benchmark size report
 records the rejected blanket-sharing experiment and the selected policy.
+
+## Pointer strides and conditional word updates
+
+Two SmallC optimizations also apply to the ACK backend. Recognized local-index
+byte-store loops use an advancing pointer when a conservative runtime guard
+proves that the absolute address cannot wrap; large or potentially wrapping
+strides retain the original index loop. Final induction variables and older
+EM stack operands are preserved. Local/global word increments and decrements
+update the high byte only when the low-byte operation carries or borrows.
+ACK already has native lowering for repeated-value doubling and indexed access.
+
+With unchanged sources and workloads, ACK C sieve drops from 160,667,418 to
+**148,787,838 cycles** (7.39% fewer), or **297.575676 seconds at 500 kHz**,
+with the same 1899 primes. The pointer loop alone takes 152,190,478 cycles.
+Pascal sieve improves by 0.20%, e by 0.24%, and TTT by 0.48%; Modula-2 sieve
+improves by 0.17% and TTT by 0.72%. Occam and BASIC timings are unchanged.
+Boundary tests compare optimized and generic EM for empty/already-finished
+loops, page crossings, large and wrapping strides, word carry/borrow/wraparound,
+and older live operands. All five frontends retain their original outputs.

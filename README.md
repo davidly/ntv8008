@@ -234,7 +234,7 @@ installed benchmark with `-p`. To select a subset:
 ./perfrun.sh --languages assembly ack pascal modula2 smallc
 ```
 
-Measured on 2026-11-04 from the current images and locally installed optional
+Measured on 2026-11-05 from the current images and locally installed optional
 components. Values are estimated **seconds on a 500 kHz 8008**, independent of
 host speed. Sieve includes ten passes; TTT is normalized to one iteration.
 

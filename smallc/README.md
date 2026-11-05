@@ -432,3 +432,58 @@ This runs after register allocation so the new entry does not inhibit it.
 Tests cover selection thresholds, loops, mutual recursion, byte/word loads,
 positive/negative offsets, and address-page carries. The benchmark size report
 records the rejected blanket-sharing experiment and the selected policy.
+
+## Local operand additions
+
+The backend now loads a word local once for `x + x` and doubles it in registers.
+For a word expression plus a local, it retains the left operand in CD while
+loading and adding the right operand directly. This removes the temporary
+RAM-stack word and the PUSH/POP-based ADD helper. Recognition is limited to
+adjacent word-load operations with the correct SP adjustment; other expressions
+retain their existing lowering. Both paths preserve 16-bit carry/wraparound and
+older values on the RAM stack.
+
+With the unchanged sieve source and full ten-pass, 8191-flag workload, this
+reduces 174,496,766 to **142,479,626 cycles** (18.35% fewer), or **284.959252
+seconds at 500 kHz**. Output remains `1899 primes.`. E remains at 125,876,740
+cycles and TTT at 635,850,408 cycles for ten iterations, with identical output.
+Differential tests cover word loads across page boundaries, zero, sign-bit and
+carry/wraparound cases, unchanged local storage and an older stack value.
+
+## Pointer-based strided stores
+
+Recognized byte-store loops now advance the array pointer directly when a runtime
+check proves that adding the stride cannot wrap the absolute 16-bit address.
+The conservative check uses the array's linked base and the constant loop bound.
+Large or potentially wrapping strides keep the index-based loop. Empty loops
+retain the original index; completed loops convert the pointer back to the
+final induction-variable value. The stride, older stack words and loop-exit
+result are preserved. No benchmark source or algorithm changes are required.
+
+This saves another 5.97% on sieve: **142,479,626 to 133,978,566 cycles**, or
+**267.957132 seconds at 500 kHz**. Together with the local-addition changes,
+this is 23.22% fewer cycles than 174,496,766. The guarded fast path adds 66 bytes
+to the sieve image compared with the local-addition-only version.
+Tests compare optimized and generic
+code for empty and already-finished loops, page crossings, strides of 255/256/257,
+large strides and 16-bit index wraparound, including final locals and sentinels.
+
+## Indexed loads and unused increment results
+
+For a static array indexed by a word local, the backend combines the local load,
+constant-base addition and element load. It constructs the array address directly
+in HL, retaining byte signedness and word-load page handling. Scaled indices and
+other expression forms retain their prior lowering.
+
+A local word increment or decrement whose AB result is provably overwritten
+updates the low byte first, touching the high byte only on carry or borrow.
+If the result remains live, the previous full-result lowering is retained.
+Differential tests check both cases across zero, 255/256, the sign boundary,
+65535, and frame/array page crossings, with older stack words preserved.
+
+On the unchanged full sieve workload these save another **6.03%**:
+133,978,566 to **125,903,626 cycles**, or **251.807252 seconds at 500 kHz**.
+Together the three passes reduce the original 174,496,766 cycles by **27.85%**.
+E also improves from 125,876,740 to **124,742,572 cycles** (0.90% fewer), or
+249.485144 seconds. TTT remains at 635,850,408 cycles for ten iterations.
+All application results and workloads are unchanged.

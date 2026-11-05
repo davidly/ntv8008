@@ -11,6 +11,168 @@ spec=importlib.util.spec_from_file_location('smallc_codegen',ROOT/'smallc/codege
 codegen=importlib.util.module_from_spec(spec);spec.loader.exec_module(codegen)
 
 class Codegen(unittest.TestCase):
+    def test_local_additions_preserve_wrap_carry_and_older_stack(self):
+        body = []
+        for offset in (0, 255, 256):
+            for value in (0, 127, 255, 256, 32767, 32768, 65535):
+                body.append(f'''ADDRSP {offset}
+PUSH
+IMM {value}
+STIND 2
+IMM 7
+PUSH
+ADDRSP {offset+2}
+LOAD 2
+PUSH
+ADDRSP {offset+4}
+LOAD 2
+ADD
+PUSH
+IMM {(value*2)&65535}
+NE
+JTRUE fail
+IMM 7
+NE
+JTRUE fail
+IMM 7
+PUSH
+ADDRSP 262
+LOAD 2
+PUSH
+ADDRSP {offset+4}
+LOAD 2
+ADD
+PUSH
+IMM {(value+257)&65535}
+NE
+JTRUE fail
+IMM 7
+NE
+JTRUE fail
+ADDRSP {offset}
+LOAD 2
+PUSH
+IMM {value}
+NE
+JTRUE fail
+''')
+        ir = 'TEXT\nmain:\nADJSP -264\nADDRSP 260\nPUSH\nIMM 257\nSTIND 2\n'+''.join(body)+'''IMM 75
+JUMP print
+fail:
+IMM 33
+print:
+PUSH
+CALL putchar
+ADJSP 2
+ADJSP 264
+IMM 0
+RETURN
+'''
+        lowered = codegen.Generator().optimized_ir(ir)
+        self.assertEqual(lowered.count('DOUBLE'), len(body))
+        self.assertEqual(lowered.count('ADD_LOCAL '), len(body))
+        self.differential(ir, b'K')
+
+    def test_indexed_loads_preserve_signedness_and_stack(self):
+        body = []
+        for offset in (0, 255):
+            for index, byte in zip((0, 1, 255, 256, 511), (0, 1, 127, 128, 255)):
+                word = byte | ((255-byte)<<8)
+                for width in (1, -1, 2):
+                    answer = word if width==2 else (byte if width==1 or byte<128 else byte+65280)
+                    body.append(f"""IMM 7
+PUSH
+ADDRSP {offset+2}
+PUSH
+IMM {index}
+STIND 2
+IMM buffer+{250+index}
+PUSH
+IMM {word}
+STIND 2
+IMM buffer+250
+PUSH
+ADDRSP {offset+4}
+LOAD 2
+ADD
+LOAD {width}
+PUSH
+IMM {answer}
+NE
+JTRUE fail
+IMM 7
+NE
+JTRUE fail
+""")
+        ir = 'TEXT\nmain:\nADJSP -259\n'+''.join(body)+"""IMM 75
+JUMP print
+fail:
+IMM 33
+print:
+PUSH
+CALL putchar
+ADJSP 2
+ADJSP 259
+IMM 0
+RETURN
+DATA
+buffer: DS 768
+"""
+        self.assertEqual(codegen.Generator().optimized_ir(ir).count('INDEX_LOAD '), len(body))
+        self.differential(ir, b'K')
+
+    def test_dead_local_steps_and_live_update_results(self):
+        body = []
+        for offset in (0, 255, 256):
+            for value in (0, 1, 255, 256, 32767, 32768, 65535):
+                for delta in (-1, 1):
+                    body.append(f"""IMM 7
+PUSH
+ADDRSP {offset+2}
+PUSH
+IMM {value}
+STIND 2
+ADDRSP {offset+2}
+PUSH
+LOAD 2
+OFFSET {delta}
+STIND 2
+ADDRSP {offset+2}
+LOAD 2
+PUSH
+IMM {(value+delta)&65535}
+NE
+JTRUE fail
+ADDRSP {offset+2}
+PUSH
+LOAD 2
+OFFSET {delta}
+STIND 2
+PUSH
+IMM {(value+2*delta)&65535}
+NE
+JTRUE fail
+IMM 7
+NE
+JTRUE fail
+""")
+        ir = 'TEXT\nmain:\nADJSP -260\n'+''.join(body)+"""IMM 75
+JUMP print
+fail:
+IMM 33
+print:
+PUSH
+CALL putchar
+ADJSP 2
+ADJSP 260
+IMM 0
+RETURN
+"""
+        lowered = codegen.Generator().optimized_ir(ir)
+        self.assertEqual(lowered.count('LOCAL_STEP '), len(body))
+        self.assertEqual(lowered.count('LOCAL_UPDATE '), len(body))
+        self.differential(ir, b'K')
+
     def test_unused_runtime_helpers_are_pruned(self):
         ir = 'TEXT\nmain:\nIMM 0\nRETURN\n'
         assembly = codegen.generate(ir)
@@ -199,7 +361,10 @@ RETURN
 
     def test_register_strided_loops(self):
         for start,stride,bound in ((0,1,0),(512,3,255),(1,3,513),
-                                   (250,257,1024),(100,65500,101),(255,32768,256)):
+                                   (250,257,1024),(100,65500,101),(255,32768,256),
+                                   (0,255,1024),(1,256,1024),(255,257,1024),
+                                   (0,60000,1024),(65535,1,1024),
+                                   (1024,32767,1024),(254,1,256)):
             final=start
             touched=set()
             while final<bound:

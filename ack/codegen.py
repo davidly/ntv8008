@@ -440,8 +440,11 @@ class Generator:
                 elif op == 'zrl':
                     self.emit('LMI 0', 'INL', 'LMI 0')
                 elif self.optimize and op in ('inl','del'):
+                    done = self.unique()
                     self.emit('LAM', 'ADI 1' if op == 'inl' else 'SUI 1', 'LMA',
-                              'INL', 'LAM', 'ACI 0' if op == 'inl' else 'SBI 0', 'LMA')
+                              'JFC '+done, 'INL', 'LAM',
+                              'ACI 0' if op == 'inl' else 'SBI 0', 'LMA')
+                    self.label(done)
                 else:
                     # Preserve the destination across POP in C/D.
                     self.emit('LCL', 'LDH')
@@ -459,9 +462,11 @@ class Generator:
                     continue
                 if self.optimize and op in ('ine','dee'):
                     address = self.address(arg)
+                    done = self.unique()
                     self.emit('LHI HIGH (' + address + ')', 'LLI LOW (' + address + ')',
-                              'LAM', 'ADI 1' if op == 'ine' else 'SUI 1', 'LMA', 'INL',
+                              'LAM', 'ADI 1' if op == 'ine' else 'SUI 1', 'LMA', 'JFC '+done, 'INL',
                               'LAM', 'ACI 0' if op == 'ine' else 'SBI 0', 'LMA')
+                    self.label(done)
                     continue
                 self.constant(self.address(arg))
                 if op in ('loe', 'ste'):
@@ -516,18 +521,40 @@ class Generator:
             elif op == 'stride':
                 offset,stride,count,byte,base = arg.split(',')
                 count = int(count)
-                # DE holds the index, BC the stride. Address arithmetic stays
-                # separate so 16-bit index wrapping matches the original loop.
+                # DE starts as the index and BC holds the stride. Keep an
+                # index-based fallback for potentially wrapping addresses.
                 self.frame_address(int(stride))
                 self.emit('LCM','INL','LBM')
                 self.frame_address(int(offset))
                 self.emit('LEM','INL','LDM')
                 loop,body,done = self.unique(),self.unique(),self.unique()
+                base = self.address(base)
+                if count:
+                    pointer,mark,finish = self.unique(),self.unique(),self.unique()
+                    # Use an absolute pointer when the stride cannot wrap it.
+                    # Reject the boundary high byte conservatively, keeping
+                    # the index-based loop for large/wrapping strides.
+                    self.emit('LAB',f'CPI HIGH (65535D-(({base})+{count-1}D))',
+                              'JFC '+loop,
+                              'LAD',f'CPI {count>>8}D','JTC '+pointer,'JFZ '+done,
+                              'LAE',f'CPI {count&255}D','JFC '+done)
+                    self.label(pointer)
+                    self.emit('LAE','ADI LOW ('+base+')','LLA','LAD',
+                              'ACI HIGH ('+base+')','LHA')
+                    self.label(mark)
+                    self.emit('LAH',f'CPI HIGH (({base})+{count}D)',
+                              'JTC '+mark+'BODY','JFZ '+finish,
+                              'LAL',f'CPI LOW (({base})+{count}D)','JFC '+finish)
+                    self.label(mark+'BODY')
+                    self.emit(f'LMI {int(byte)&255}D','LAL','ADC','LLA',
+                              'LAH','ACB','LHA','JMP '+mark)
+                    self.label(finish)
+                    self.emit('LAL','SUI LOW ('+base+')','LEA','LAH',
+                              'SBI HIGH ('+base+')','LDA','JMP '+done)
                 self.label(loop)
                 self.emit('LAD',f'CPI {count>>8}D','JTC '+body,'JFZ '+done,
                           'LAE',f'CPI {count&255}D','JFC '+done)
                 self.label(body)
-                base = self.address(base)
                 self.emit('LAE','ADI LOW ('+base+')','LLA','LAD',
                           'ACI HIGH ('+base+')','LHA',f'LMI {int(byte)&255}D',
                           'LAE','ADC','LEA','LAD','ACB','LDA','JMP '+loop)

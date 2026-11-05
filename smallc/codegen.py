@@ -206,6 +206,20 @@ class Generator:
                     index = cursor
                     continue
             constant = None
+            if (len(first)==2 and first[0]=='ADDRSP' and int(first[1])>=0 and
+                    second==['LOAD','2'] and third==['PUSH'] and
+                    fourth==['ADDRSP',str(int(first[1])+2)] and
+                    parts(index+4)==['LOAD','2'] and parts(index+5)==['ADD']):
+                # The pushed word shifts the second address by two bytes.
+                # Read an unchanged local once when computing x + x.
+                output.extend((lines[index], 'LOAD 2', 'DOUBLE'))
+                index += 6
+                continue
+            if (first==['PUSH'] and len(second)==2 and second[0]=='ADDRSP' and
+                    int(second[1])>=2 and third==['LOAD','2'] and fourth==['ADD']):
+                output.append('ADD_LOCAL '+str(int(second[1])-2))
+                index += 4
+                continue
             relation = first[0] if first[0] in relations else None
             count = 1
             if first == ['PUSH'] and len(second) == 2 and second[0] == 'IMM' and re.fullmatch(r'-?\d+',second[1]) and third:
@@ -253,7 +267,9 @@ class Generator:
                     int(first[1]) >= 0 and
                     third == ['LOAD','2'] and len(fourth) == 2 and fourth[0] == 'OFFSET' and
                     parts(index+4) == ['STIND','2']):
-                output.append('LOCAL_UPDATE '+first[1]+','+fourth[1])
+                operation = ('LOCAL_STEP' if int(fourth[1]) in (-1,1) and dead(index+5)
+                             else 'LOCAL_UPDATE')
+                output.append(operation+' '+first[1]+','+fourth[1])
                 index += 5
                 continue
             if (len(first) == 2 and first[0] == 'ADDRSP' and second == ['PUSH'] and
@@ -270,6 +286,13 @@ class Generator:
                     scaling.append(lines[cursor])
                     cursor += 1
                 if parts(cursor) == ['ADD']:
+                    following = parts(cursor+1)
+                    if (fourth==['LOAD','2'] and not scaling and
+                            following in (['LOAD','1'],['LOAD','-1'],['LOAD','2'])):
+                        output.append('INDEX_LOAD '+','.join((
+                            str(int(third[1])-2),first[1],following[1])))
+                        index = cursor+2
+                        continue
                     # The old index was addressed after pushing the base. The
                     # fused sequence removes that push, so compensate by -2.
                     output += ['ADDRSP '+str(int(third[1])-2),'LOAD '+fourth[1]]+scaling
@@ -724,11 +747,33 @@ class Generator:
                 self.inc_hl()
                 self.emit('LDM')
                 loop,body,done = self.unique(),self.unique(),self.unique()
+                base = self.value(base)
+                if count:
+                    pointer,mark,finish = self.unique(),self.unique(),self.unique()
+                    # Use an absolute pointer when the stride cannot wrap it.
+                    # Reject the boundary high byte conservatively, keeping
+                    # the index-based loop for large/wrapping strides.
+                    self.emit('LAB',f'CPI HIGH (65535D-(({base})+{count-1}D))',
+                              'JFC '+loop,
+                              'LAD',f'CPI {count>>8}D','JTC '+pointer,'JFZ '+done,
+                              'LAE',f'CPI {count&255}D','JFC '+done)
+                    self.label(pointer)
+                    self.emit('LAE','ADI LOW ('+base+')','LLA','LAD',
+                              'ACI HIGH ('+base+')','LHA')
+                    self.label(mark)
+                    self.emit('LAH',f'CPI HIGH (({base})+{count}D)',
+                              'JTC '+mark+'BODY','JFZ '+finish,
+                              'LAL',f'CPI LOW (({base})+{count}D)','JFC '+finish)
+                    self.label(mark+'BODY')
+                    self.emit(f'LMI {int(byte)&255}D','LAL','ADC','LLA',
+                              'LAH','ACB','LHA','JMP '+mark)
+                    self.label(finish)
+                    self.emit('LAL','SUI LOW ('+base+')','LEA','LAH',
+                              'SBI HIGH ('+base+')','LDA','JMP '+done)
                 self.label(loop)
                 self.emit('LAD',f'CPI {count>>8}D','JTC '+body,'JFZ '+done,
                           'LAE',f'CPI {count&255}D','JFC '+done)
                 self.label(body)
-                base = self.value(base)
                 self.emit('LAE','ADI LOW ('+base+')','LLA','LAD',
                           'ACI HIGH ('+base+')','LHA',f'LMI {int(byte)&255}D',
                           'LAE','ADC','LEA','LAD','ACB','LDA','JMP '+loop)
@@ -768,6 +813,14 @@ class Generator:
                 self.emit('LAM','ADC','LMA','LEA')
                 self.inc_hl()
                 self.emit('LAM','ACD','LMA','LBA','LAE')
+            elif op == 'ADD_LOCAL':
+                # Retain the left value in CD while reading the right local;
+                # no temporary RAM-stack word or PUSH/POP helper is needed.
+                self.emit('LCA','LDB')
+                self.stack_address(int(arg))
+                self.emit('LAM','ADC','LEA')
+                self.inc_hl()
+                self.emit('LAM','ACD','LBA','LAE')
             elif op=='LOCAL_BYTE_UPDATE':
                 offset,value=map(int,arg.split(','));value&=65535
                 slot=offset-(self.frame_depth if self.frame_depth is not None else -65536)
@@ -776,6 +829,16 @@ class Generator:
                 # Retain the full promoted result in AB, including byte wrap.
                 self.emit('LAM',f'ADI {value&255}D','LMA','LEA','LAI 0D',
                           f'ACI {value>>8}D','LBA','LAE','; end local byte')
+            elif op == 'LOCAL_STEP':
+                offset,value = map(int,arg.split(','))
+                slot=offset-(self.frame_depth if self.frame_depth is not None else -65536)
+                self.emit('; local word store '+str(slot))
+                self.stack_address(offset)
+                done = self.unique()
+                self.emit('LAM',('ADI' if value==1 else 'SUI')+' 1D','LMA','JFC '+done)
+                self.inc_hl()
+                self.emit('LAM',('ACI' if value==1 else 'SBI')+' 0D','LMA')
+                self.label(done)
             elif op in ('LOCAL_UPDATE','LOCAL_CONST'):
                 fields = arg.split(',')
                 slot=int(fields[0])-(self.frame_depth if self.frame_depth is not None else -65536)
@@ -816,6 +879,14 @@ class Generator:
                 self.stack_address(offset)
                 self.load(width,address=False)
                 if width==1:self.emit('; end local byte')
+            elif op == 'INDEX_LOAD':
+                offset,base,width = arg.split(',')
+                base = self.value(base)
+                self.stack_address(int(offset))
+                self.emit('LAM','ADI LOW ('+base+')','LEA')
+                self.inc_hl()
+                self.emit('LAM','ACI HIGH ('+base+')','LHA','LLE')
+                self.load(int(width),address=False)
             elif op == 'LOADQUOT':
                 self.emit('LHI HIGH DQUOT','LLI LOW DQUOT','LAM','INL','LBM')
             elif op in ('RMISAVE','RMUSAVE'):

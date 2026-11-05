@@ -32,6 +32,39 @@ class Codegen(unittest.TestCase):
             with self.subTest(optimize=optimize):
                 self.assertEqual(self.execute(em,optimize),expected)
 
+    def test_word_steps_preserve_wrap_and_older_operands(self):
+        body=[]
+        for value in (0,1,255,256,32767,32768,65535):
+            for delta in (-1,1):
+                for store,load,step in (('stl -2','lol -2','inl -2' if delta==1 else 'del -2'),
+                                        ('ste value','loe value','ine value' if delta==1 else 'dee value')):
+                    body.append(f""" loc {value}
+ {store}
+ loc 1234
+ {step}
+ {load}
+ loc {(value+delta)&65535}
+ cmi 2
+ zne *9
+ loc 1234
+ cmi 2
+ zne *9
+""")
+        em=' pro $main,2\n'+''.join(body)+""" loc 75
+ bra *8
+9
+ loc 33
+8
+ cal $putchar
+ asp 2
+ loc 0
+ ret 2
+ end 2
+value
+ bss 2,0,0
+"""
+        self.differential(em,b'K')
+
     def test_byte_increment_keeps_older_operands(self):
         from ack_bytes import lower_bytes
         for conversion in ('',' loc 2\n loc 2\n ciu \n'):
@@ -147,7 +180,10 @@ buffer
     def test_register_strided_loops(self):
         from memory import strided_loops
         for start,stride,bound in ((0,1,0),(512,3,255),(1,3,513),
-                                   (250,257,1024),(100,65500,101),(255,32768,256)):
+                                   (250,257,1024),(100,65500,101),(255,32768,256),
+                                   (0,255,1024),(1,256,1024),(255,257,1024),
+                                   (0,60000,1024),(65535,1,1024),
+                                   (1024,32767,1024),(254,1,256)):
             final=start
             touched=set()
             while final<bound:
