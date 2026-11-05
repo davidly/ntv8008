@@ -1,6 +1,6 @@
 ; Native 8008 port of https://github.com/davidly/cpm_compilers/blob/main/asm/SIEVE.ASM.
 ; BYTE odd-number sieve: ten passes, SIZE=8190, with one padding byte.
-; BC = i, DE = 2*i+3, HL = flags+i / flags+k. No keyboard or CP/M calls.
+; HL scans flags+i; BC saves it, DE = 2*i+3, HL = flags+k. No keyboard or CP/M calls.
 ; Expected output: 1899 primes.
 LOOPS   EQU 10D
 FLAGS   EQU 1800H              ; 8192 bytes, ending at 3800H (exclusive)
@@ -17,94 +17,80 @@ ITERAGAIN:
         LMI 0
         LHI HIGH FLAGS
         LLI 0
+        LAI 1
 ; Sixteen flags per branch; the 8192-byte region is page aligned.
-FILL:   LMI 1
+FILL:   LMA
         INL
-        LMI 1
+        LMA
         INL
-        LMI 1
+        LMA
         INL
-        LMI 1
+        LMA
         INL
-        LMI 1
+        LMA
         INL
-        LMI 1
+        LMA
         INL
-        LMI 1
+        LMA
         INL
-        LMI 1
+        LMA
         INL
-        LMI 1
+        LMA
         INL
-        LMI 1
+        LMA
         INL
-        LMI 1
+        LMA
         INL
-        LMI 1
+        LMA
         INL
-        LMI 1
+        LMA
         INL
-        LMI 1
+        LMA
         INL
-        LMI 1
+        LMA
         INL
-        LMI 1
+        LMA
         INL
         JFZ FILL
         INH
         LAH
         CPI 038H
+        LAI 1                  ; flags are unchanged by loads
         JFZ FILL
-        LBI 0
-        LCI 0
-NEXTPRIME:
-        LAB
-        ADI HIGH FLAGS
-        LHA
-        LLC
-        LAM
-        NDA
-        JTZ NEXTI
-        ; DE = BC + BC + 3, using low-byte carry into the high byte.
-        LAC
-        ADC
-        LEA
-        LAB
-        ACB
-        LDA
-        LAE
-        ADI 3
-        LEA
-        LAD
-        ACI 0
-        LDA
-KLOOP:  LAL
-        ADE
-        LLA
-        LAH
-        ACD
-        LHA
-        CPI 038H
-        JFC INCCOUNT
-        LMI 0
-        JMP KLOOP
-INCCOUNT:
-        LHI HIGH VARS
-        LLI 0
-        LAM
-        ADI 1
-        LMA
-        JFC NEXTI          ; high byte changes only on carry
+        LHI HIGH FLAGS         ; L is zero after the fill
+        XRA
+; HL walks eight flags per branch; only the eighth INL can wrap L.
+; A stays zero while scanning: CPM tests a flag, and CFZ calls PRIME.
+SCAN:   CPM
+        CFZ PRIME
         INL
-        LAM
-        ACI 0
-        LMA
-NEXTI:  INC
-        JFZ NEXTPRIME
-        INB
-        LAB
-        CPI 020H
-        JFZ NEXTPRIME
+        CPM
+        CFZ PRIME
+        INL
+        CPM
+        CFZ PRIME
+        INL
+        CPM
+        CFZ PRIME
+        INL
+        CPM
+        CFZ PRIME
+        INL
+        CPM
+        CFZ PRIME
+        INL
+        CPM
+        CFZ PRIME
+        INL
+        CPM
+        CFZ PRIME
+        INL
+        JFZ SCAN
+        INH
+        LAH
+        CPI 038H
+        LAI 0
+        JFZ SCAN
         LHI HIGH VARS
         LLI 2
         LAM
@@ -121,6 +107,62 @@ NEXTI:  INC
         LLI LOW MESSAGE
         CAL PRINT
         HLT
+; BC saves the flag pointer. DE = 2*i+3, where i = HL-FLAGS.
+PRIME:  LBH
+        LCL
+        LAL
+        ADL
+        LEA
+        LAH
+        ACH
+        SUI 2*HIGH FLAGS
+        LDA
+        LAE
+        ADI 3
+        LEA
+        JFC STEPDONE
+        IND
+STEPDONE:
+        LAD
+        NDA
+        JFZ KBIG
+; D is zero: only a low-byte carry changes H, and LMD clears a flag.
+; A tracks L between marks.
+        LAL
+        JMP KSMALL
+KSMARK: LMD
+KSMALL: ADE
+        LLA
+        JFC KSMARK
+        INH
+        LAH
+        CPI 038H
+        LAL
+        JTC KSMARK
+        JMP COUNT
+KBMARK: LMI 0
+KBIG:   LAL
+        ADE
+        LLA
+        LAH
+        ACD
+        LHA
+        CPI 038H
+        JTC KBMARK
+COUNT:  LHI HIGH VARS
+        LLI 0
+        LAM
+        ADI 1
+        LMA
+        JFC RESUME             ; high byte changes only on carry
+        INL
+        LAM
+        ACI 0
+        LMA
+RESUME: LHB
+        LLC
+        XRA
+        RET
 MESSAGE: DATA " primes.", 012, 0
 ; Console helpers: OUT octal 12 replaces CP/M BDOS output.
 ; PRINT prints a zero-terminated string at HL, clobbering A and HL.

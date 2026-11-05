@@ -743,3 +743,25 @@ This supersedes earlier Linux/WSL-only ACK host-build limitations in historical
 entries above. Windows CI now builds the full toolchains and executes compiler
 regressions. New bundled generator sources remain verbatim with their complete
 license notices; publication inventory and required-notice checks pass.
+
+## Assembly sieve, e and TTT performance — 2026-11-05
+
+Sieve scans flags with HL and an unrolled CPM/CFZ loop, calling the prime
+handler only for set flags; steps below 256 use a dedicated marking loop.
+E keeps the dividend's low byte in A during division and indexes the x10 tables
+directly. TTT moves the board into the frames page, splits MIN/MAX search code,
+undoes moves from the parent's last tried cell, reads invariant bounds from the
+parent frame, counts nodes in D, and dispatches WINNER through a low-byte table
+with a Z-flag result.
+
+| Benchmark | Before (clocks) | After (clocks) | Change |
+| --- | ---: | ---: | ---: |
+| sieve (10 passes) | 39,067,880 | 25,430,180 | -34.9% |
+| e | 18,262,668 | 9,523,146 | -47.9% |
+| ttt (1 iteration) | 14,457,102 | 7,722,478 | -46.6% |
+
+Outputs are unchanged: 1899 primes, 192 digits of e, and three drawn TTT
+openings with 6493 nodes. The exhaustive winner test now passes the board
+address in E and checks the Z-flag result; a deliberately broken line check
+makes it fail. The workbook and runtime image were refreshed from these runs.
+

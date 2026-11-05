@@ -1,10 +1,10 @@
 ; Native 8008 port of https://github.com/davidly/cpm_compilers/blob/main/asm/E.ASM.
 ; Same factorial-series decimal spigot, DIGITS=200. No keyboard or CP/M.
-; B = n, C = quotient, DE = x. Each array element fits in a byte.
+; B = n, C = quotient, DA = x. Each array element fits in a byte.
 ; The outer-loop limit deliberately matches the 8080 source.
 DIGITS  EQU 200D
-ARRAY   EQU 1000H              ; page aligned; DIGITS must be 10..255
-HIGHVAL EQU 1100H
+ARRAY   EQU 1200H              ; page after MUL10HI; DIGITS must be 10..255
+HIGHVAL EQU 1300H
         ORG 0040H
         LHI HIGH ARRAY
         LLI DIGITS-1
@@ -25,45 +25,39 @@ OUTER:  LHI HIGH HIGHVAL
         SUI 1
         LMA
         LBA
-        LDI 0
-        LEI 0
-INNER:  LCI 0                  ; unsigned DE / B, quotient C, remainder E
-UDIV:   LAE
-        SUB
-        LEA
-        LAD
-        SBI 0
-        LDA
-        JTC DIVRESTORE
-        INC
-        JMP UDIV
-DIVRESTORE:
-        ; The failed subtraction borrowed; add B back to restore DE.
-        LAE
-        ADB
-        LEA
-        LAD
-        ACI 0
-        LDA
-DIVDONE:
         LHI HIGH ARRAY
+        LDI 0
+        XRA                    ; x = DA = 0
+; Unsigned DA / B: quotient C, remainder A. The low byte stays in A;
+; a low-byte borrow decrements D, and D going negative ends the division.
+INNER:  LCI 0FFH
+UDIV:   INC
+        SUB
+        JTC BORROW
+        INC
+        SUB
+        JFC UDIV
+BORROW: DCD
+        JFS UDIV
+        ADB                    ; undo the failed subtraction; D is dead
         LLB
-        LME                    ; a[n] = x MOD n
+        LMA                    ; a[n] = x MOD n
         DCL
-        LAM                    ; a[n-1]
-        LLA                    ; index byte a[n-1]
+        LLM                    ; index by a[n-1]
         LHI HIGH MUL10LO
-        LEM
+        LAM
         INH
-        LDM                    ; DE = 10*a[n-1], preserving n and quotient
-        LAE
+        LDM                    ; DA = 10*a[n-1], preserving n and quotient
+        INH                    ; back to ARRAY for the next n
         ADC                    ; x = 10*a[n-1] + quotient
-        LEA
-        LAD
-        ACI 0
-        LDA
+        JTC XCARRY
         DCB
         JFZ INNER
+        JMP DIGIT
+XCARRY: IND
+        DCB
+        JFZ INNER
+DIGIT:  LEA
         CAL PUTU
         LHI HIGH HIGHVAL
         LLI LOW HIGHVAL
@@ -107,7 +101,7 @@ EUNITS: LAE
         RET
 ; Two adjacent pages contain LOW/HIGH (10*n) for every byte n.
 ; This replaces repeated 16-bit doubling without changing the spigot.
-        ORG 1200H
+        ORG 1000H
 MUL10LO:
         DATA 0D,10D,20D,30D,40D,50D,60D,70D,80D,90D,100D,110D,120D,130D,140D,150D
         DATA 160D,170D,180D,190D,200D,210D,220D,230D,240D,250D,4D,14D,24D,34D,44D,54D

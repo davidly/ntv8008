@@ -46,17 +46,29 @@ those distinct historical works. `echo.asm` is an original keyboard demo;
 interpreter derivative. Rebuild these with `./a08/rebuild.sh` or `rebuild.bat`.
 
 The assembly TTT benchmark uses nine explicit 16-byte frames in one page,
-with B encoding the frame offset and depth parity. E carries the candidate
-move through occupied-cell scans and supplies WINNER's last-move argument;
-node counting and child-frame setup preserve it until that call. The parent
-resume position is written only before descent. The return path still reads
-the child's saved last move to undo its board placement.
+with B encoding the frame offset and depth parity. The board, a zero sentinel
+and the node count's high byte share that page, so H stays fixed during the
+search; D holds the count's low byte. Separate MIN and MAX copies of the search
+know the side to move statically. A frame stores its last tried board address,
+which also tells a returning child which move to undo. A MIN frame's alpha and
+a MAX frame's beta are read from the parent instead of copied. WINNER takes the
+last move's board address in E, patches only the low byte of a trampoline (all
+line checks start in one page), and returns Z for a win.
 
-One iteration takes 14,457,102 clocks (28.9 seconds at 500 kHz), versus
-16,111,346 before these frame-access refinements (10.3% fewer). Ascending moves,
-the three drawn openings and 6493 nodes are unchanged. The integration suite
-checks repeated iterations and the winner against every reachable board/last
-move, poisoning the old frame argument to verify the register interface.
+Sieve scans the flags with HL and an 8x unrolled `CPM`/`CFZ PRIME` loop, and
+marks multiples of steps below 256 in a short loop that only adjusts H on a
+low-byte carry. E keeps the dividend's low byte in A, so each subtraction of
+the repeated-subtraction division is `INC`/`SUB`/`JFC`.
+
+| Benchmark | Before (clocks) | After (clocks) | Seconds at 500 kHz |
+| --- | ---: | ---: | ---: |
+| sieve (10 passes) | 39,067,880 | 25,430,180 | 50.86 |
+| e | 18,262,668 | 9,523,146 | 19.05 |
+| ttt (1 iteration) | 14,457,102 | 7,722,478 | 15.44 |
+
+Algorithms, outputs, ascending moves, the three drawn openings and 6493 nodes
+are unchanged. The integration suite checks repeated iterations and the winner
+against every reachable board/last move.
 
 The original b8008 integer BASIC image is included as `b8008.asm` and
 `b8008.hex`. Its source macros, examples, memory layout, and regeneration

@@ -147,7 +147,8 @@ class Integration(unittest.TestCase):
         visit(1)
         self.assertGreater(len(cases), 10000)
         original = (ROOT / 'a08/ttt.asm').read_text().rsplit('        END', 1)[0]
-        # TREAD preserves B/C; WINNER takes the last move in E and preserves B.
+        # TREAD preserves B/C; WINNER takes the last move's board address in E,
+        # returns Z (A = piece) for a win, and preserves B.
         # Fixtures start above the jump table and fit in the remaining RAM.
         harness = """
         ORG 0040H
@@ -159,9 +160,12 @@ class Integration(unittest.TestCase):
         LBI 40H
 TCASE:  LCI 0
 TLOAD:  CAL TREAD
+        LDA
+        LAC
+        ADI LOW BOARD
         LHI HIGH BOARD
-        LLC
-        LMA
+        LLA
+        LMD
         INC
         LAC
         CPI 9D
@@ -169,11 +173,12 @@ TLOAD:  CAL TREAD
         CAL TREAD
         CPI 255D
         JTZ TDONE
-        LEA                    ; last move is now a register argument
-        LHI HIGH FRAMES
-        LLI 44H
-        LMI 255D               ; poison the old argument location
+        ADI LOW BOARD
+        LEA
         CAL WINNER
+        JTZ TWON
+        XRA                    ; NZ: no winner
+TWON:   LCA
         LHI HIGH VARS
         LLI 10D
         LMC

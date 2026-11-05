@@ -287,10 +287,11 @@ Shorter stack-pop helpers benefit SmallC and all five ACK frontends. SmallC siev
 and e now take **251.806988** and **248.524724 seconds**, respectively. See the
 [SmallC](smallc/README.md) and [ACK](ack/README.md) notes for individual measurements.
 
-Assembly TTT retains its nine 16-byte RAM frames, passes the last move to the
-winner checker in E, and scans occupied cells in that register. It saves the
-resume position only before descending. This reduces one iteration from
-16,111,346 to 14,457,102 clocks (10.3% fewer), with the same 6493-node search.
+The assembly benchmarks were reworked for the 8008's instruction timings:
+sieve falls from 78.14 to **50.86 seconds** (34.9% fewer clocks), e from 36.53
+to **19.05** (47.9%), and TTT from 28.91 to **15.44** per iteration (46.6%).
+Outputs and workloads, including TTT's 6493-node search, are unchanged; see
+[the a08 notes](a08/README.md) for details.
 
 Occam now places eligible sequential procedure workspaces in static BSS,
 including ttt's search arrays. This reduces target cycles by 56.9% for sieve,
