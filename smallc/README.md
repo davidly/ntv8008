@@ -487,3 +487,98 @@ Together the three passes reduce the original 174,496,766 cycles by **27.85%**.
 E also improves from 125,876,740 to **124,742,572 cycles** (0.90% fewer), or
 249.485144 seconds. TTT remains at 635,850,408 cycles for ten iterations.
 All application results and workloads are unchanged.
+
+## Direct byte comparisons and unused byte updates
+
+Unsigned-byte comparisons against constants use `CPI`; comparisons against a
+static byte use `CPM` after loading the left operand. This avoids a temporary
+register and permits reuse of cached byte locals. Byte-local updates whose
+promoted result is provably unused now omit the zero-extension/result assembly;
+updates with a live result retain the full 16-bit promoted value.
+
+For the unchanged recursive TTT search, this reduces 635,850,408 to
+**619,257,888 cycles** over ten iterations (2.61% fewer), or **123.8515776
+seconds per iteration at 500 kHz**. Each iteration still visits 6493 positions.
+Sieve and e timings are unchanged. Differential tests check comparison relations,
+byte wraparound and page-crossing locals, older stack operands, and live versus
+unused update results. The native calling convention is unchanged.
+
+## Stack helper register copies
+
+`POP` and the function-return helper now read the stack pointer's low byte once
+and copy it to E, saving three cycles per call compared with reading RAM twice.
+`PUSH` retains its overflow check and existing instruction sequence. Stack
+alignment, page-crossing behavior and register-preservation rules are unchanged.
+Tests directly check stack bytes and pointer updates, preserved registers and
+return values at even, odd and page-crossing addresses.
+
+TTT improves from 619,257,888 to **618,478,590 cycles** for ten iterations
+(0.13% fewer). E improves from 124,742,572 to **124,262,362 cycles** (0.38%
+fewer); sieve improves from 125,903,626 to **125,903,494 cycles**.
+
+## Unused global counter results
+
+For global word increments and decrements whose result is provably overwritten,
+the backend updates the low byte in memory and touches the high byte only on
+carry or borrow. Live expression results keep their existing full-value code.
+The optimization applies to global counters generally, including TTT's `moves`;
+the benchmark source and search order are unchanged.
+
+TTT improves from 618,478,590 to **608,108,290 cycles** for ten iterations
+(1.68% fewer), or **121.621658 seconds per iteration at 500 kHz**, still visiting
+6493 positions per iteration. Differential tests check increments and decrements,
+16-bit wraparound, page-crossing globals, live results and older stack operands.
+
+## Shared depth parity test in TTT
+
+TTT now initializes `piece` and `value` together in one `if/else` on `depth & 1`,
+avoiding the repeated parity test from two conditional expressions. Search order,
+results and the 6493 positions per iteration are unchanged. This source change
+reduces the ten-iteration workload from 608,108,290 to **602,387,710 cycles**
+(0.94% fewer), or **120.477542 seconds per iteration at 500 kHz**.
+
+## Proven first loop iterations
+
+When a constant byte-local initialization immediately precedes a constant-bound test,
+the backend evaluates that first condition at compile time. If it proves that
+the body executes and the body overwrites the comparison result, initialization
+jumps directly to the body. The original test and increment labels remain for
+later iterations and `continue`. Potentially empty loops, intervening effects,
+mismatched load/store widths and live comparison results retain their prior code.
+Word loops retain their tests because bypassing them can prevent frame-address
+reuse in the body on every iteration, outweighing the initial saving.
+The proof accounts for byte truncation, signed loads and signed/unsigned relations.
+
+This skips the initial tests for TTT's `pos` and `iteration` loops, reducing
+602,387,710 to **601,386,074 cycles** for ten iterations (0.17% fewer), or
+**120.2772148 seconds per iteration at 500 kHz**. Output and search order remain
+unchanged. Differential tests include initially false conditions, byte/word wrap,
+signed and unsigned comparisons, reversed branch conditions and continue edges.
+
+## Byte-selector jump tables
+
+A dense jump table starting at case zero omits its selector-high-byte check when
+the selector expression ends in an unsigned-byte load. The upper bound remains
+checked, so byte values outside the table still select the default. Signed loads,
+word loads, subsequent arithmetic and tables starting at another case retain the
+full check; subtracting a nonzero lower bound could borrow into the high byte.
+
+With this change to its nine-entry table, TTT now takes **596,795,114 cycles**
+for ten iterations, down from 601,386,074 (0.76% fewer), or **119.3590228 seconds per
+iteration at 500 kHz**. Output and the 6493 positions per iteration are unchanged.
+Differential tests cover in-range/default selectors, signed-byte and word loads,
+byte truncation, arithmetic producing nonzero high bytes and nonzero table bases.
+
+## Indexed loads with byte indices
+
+The direct indexed-load lowering also handles unsigned-byte local indices. It
+forms HL from the static base and zero-extended index without constructing and
+shuffling a full AB address. Byte-local load markers retain register-cache reuse.
+Signed-byte indices keep their existing sign-extending path, and result loads
+retain their signedness and word page-crossing checks.
+
+TTT improves from 596,795,114 to **586,743,914 cycles** for ten iterations
+(1.68% fewer), or **117.3487828 seconds per iteration at 500 kHz**, with the same
+6493 positions per iteration. Differential indexed-load tests cover byte and word
+indices, byte truncation, signed/unsigned byte and word results, frame and array
+page crossings and older stack operands.

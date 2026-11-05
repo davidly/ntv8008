@@ -276,6 +276,17 @@ SmallC from 131.2 to 127.2 (3.1%). It fuses unsigned byte increments, uses
 direct-memory byte comparisons and shorter zero-offset pointer loads, and
 specializes ACK frame entry/exit and SmallC returns.
 
+The latest SmallC pass lowers TTT further to **117.35 seconds per iteration**
+(586,743,914 cycles for ten iterations), 7.72% fewer cycles than the previously
+published 127.17 seconds. It uses direct byte comparisons, omits unused update
+results, updates global counters' high bytes only on carry/borrow, skips proven
+first byte-loop tests, simplifies byte-selector jump-table dispatch, and forms
+indexed-load addresses directly from byte locals. TTT also shares one depth-parity
+test when initializing `piece` and `value`; search order and node count are unchanged.
+Shorter stack-pop helpers benefit SmallC and all five ACK frontends. SmallC sieve
+and e now take **251.806988** and **248.524724 seconds**, respectively. See the
+[SmallC](smallc/README.md) and [ACK](ack/README.md) notes for individual measurements.
+
 Assembly TTT retains its nine 16-byte RAM frames, passes the last move to the
 winner checker in E, and scans occupied cells in that register. It saves the
 resume position only before descending. This reduces one iteration from

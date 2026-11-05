@@ -133,7 +133,7 @@ def stack_depths(text,function_names):
         elif op in ('DENSE_SWITCH','SWITCH'):
             successors=[labels[t] for t in data_targets if t in labels]
             if op=='DENSE_SWITCH':
-                default=arg.split(',')[-1]
+                default=arg.split(',')[3]
                 if default in labels:successors.append(labels[default])
         for j in successors:
             if j in depths:

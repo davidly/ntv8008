@@ -206,6 +206,13 @@ class Generator:
                     index = cursor
                     continue
             constant = None
+            if (len(first)==2 and first[0]=='IMM' and
+                    re.fullmatch(r'[$A-Za-z_][\w$]*',first[1]) and
+                    second==['LOAD','2'] and third in (['OFFSET','1'],['OFFSET','-1']) and
+                    fourth==['STORE',first[1]+',2'] and dead(index+4)):
+                output.append('GLOBAL_STEP '+first[1]+','+third[1])
+                index += 4
+                continue
             if (len(first)==2 and first[0]=='ADDRSP' and int(first[1])>=0 and
                     second==['LOAD','2'] and third==['PUSH'] and
                     fourth==['ADDRSP',str(int(first[1])+2)] and
@@ -260,7 +267,8 @@ class Generator:
             if (len(first)==2 and first[0]=='ADDRSP' and second==['PUSH'] and
                     third==['LOAD','1'] and len(fourth)==2 and fourth[0]=='OFFSET' and
                     parts(index+4)==['STIND','1']):
-                output.append('LOCAL_BYTE_UPDATE '+first[1]+','+fourth[1])
+                operation = 'LOCAL_BYTE_STEP' if dead(index+5) else 'LOCAL_BYTE_UPDATE'
+                output.append(operation+' '+first[1]+','+fourth[1])
                 index+=5
                 continue
             if (len(first) == 2 and first[0] == 'ADDRSP' and second == ['PUSH'] and
@@ -287,10 +295,11 @@ class Generator:
                     cursor += 1
                 if parts(cursor) == ['ADD']:
                     following = parts(cursor+1)
-                    if (fourth==['LOAD','2'] and not scaling and
+                    if (fourth in (['LOAD','2'],['LOAD','1']) and not scaling and
                             following in (['LOAD','1'],['LOAD','-1'],['LOAD','2'])):
                         output.append('INDEX_LOAD '+','.join((
-                            str(int(third[1])-2),first[1],following[1])))
+                            str(int(third[1])-2),first[1],following[1]))+
+                            (',byte' if fourth==['LOAD','1'] else ''))
                         index = cursor+2
                         continue
                     # The old index was addressed after pushing the base. The
@@ -367,6 +376,46 @@ class Generator:
             return 'FILL '+','.join(loop[name] for name in ('index','count','byte','base'))+'\n'
         return pattern.sub(lower,text)
 
+    def loop_entries(self, text):
+        """Bypass a proven-true first test; retain the original loop back edge."""
+        lines = text.splitlines()
+        labels = {line[:-1]:i for i,line in enumerate(lines) if line.endswith(':')}
+        pattern = re.compile(
+            r'^ADDRSP (?P<slot>\d+)\nPUSH\nIMM (?P<initial>-?\d+)\n'
+            r'STIND (?P<store>1)\n(?P<test>[$\w]+):\n'
+            r'ADDRSP (?P=slot)\nLOAD (?P<load>-1|1)\nPUSH\n'
+            r'IMM (?P<bound>-?\d+)\n(?P<relation>U?(?:EQ|NE|LT|LE|GT|GE))\n'
+            r'(?P<branch>JTRUE|JFALSE) (?P<body>[$\w]+)\nJUMP (?P<exit>[$\w]+)$', re.M)
+
+        def lower(loop):
+            width = int(loop['load'])
+            if abs(width) != int(loop['store']):
+                return loop[0]
+            left = int(loop['initial']) & (255 if abs(width)==1 else 65535)
+            if width == -1 and left >= 128:
+                left |= 0xff00
+            right = int(loop['bound']) & 65535
+            relation = loop['relation']
+            if not relation.startswith('U'):
+                left = (left+32768)%65536-32768
+                right = (right+32768)%65536-32768
+            truth = {'EQ':left==right, 'NE':left!=right, 'LT':left<right,
+                     'LE':left<=right, 'GT':left>right, 'GE':left>=right}[relation.lstrip('U')]
+            if truth != (loop['branch']=='JTRUE'):
+                return loop[0]
+            # Skipping the comparison also discards its boolean AB result.
+            # Accept only a body that immediately overwrites AB, even if other
+            # predecessors enter the test or body labels.
+            cursor = labels.get(loop['body'], len(lines)) + 1
+            while cursor < len(lines) and lines[cursor].endswith(':'):
+                cursor += 1
+            if cursor >= len(lines) or lines[cursor].split()[0] not in ('IMM','ADDRSP'):
+                return loop[0]
+            initialization, test = loop[0].split(loop['test']+':', 1)
+            return initialization+'JUMP '+loop['body']+'\n'+loop['test']+':'+test
+
+        return pattern.sub(lower, text)
+
     def strided_loops(self, text):
         # fill_loops has already normalized whitespace and comments.
         allocations=self.allocations(text)
@@ -442,8 +491,13 @@ class Generator:
                         name = '$'+self.unique()
                     extra += ['DATA',name+':','DW '+','.join(
                         cases.get(x,default) for x in range(low,high+1))]
+                    # LOAD 1 zero-extends AB. Restrict the shortcut to tables
+                    # starting at zero: subtracting a nonzero low case could
+                    # otherwise borrow into the high byte.
+                    byte = low==0 and adjusted[-1:] == ['LOAD 1']
                     lines[index:cursor+1] = adjusted+[
-                        'DENSE_SWITCH '+','.join((name,str(low),str(high),default))]
+                        'DENSE_SWITCH '+','.join((name,str(low),str(high),default))+
+                        (',byte' if byte else '')]
                     fused = True
                     break
                 if op=='PUSH':
@@ -644,7 +698,9 @@ class Generator:
         function_names={'main'} | set(re.findall(r'(?m)^\s*;\s*FUNCTION\s+(\w+)',text))
         function_names.update(re.findall(r'(?m)^\s*CALL\s+(\w+)',text))
         if self.optimize:
-            text = self.optimized_ir(thread_booleans(self.fold_expressions(self.dense_switches(self.strided_loops(self.fill_loops(self.reuse_quotients(text)))))))
+            text = self.strided_loops(self.fill_loops(self.reuse_quotients(text)))
+            text = self.loop_entries(text)
+            text = self.optimized_ir(thread_booleans(self.fold_expressions(self.dense_switches(text))))
             # Also catches loads exposed by indexed-address folding.
             text = re.sub(r'(?m)^ADDRSP (-?\d+)\nLOAD (-?\d+)$',
                           r'STACK_LOAD \1,\2', text)
@@ -690,7 +746,9 @@ class Generator:
                               mnemonic+' %dD' % ((value >> 8) & 255),'LBA','LAE')
             elif op == 'BYTE_CMP':
                 relation,jump,target,constant,keep,left,right=arg.split(',')
-                for number,operand in enumerate((right,left)):
+                right_kind,right_value=right.split('~',1)
+                direct = right_kind in ('i','g')
+                for number,operand in enumerate((left,) if direct else (right,left)):
                     kind,value=operand.split('~',1)
                     if kind=='i': self.emit('LAI '+value+'D')
                     elif kind=='g':
@@ -700,12 +758,18 @@ class Generator:
                         slot=int(value)-(self.frame_depth if self.frame_depth is not None else -65536)
                         self.emit('; local byte load '+str(slot))
                         self.stack_address(int(value));self.emit('LAM','; end local byte')
-                    if number==0:self.emit('LDA')
+                    if number==0 and not direct:self.emit('LDA')
                 condition=relation.lstrip('U').lower()
                 if jump=='JFALSE' and keep=='0':
                     condition={'eq':'ne','ne':'eq','lt':'ge','le':'gt','gt':'le','ge':'lt'}[condition]
                 yes=self.unique() if keep=='1' else self.value(target)
-                self.emit('CPD')
+                if right_kind=='i':
+                    self.emit('CPI '+right_value+'D')
+                elif right_kind=='g':
+                    address=self.value(right_value)
+                    self.emit('LHI HIGH ('+address+')','LLI LOW ('+address+')','CPM')
+                else:
+                    self.emit('CPD')
                 if condition in ('eq','ne','lt','ge'):
                     self.emit({'eq':'JTZ','ne':'JFZ','lt':'JTC','ge':'JFC'}[condition]+' '+yes)
                 elif condition=='le': self.emit('JTC '+yes,'JTZ '+yes)
@@ -821,14 +885,26 @@ class Generator:
                 self.emit('LAM','ADC','LEA')
                 self.inc_hl()
                 self.emit('LAM','ACD','LBA','LAE')
-            elif op=='LOCAL_BYTE_UPDATE':
+            elif op in ('LOCAL_BYTE_UPDATE','LOCAL_BYTE_STEP'):
                 offset,value=map(int,arg.split(','));value&=65535
                 slot=offset-(self.frame_depth if self.frame_depth is not None else -65536)
                 self.emit('; local byte update '+str(slot))
                 self.stack_address(offset)
+                if op=='LOCAL_BYTE_STEP':
+                    self.emit('LAM',f'ADI {value&255}D','LMA','; end local byte')
+                    continue
                 # Retain the full promoted result in AB, including byte wrap.
                 self.emit('LAM',f'ADI {value&255}D','LMA','LEA','LAI 0D',
                           f'ACI {value>>8}D','LBA','LAE','; end local byte')
+            elif op == 'GLOBAL_STEP':
+                name,value = arg.split(',')
+                address = self.value(name)
+                self.emit('LHI HIGH ('+address+')','LLI LOW ('+address+')')
+                done = self.unique()
+                self.emit('LAM',('ADI' if value=='1' else 'SUI')+' 1D','LMA','JFC '+done)
+                self.inc_hl()
+                self.emit('LAM',('ACI' if value=='1' else 'SBI')+' 0D','LMA')
+                self.label(done)
             elif op == 'LOCAL_STEP':
                 offset,value = map(int,arg.split(','))
                 slot=offset-(self.frame_depth if self.frame_depth is not None else -65536)
@@ -880,12 +956,23 @@ class Generator:
                 self.load(width,address=False)
                 if width==1:self.emit('; end local byte')
             elif op == 'INDEX_LOAD':
-                offset,base,width = arg.split(',')
+                fields = arg.split(',')
+                offset,base,width = fields[:3]
                 base = self.value(base)
+                byte = fields[3:] == ['byte']
+                if byte:
+                    slot=int(offset)-(self.frame_depth if self.frame_depth is not None else -65536)
+                    self.emit('; local byte load '+str(slot))
                 self.stack_address(int(offset))
-                self.emit('LAM','ADI LOW ('+base+')','LEA')
-                self.inc_hl()
-                self.emit('LAM','ACI HIGH ('+base+')','LHA','LLE')
+                self.emit('LAM')
+                if byte:
+                    self.emit('; end local byte')
+                self.emit('ADI LOW ('+base+')','LEA')
+                if byte:
+                    self.emit('LAI HIGH ('+base+')','ACI 0D','LHA','LLE')
+                else:
+                    self.inc_hl()
+                    self.emit('LAM','ACI HIGH ('+base+')','LHA','LLE')
                 self.load(int(width),address=False)
             elif op == 'LOADQUOT':
                 self.emit('LHI HIGH DQUOT','LLI LOW DQUOT','LAM','INL','LBM')
@@ -995,12 +1082,15 @@ class Generator:
             elif op in ('JTRUE','JFALSE'):
                 self.emit('ORB', ('JFZ ' if op == 'JTRUE' else 'JTZ ') + self.value(arg))
             elif op == 'DENSE_SWITCH':
-                name,low,high,default = arg.split(',')
+                fields = arg.split(',')
+                name,low,high,default = fields[:4]
+                byte = fields[4:] == ['byte']
                 table,target = self.value(name),self.value(default)
                 if int(low):
                     self.add_constant(str(-int(low)))
-                self.emit('LEA','LAB','NDA','JFZ '+target,'LAE',
-                          f'CPI {int(high)-int(low)+1}D','JFC '+target,
+                if not byte:
+                    self.emit('LEA','LAB','NDA','JFZ '+target,'LAE')
+                self.emit(f'CPI {int(high)-int(low)+1}D','JFC '+target,
                           'ADA','ADI LOW ('+table+')','LLA',
                           'LAI HIGH ('+table+')','ACI 0','LHA','LAM')
                 self.inc_hl()

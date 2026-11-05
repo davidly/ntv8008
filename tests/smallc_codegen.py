@@ -11,6 +11,280 @@ spec=importlib.util.spec_from_file_location('smallc_codegen',ROOT/'smallc/codege
 codegen=importlib.util.module_from_spec(spec);spec.loader.exec_module(codegen)
 
 class Codegen(unittest.TestCase):
+    def test_byte_switch_omits_only_proven_zero_high_byte_check(self):
+        for low in (0, 2):
+            for width in (1, -1, 2):
+                for offset in (0, 256):
+                    for selector in (0, 1, 2, 3, 4, 5, 127, 128, 255, 256, 65535):
+                        value = selector & (255 if abs(width)==1 else 65535)
+                        if width==-1 and value>=128:
+                            value -= 256
+                        value = (value+offset) & 65535
+                        cases = range(low, low+4)
+                        targets = ','.join(f'{x},case{x}' for x in cases)
+                        dispatch = ''.join(f'case{x}:\nIMM {65+x}\nJUMP print\n' for x in cases)
+                        arithmetic = f'OFFSET {offset}\n' if offset else ''
+                        ir = f'''TEXT
+main:
+ADJSP -2
+ADDRSP 0
+PUSH
+IMM {selector}
+STIND {abs(width)}
+IMM table
+PUSH
+ADDRSP 2
+LOAD {width}
+{arithmetic}SWITCH
+'''+dispatch+'''default:
+IMM 33
+print:
+PUSH
+CALL putchar
+ADJSP 2
+ADJSP 2
+IMM 0
+RETURN
+DATA
+table:
+DW '''+targets+''',default,0
+'''
+                        with self.subTest(low=low,width=width,offset=offset,selector=selector):
+                            byte = low==0 and width==1 and offset==0
+                            lowered = codegen.Generator().dense_switches(ir)
+                            self.assertEqual(',byte' in lowered, byte)
+                            assembly = codegen.generate(ir)
+                            high_check = 'LEA\n        LAB\n        NDA\n        JFZ SC_64656661756C74\n        LAE'
+                            self.assertEqual(high_check in assembly, not byte)
+                            expected = bytes([65+value if value in cases else 33])
+                            self.differential(ir, expected)
+                            if byte and selector in (0, 3):
+                                self.differential(ir, expected, table_offset=255)
+
+    def test_proven_loop_entries_keep_later_tests_and_continue(self):
+        cases = (
+            (1, 0, 4, 'ULT', 'JTRUE', 1, 4),
+            (1, 256, 3, 'ULT', 'JTRUE', 1, 3),
+            (-1, 255, 2, 'LT', 'JTRUE', 1, 3),
+            (1, 3, 0, 'UGT', 'JTRUE', -1, 3),
+            (1, 0, 4, 'GE', 'JFALSE', 1, 4),
+            (2, 65535, 2, 'LT', 'JTRUE', 1, 3),
+            (2, 3, 0, 'UGT', 'JTRUE', -1, 3),
+            (2, 0, 4, 'GE', 'JFALSE', 1, 4),
+            (2, 0, 1, 'NE', 'JTRUE', 1, 1),
+            (1, 0, 0, 'ULT', 'JTRUE', 1, 0),
+            (2, 32768, 1, 'ULT', 'JTRUE', 1, 0),
+        )
+        for width,initial,bound,relation,branch,step,count in cases:
+            ir = f'''TEXT
+main:
+ADJSP -4
+ADDRSP 2
+PUSH
+IMM 0
+STIND 2
+ADDRSP 0
+PUSH
+IMM {initial}
+STIND {abs(width)}
+test:
+ADDRSP 0
+LOAD {width}
+PUSH
+IMM {bound}
+{relation}
+{branch} body
+JUMP exit
+increment:
+ADDRSP 0
+PUSH
+LOAD {width}
+OFFSET {step}
+STIND {abs(width)}
+JUMP test
+body:
+ADDRSP 2
+PUSH
+LOAD 2
+OFFSET 1
+STIND 2
+JUMP increment
+exit:
+ADDRSP 2
+LOAD 2
+PUSH
+IMM {count}
+NE
+JTRUE fail
+IMM 75
+JUMP print
+fail:
+IMM 33
+print:
+PUSH
+CALL putchar
+ADJSP 2
+ADJSP 4
+IMM 0
+RETURN
+'''
+            with self.subTest(width=width,initial=initial,relation=relation):
+                lowered = codegen.Generator().loop_entries(ir)
+                self.assertEqual('JUMP body\ntest:' in lowered, count != 0 and abs(width)==1)
+                self.assertIn('JUMP test\nbody:', lowered)
+                self.differential(ir, b'K')
+
+    def test_loop_entry_retains_live_boolean_and_intervening_effects(self):
+        prefix = '''ADDRSP 0
+PUSH
+IMM 0
+STIND 1
+'''
+        test = '''test:
+ADDRSP 0
+LOAD 1
+PUSH
+IMM 9
+ULT
+JTRUE body
+JUMP exit
+body:
+'''
+        for source in (prefix+test+'PUSH\n',
+                       prefix+'CALL mutate\n'+test+'IMM 0\n',
+                       prefix+test.replace('LOAD 1','LOAD 2')+'IMM 0\n'):
+            self.assertEqual(codegen.Generator().loop_entries(source), source)
+
+    def test_global_steps_preserve_wrap_live_results_and_older_stack(self):
+        body = []
+        for value in (0, 1, 255, 256, 32767, 32768, 65535):
+            for delta in (-1, 1):
+                for live in (False, True):
+                    expected = (value+delta) & 65535
+                    body.append(f'''IMM {value}
+STORE table,2
+IMM 7
+PUSH
+IMM table
+LOAD 2
+OFFSET {delta}
+STORE table,2
+''')
+                    if live:
+                        body.append(f'''PUSH
+IMM {expected}
+NE
+JTRUE fail
+''')
+                    body.append(f'''IMM table
+LOAD 2
+PUSH
+IMM {expected}
+NE
+JTRUE fail
+IMM 7
+NE
+JTRUE fail
+''')
+        ir = 'TEXT\nmain:\n'+''.join(body)+'''IMM 75
+JUMP print
+fail:
+IMM 33
+print:
+PUSH
+CALL putchar
+ADJSP 2
+IMM 0
+RETURN
+DATA
+table:
+DW 0
+'''
+        lowered = codegen.Generator().optimized_ir(ir)
+        self.assertEqual(lowered.count('GLOBAL_STEP '), 14)
+        for offset in (254, 255):
+            with self.subTest(offset=offset):
+                self.differential(ir, b'K', offset, table_symbol='table')
+
+    def test_runtime_stack_helpers_preserve_values_and_cross_pages(self):
+        body = []
+
+        def check(instruction, value):
+            return f'{instruction}\nCPI {value}D\nJFZ fail\n'
+
+        for address in (0x3000, 0x3001, 0x30fe, 0x30ff,
+                        0x3100, 0x3101, 0x31fe, 0x31ff):
+            for value in (0, 0x81ff, 0xffff):
+                initial = address + 2
+                body.append(f'''LHI HIGH RSP
+LLI LOW RSP
+LMI {initial & 255}D
+INL
+LMI {initial >> 8}D
+LAI {value & 255}D
+LBI {value >> 8}D
+LCI 90D
+LDI 165D
+CAL PUSH
+''')
+                body.append(check('NDA', value & 255))
+                body.append(check('LAB', value >> 8))
+                body.append(check('LAC', 90))
+                body.append(check('LAD', 165))
+                body.append('LHI HIGH RSP\nLLI LOW RSP\n')
+                body.append(check('LAM', address & 255))
+                body.append(check('INL\nLAM', address >> 8))
+                body.append(f'LHI {address >> 8}D\nLLI {address & 255}D\n')
+                body.append(check('LAM', value & 255))
+                body.append(f'LHI {(address+1) >> 8}D\nLLI {(address+1) & 255}D\n')
+                body.append(check('LAM', value >> 8))
+                body.append('LAI 17D\nLBI 34D\nCAL POP\n')
+                body.append(check('NDA', value & 255))
+                body.append(check('LAB', value >> 8))
+                body.append(check('LAC', 90))
+                body.append(check('LAD', 165))
+                body.append('LHI HIGH RSP\nLLI LOW RSP\n')
+                body.append(check('LAM', initial & 255))
+                body.append(check('INL\nLAM', initial >> 8))
+            label = 'returned_' + str(address)
+            body.append(f'''LAI LOW {label}
+LBI HIGH {label}
+CAL PUSH
+LAI 255D
+LBI 129D
+JMP SCRETURN
+{label}:
+''')
+            body.append(check('NDA', 255))
+            body.append(check('LAB', 129))
+            body.append('LHI HIGH RSP\nLLI LOW RSP\n')
+            body.append(check('LAM', initial & 255))
+            body.append(check('INL\nLAM', initial >> 8))
+        runtime = (ROOT / 'smallc/runtime.asm').read_text()
+        program = ''.join(body) + '''LAI 75D
+OUT 12
+HLT
+fail:
+LAI 33D
+OUT 12
+HLT
+STACKMIN EQU 2000H
+END
+'''
+        assembly = runtime + '\nSC_6D61696E:\n' + '\n'.join(
+            line if line.endswith(':') or ' EQU ' in line else '        '+line
+            for line in program.splitlines()) + '\n'
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory, 'stack.asm')
+            image = source.with_suffix('.hex')
+            source.write_text(assembly)
+            result = subprocess.run([str(ASSEMBLER), str(source), '-o'+str(image)],
+                                    capture_output=True, timeout=10)
+            self.assertEqual(result.returncode, 0, result.stdout+result.stderr)
+            result = run('-n:2000000', image)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(result.stdout, b'K')
+
     def test_local_additions_preserve_wrap_carry_and_older_stack(self):
         body = []
         for offset in (0, 255, 256):
@@ -75,25 +349,26 @@ RETURN
 
     def test_indexed_loads_preserve_signedness_and_stack(self):
         body = []
-        for offset in (0, 255):
-            for index, byte in zip((0, 1, 255, 256, 511), (0, 1, 127, 128, 255)):
-                word = byte | ((255-byte)<<8)
-                for width in (1, -1, 2):
-                    answer = word if width==2 else (byte if width==1 or byte<128 else byte+65280)
-                    body.append(f"""IMM 7
+        for index_width in (1, 2):
+            for offset in (0, 255):
+                for index, byte in zip((0, 1, 255, 256, 511), (0, 1, 127, 128, 255)):
+                    word = byte | ((255-byte)<<8)
+                    for width in (1, -1, 2):
+                        answer = word if width==2 else (byte if width==1 or byte<128 else byte+65280)
+                        body.append(f"""IMM 7
 PUSH
 ADDRSP {offset+2}
 PUSH
 IMM {index}
-STIND 2
-IMM buffer+{250+index}
+STIND {index_width}
+IMM buffer+{250+(index&255 if index_width==1 else index)}
 PUSH
 IMM {word}
 STIND 2
 IMM buffer+250
 PUSH
 ADDRSP {offset+4}
-LOAD 2
+LOAD {index_width}
 ADD
 LOAD {width}
 PUSH
@@ -173,6 +448,47 @@ RETURN
         self.assertEqual(lowered.count('LOCAL_UPDATE '), len(body))
         self.differential(ir, b'K')
 
+    def test_dead_byte_updates_preserve_storage_and_older_stack(self):
+        body=[]
+        for offset in (0,255,256):
+            for value in (0,127,255):
+                for delta in (-257,-1,1,257):
+                    body.append(f"""IMM 7
+PUSH
+ADDRSP {offset+2}
+PUSH
+IMM {value}
+STIND 1
+ADDRSP {offset+2}
+PUSH
+LOAD 1
+OFFSET {delta}
+STIND 1
+ADDRSP {offset+2}
+LOAD 1
+PUSH
+IMM {(value+delta)&255}
+NE
+JTRUE fail
+IMM 7
+NE
+JTRUE fail
+""")
+        ir='TEXT\nmain:\nADJSP -260\n'+''.join(body)+"""IMM 75
+JUMP print
+fail:
+IMM 33
+print:
+PUSH
+CALL putchar
+ADJSP 2
+ADJSP 260
+IMM 0
+RETURN
+"""
+        self.assertEqual(codegen.Generator().optimized_ir(ir).count('LOCAL_BYTE_STEP '),len(body))
+        self.differential(ir,b'K')
+
     def test_unused_runtime_helpers_are_pruned(self):
         ir = 'TEXT\nmain:\nIMM 0\nRETURN\n'
         assembly = codegen.generate(ir)
@@ -181,13 +497,13 @@ RETURN
         self.assertIn('SCRETURN:', assembly)
         self.differential(ir, b'')
 
-    def differential(self,ir,expected,table_offset=None):
+    def differential(self,ir,expected,table_offset=None,table_symbol=None):
         for optimize in (False,True):
             with self.subTest(optimize=optimize), tempfile.TemporaryDirectory() as directory:
                 source=Path(directory,'test.asm');image=source.with_suffix('.hex')
                 assembly=codegen.generate(ir,optimize=optimize)
                 if table_offset is not None:
-                    symbol=codegen.Generator().symbol('$SCL1' if optimize else 'table')
+                    symbol=codegen.Generator().symbol(table_symbol or ('$SCL1' if optimize else 'table'))
                     self.assertIn(symbol+':',assembly)
                     assembly=assembly.replace(symbol+':',
                         '_SC_TABLE_PAGE:\n        ORG ((_SC_TABLE_PAGE+255D) AND 0FF00H)+'+

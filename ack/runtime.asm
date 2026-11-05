@@ -48,6 +48,7 @@ ADDSP:  LHI HIGH RSP
 ; PUSH/POP preserve C/D and use ACK's word-aligned stack.
 ; Only update the pointer high byte on a borrow/carry; loads preserve carry.
 ; Keep the PUSH bounds check on both paths, including the no-borrow path.
+; Copy the old pointer low byte to E instead of reading it from RAM twice.
 PUSH:   LEA
         LHI HIGH RSP
         LLI LOW RSP
@@ -72,8 +73,8 @@ PUSHREADY:
         RET
 POP:    LHI HIGH RSP
         LLI LOW RSP
-        LEM
         LAM
+        LEA
         ADI 2
         LMA
         INL

@@ -70,8 +70,13 @@ unsigned char move;
         }
         if (depth == 8) return 5;
     }
-    piece = (depth & 1) ? 1 : 2;
-    value = (depth & 1) ? 2 : 9;
+    if (depth & 1) {
+        piece = 1;
+        value = 2;
+    } else {
+        piece = 2;
+        value = 9;
+    }
     for (pos = 0; pos < 9; ++pos) {
         if (board[pos]) continue;
         board[pos] = piece;

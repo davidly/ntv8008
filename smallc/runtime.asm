@@ -48,6 +48,7 @@ ADDSP:  LHI HIGH RSP
 ; PUSH/POP preserve C/D and handle odd stack addresses/page crossings.
 ; Only update the pointer high byte on a borrow/carry; loads preserve carry.
 ; Keep the PUSH bounds check on both paths, including the no-borrow path.
+; POP and SCRETURN copy the old pointer low byte to E rather than rereading RAM.
 PUSH:   LEA
         LHI HIGH RSP
         LLI LOW RSP
@@ -75,8 +76,8 @@ PUSHWORD:
         RET
 POP:    LHI HIGH RSP
         LLI LOW RSP
-        LEM
         LAM
+        LEA
         ADI 2
         LMA
         INL
@@ -533,8 +534,8 @@ SCRETURN:
         LDB
         LHI HIGH RSP
         LLI LOW RSP
-        LEM
         LAM
+        LEA
         ADI 2
         LMA
         INL

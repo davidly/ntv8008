@@ -553,3 +553,24 @@ improves by 0.17% and TTT by 0.72%. Occam and BASIC timings are unchanged.
 Boundary tests compare optimized and generic EM for empty/already-finished
 loops, page crossings, large and wrapping strides, word carry/borrow/wraparound,
 and older live operands. All five frontends retain their original outputs.
+
+## Stack pointer register copy
+
+The shared runtime's `POP` reads the stack pointer's low byte once and copies it
+to E instead of reading RAM twice, saving three cycles per call. This is the same
+change as SmallC's `POP`; ACK's separate frame-return helper does not contain
+that repeated read. `PUSH`, register preservation and stack checks are unchanged.
+
+Rebuilt benchmarks produce identical output with the following cycle counts:
+
+| Frontend | Sieve | E | TTT (ten iterations) |
+| --- | ---: | ---: | ---: |
+| C | 148,559,868 | 171,318,508 | 725,540,982 |
+| Pascal | 316,895,014 | 286,559,656 | 2,354,540,420 |
+| Modula-2 | 368,164,228 | 262,693,250 | 1,588,752,590 |
+| Occam | 290,779,670 | 328,710,078 | 1,831,444,390 |
+| BASIC | 1,278,485,094 | 307,852,262 | 2,436,950,244 |
+
+This saves 0.15% to 0.65% across these workloads. Stack tests cover pointer page
+crossings, preserved AB/CD registers, stored words and overflow on both paths;
+all five frontend suites also pass with compilation enabled.
