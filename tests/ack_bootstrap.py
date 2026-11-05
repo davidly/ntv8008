@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """ACK Unix build prerequisites must be checked before building anything."""
 import importlib.util
+import io
+from contextlib import redirect_stdout
 from pathlib import Path
 import unittest
 from unittest.mock import patch
@@ -45,6 +47,13 @@ class Prerequisites(unittest.TestCase):
 
 
 class Downloads(unittest.TestCase):
+    def setUp(self):
+        # Expected simulated download failures should not look like real ones
+        # in the regression runner's output.
+        output = redirect_stdout(io.StringIO())
+        output.__enter__()
+        self.addCleanup(output.__exit__, None, None, None)
+
     def test_connection_reset_and_incomplete_read_are_retried(self):
         from unittest.mock import MagicMock
         response=MagicMock()

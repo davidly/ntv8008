@@ -117,6 +117,8 @@ py -3 tests\forth.py
 `PYTHON` selects a Python command for either rebuild script. The Windows
 script otherwise uses `py -3` or `python`. The default `test.sh` / `test.bat`
 suites include the Forth tests and all three full benchmarks. Tests rebuild
+the installed Forth kernel before running the suite, so source updates cannot
+leave an older local image in use. The Forth tests also regenerate
 and compare the locally generated assembly/HEX, exercise stacks, bytes and variables,
 recursive definitions, branches and loops, and independently verify e's digits,
 sieve's prime count and TTT's node count. They require `BYE` to execute rather

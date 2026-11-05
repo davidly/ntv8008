@@ -1233,7 +1233,7 @@
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "forth/README.md": {
-      "sha256": "6c4341a7e4dae55fc6b1474bb01c666c79c2c048902f3fe535dd47459af430ab",
+      "sha256": "fbf322317588041b15be82c0cdd078f82490013f8d220340afa9b6c93de9902d",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
@@ -1813,12 +1813,12 @@
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "test.bat": {
-      "sha256": "bee82abab5bf4653004ee30c636b99db0bf438d96b60ca135458150310236f05",
+      "sha256": "2bb203336b896d7099b97263079972ef04099be868920cdab53c8b1cd55520e5",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "test.sh": {
-      "sha256": "a739ee24f5aa39f5add12a82c7eabf517181c9a84624c8208d6125da550ad898",
+      "sha256": "9a4081736b1469d318502509abd4f6219343db3061a747c8c83386b0fc12a0af",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
@@ -1843,7 +1843,7 @@
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "tests/ack_bootstrap.py": {
-      "sha256": "3dd34437bc105cd2998ecbe173b557e941ca475e9891587d1e57922f69954802",
+      "sha256": "b566084f7f91f74540dc66f88448c1d52817f9f3bb9d531e0cc095709598260a",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },

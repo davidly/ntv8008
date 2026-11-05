@@ -7,6 +7,10 @@ call m.bat
 if errorlevel 1 goto failed
 call a08\rebuild.bat hello.asm count.asm echo.asm sieve.asm e.asm ttt.asm robson.asm b8008.asm
 if errorlevel 1 goto failed
+if exist a08\forth.hex (
+    call forth\rebuild.bat
+    if errorlevel 1 goto failed
+)
 :choose_temp
 set "build_dir=%TEMP%\i8008-test-%RANDOM%-%RANDOM%"
 if exist "%build_dir%" goto choose_temp
