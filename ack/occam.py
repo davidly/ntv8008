@@ -80,11 +80,14 @@ def compile_source(source, *, optimize_arrays=True, workspace='auto'):
             if mode!='stack' and sum(map(int,re.findall(r'^ bss (\d+),',candidate,re.M)))>0x3c00:
                 last_error=CodegenError('static workspace leaves insufficient RAM for stack')
                 continue
-            assembly=generate(units,pascal=True)
-            (work/'program.asm').write_bytes(assembly.encode('ascii'))
-            run([ROOT/'a08'/('a08'+SUFFIX),work/'program.asm','-o'+str(work/'program.hex')])
-            image=(work/'program.hex').read_text()
-            end=max(int(line[3:7],16)+int(line[1:3],16) for line in image.splitlines() if line[7:9]=='00')
+            # Prefer spill slots and stored arguments; drop them if too large.
+            for compact in (False,True):
+                assembly=generate(units,pascal=True,compact=compact)
+                (work/'program.asm').write_bytes(assembly.encode('ascii'))
+                run([ROOT/'a08'/('a08'+SUFFIX),work/'program.asm','-o'+str(work/'program.hex')])
+                image=(work/'program.hex').read_text()
+                end=max(int(line[3:7],16)+int(line[1:3],16) for line in image.splitlines() if line[7:9]=='00')
+                if end<=0x3d00:break
             main=re.search(r'^ pro \$main,(\d+)$',candidate,re.M)
             frame=int(main[1]) if main else 0
             floor=(end+255)&~255 if mode!='stack' else end

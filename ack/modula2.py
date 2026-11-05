@@ -8,7 +8,7 @@ import sys
 import tempfile
 
 from codegen import CodegenError, generate
-from compile import ROOT, HERE, TOOLS, SUFFIX, run, compile_c_unit
+from compile import ROOT, HERE, TOOLS, SUFFIX, run, compile_c_unit, assemble_fitting
 from wirth import trim_runtime, lower_fixed_arrays
 
 M2_SIZES = '-Vw2.2i2.2s2.2l4.2p2.2f4.2d8.2'
@@ -23,6 +23,20 @@ def namespace_procedures(program):
         return match[1] + aliases.get(match[2], match[2])
     return re.sub(r'^( (?:pro|cal|exp|inp|lpi) )(\$[^,\s]+)',
                   rename, program, flags=re.M)
+
+
+def power_of_two_division(text):
+    """Inline floor DIV/MOD by a positive power of two.
+
+    runtime.c's dvi/rmi round toward negative infinity. For divisor 2**k that
+    is an arithmetic right shift by k, and a mask of the low k bits.
+    """
+    def rewrite(match):
+        divisor=int(match[1])
+        if divisor<=0 or divisor>16384 or divisor&(divisor-1):return match[0]
+        if match[2]=='rmi':return ' loc %d\n and 2' % (divisor-1)
+        return ' loc %d\n sri 2' % (divisor.bit_length()-1)
+    return re.sub(r'^ loc (\d+)\n cal \$(dvi|rmi)\n asp 4\n lfr 2$',rewrite,text,flags=re.M)
 
 
 def compile_source(source):
@@ -41,22 +55,12 @@ def compile_source(source):
         (work/'program.opt.k').write_bytes(run([TOOLS/('em_opt'+SUFFIX)],
                                               input=(work/'program.k').read_bytes()))
         run([TOOLS/('em_decode'+SUFFIX), work/'program.opt.k', work/'program.e'])
-        program = lower_fixed_arrays(namespace_procedures((work/'program.e').read_text()))
+        program = power_of_two_division(lower_fixed_arrays(namespace_procedures((work/'program.e').read_text())))
         units = [compile_c_unit(RUNTIME/'runtime.c', work, 'support'),
                  compile_c_unit(HERE/'pascal/runtime.c', work, 'arrays'),
                  compile_c_unit(HERE/'console.c', work, 'console')]
         units = [program, *trim_runtime(program, units)]
-        assembly = generate(units, pascal=True)
-        (work/'program.asm').write_bytes(assembly.encode('ascii'))
-        run([assembler, work/'program.asm', '-o'+str(work/'program.hex')])
-        image = (work/'program.hex').read_text()
-        end = 0
-        for line in image.splitlines():
-            record = bytes.fromhex(line[1:])
-            if record[3] == 0:
-                end = max(end, int.from_bytes(record[1:3],'big')+record[0])
-        if end > 0x3d00:
-            raise CodegenError('code/data exceed 15616 bytes; at least 512 bytes of stack required')
+        image, assembly = assemble_fitting(units, work, assembler, pascal=True)
         return image, assembly, '\n'.join(units)
 
 

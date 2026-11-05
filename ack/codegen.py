@@ -9,12 +9,12 @@ import re
 import sys
 if str(Path(__file__).resolve().parents[1]/'tools') not in sys.path:
     sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'tools'))
-from native8008 import optimize_functions
+from native8008 import optimize_functions, registers
 from runtime_prune import prune_runtime
 from outline8008 import share_return_values, outline_frame_loads
 from ack_bytes import lower_bytes, dense_switches
 from division import reuse_quotients
-from memory import constant_byte_stores, local_updates, fill_loops, strided_loops, global_strided_loops
+from memory import constant_byte_stores, local_updates, fill_loops, strided_loops, global_strided_loops, commute_constants, variable_steps, stacked_for_loops, branching_conditions, fold_addresses, indexed_operands, materialized_conditions, stored_address_temporaries
 
 
 class CodegenError(ValueError):
@@ -35,6 +35,88 @@ def multiply_constant(value):
     if value.bit_length()-1 + bin(value).count('1')-1 <= 8:
         return '@MUL_CONST ' + str(value)
     return None
+
+
+def spill_pairs(code):
+    """Hold a short-lived expression word in a scratch slot, not the stack.
+
+    A `CAL PUSH` matched by a `CAL POP` in the same straight-line run, with
+    no call, jump, label or stack-pointer access between, stores AB in one of
+    eight SPILL words instead. Nothing between can observe the RAM stack or
+    re-enter this code, and nested pairs use distinct slots.
+    """
+    output=list(code);open_=[];pairs=[]
+    for index,line in enumerate(code):
+        text=line.strip()
+        if not text or text.startswith(';'):continue
+        if text=='CAL PUSH':
+            open_.append(index);continue
+        if text=='CAL POP':
+            if open_:pairs.append((open_.pop(),index))
+            continue
+        op=text.split()[0]
+        if (text.endswith(':') or op in ('CAL','RET','RST','HLT') or op[0] in 'JR' and
+                op not in ('RAL','RAR','RLC','RRC') or 'RSP' in text):
+            open_=[]
+    for push,pop in pairs:
+        depth=sum(1 for p,q in pairs if p<push<q)
+        if depth>=8:continue
+        slot='SPILL+%dD' % (2*depth)
+        output[push]='\n'.join('        '+item for item in
+                               ('LHI HIGH ('+slot+')','LLI LOW ('+slot+')','LMA','INL','LMB'))
+        output[pop]='\n'.join('        '+item for item in
+                              ('LHI HIGH ('+slot+')','LLI LOW ('+slot+')','LAM','INL','LBM'))
+    return '\n'.join(output).split('\n')
+
+
+def stored_arguments(code):
+    """Reserve a call's argument block once and store arguments into it.
+
+    For `push a1 .. push an; push return; JMP f; return: asp 2n`, the first
+    push saves AB in CD and reserves 2n+2 bytes with one checked ADDSP; every
+    later push stores downward through the slot pointer kept in CD. Only
+    straight-line runs with no other call, stack access, or C/D use qualify.
+    """
+    lines=list(code);serial=0
+    executable=lambda i:lines[i].strip() and not lines[i].strip().startswith(';')
+    for j,line in enumerate(code):
+        parts=line.strip().split()
+        if len(parts)!=2 or parts[0]!='JMP':continue
+        after=[k for k in range(j+1,min(j+8,len(lines))) if executable(k)]
+        if len(after)<4 or not lines[after[0]].strip().endswith(':'):continue
+        resume=lines[after[0]].strip()[:-1]
+        asp=[lines[k].strip() for k in after[1:4]]
+        size=re.fullmatch(r'LAI (\d+)D',asp[0])
+        if not size or asp[1:]!=['LBI 0D','CAL ADDSP'] or int(size[1])%2:continue
+        count=int(size[1])//2
+        before=[k for k in range(j-1,max(j-4,-1),-1) if executable(k)]
+        if (len(before)<3 or lines[before[0]].strip()!='CAL PUSH' or
+                lines[before[1]].strip()!='LBI HIGH ('+resume+')' or
+                lines[before[2]].strip()!='LAI LOW ('+resume+')'):continue
+        pushes=[before[0]];k=before[2]-1;ok=True
+        while k>=0 and len(pushes)<count+1:
+            text=lines[k].strip()
+            if executable(k):
+                op=text.split()[0]
+                if text=='CAL PUSH':pushes.append(k)
+                elif (text.endswith(':') or op in ('CAL','RET','HLT') or 'RSP' in text or
+                      (op[0] in 'JR' and op not in ('RAL','RAR','RLC','RRC')) or
+                      any(registers(item.strip())[0]&12 or registers(item.strip())[1]&12
+                          for item in text.split('\n'))):
+                    ok=False;break
+            k-=1
+        if not ok or len(pushes)!=count+1:continue
+        first,*rest=sorted(pushes)
+        serial+=1;carry='ARGS%d' % serial;total=2*count+2
+        lines[first]='\n'.join('        '+item if not item.endswith(':') else item for item in
+            ('LCA','LDB',f'LAI {(-total)&255}D',f'LBI {((-total)>>8)&255}D','CAL ADDSP',
+             'LAL',f'ADI {total-2}D','LLA','JFC '+carry,'INH',carry+':',
+             'LMC','INL','LMD','DCL','LCL','LDH'))
+        for index in rest:
+            lines[index]='\n'.join('        '+item for item in
+                ('LEA','LAC','SUI 2','LLA','LAD','SBI 0','LHA','LME','INL','LMB','DCL')+
+                (('LCL','LDH') if index!=rest[-1] else ()))
+    return '\n'.join(lines).split('\n')
 
 
 def split_args(text):
@@ -60,9 +142,12 @@ def em_string(text):
 
 
 class Generator:
-    def __init__(self, pascal=False, optimize=True):
+    def __init__(self, pascal=False, optimize=True, compact=False):
         self.pascal = pascal
         self.optimize = optimize
+        # Compact output keeps RAM-stack PUSH/POP calls, which are shorter
+        # than spill-slot and stored-argument sequences.
+        self.compact = compact
         self.code = []
         self.data = []
         self.function = ''
@@ -130,6 +215,10 @@ class Generator:
         static = self.static_frame(self.function, offset)
         if static:
             self.emit(*static)
+            return
+        if self.optimize:
+            # Inline FP+offset; frame-address caching can reuse it.
+            self.frame_address(offset)
             return
         self.immediate(offset + (4 if offset >= 0 else 0))
         self.emit('CAL LOCAL')
@@ -241,7 +330,10 @@ class Generator:
                     operation = 'LOAD' if following[0] == 'loi' else 'STORE'
                     self.emit('@INDEX_' + operation + following[1] + ' ' + self.address(base))
                 return cursor+2
-            if current == ['dup','2'] and following in (['adu','2'],['adi','2']):
+            if current in (['inc'],['dec']):
+                actions.append('@ADD_CONST ' + ('1' if current == ['inc'] else '65535'))
+                cursor += 1
+            elif current == ['dup','2'] and following in (['adu','2'],['adi','2']):
                 actions.append('@DOUBLE 1')
                 cursor += 2
             elif (current == ['loc','2'] and following == ['loc','2'] and
@@ -261,9 +353,53 @@ class Generator:
                 return None
         return None
 
+    def saved_store(self, lines, start):
+        """Lower `value; lae base; index; [scaling]; ads 2; sti 1|2`.
+
+        The value is a constant or simple load. Index scaling may only use
+        A, B and E, leaving the saved value in D or CD intact.
+        """
+        value = lines[start].strip().split()
+        if len(value) != 2 or value[0] not in ('llb','lol','loe','loc'):
+            return None
+        base = lines[start+1].strip().split() if start+1 < len(lines) else []
+        source = lines[start+2].strip().split() if start+2 < len(lines) else []
+        if len(base) != 2 or base[0] != 'lae' or len(source) != 2 or source[0] not in ('llb','lol','loe'):
+            return None
+        cursor = start+3;actions = []
+        while cursor+1 < len(lines):
+            current,following = lines[cursor].strip().split(),lines[cursor+1].strip().split()
+            if current == ['ads','2'] and following in (['sti','1'],['sti','2']):
+                break
+            if (current == ['loc','2'] and following == ['loc','2'] and cursor+2 < len(lines) and
+                    lines[cursor+2].strip() in ('cii','ciu','cui','cuu')):
+                cursor += 3
+            elif current in (['inc'],['dec']):
+                actions.append('@ADD_CONST ' + ('1' if current == ['inc'] else '65535'));cursor += 1
+            elif current == ['dup','2'] and following in (['adu','2'],['adi','2']):
+                actions.append('@DOUBLE 1');cursor += 2
+            elif len(current) == 2 and current[0] == 'loc' and following in (
+                    ['adu','2'],['adi','2'],['sbu','2'],['sbi','2']):
+                value_ = int(current[1]) * (-1 if following[0].startswith('sb') else 1)
+                actions.append('@ADD_CONST ' + str(value_ & 65535));cursor += 2
+            else:
+                return None
+        else:
+            return None
+        width = lines[cursor+1].strip().split()[1]
+        load = lambda kind,argument: ('@GLOBAL_LOAD2 '+self.address(argument) if kind == 'loe' else
+                                      '@LOCAL_'+('LOAD1 ' if kind == 'llb' else 'LOAD2 ')+argument)
+        save = '@SAVE_' + ('BYTE ' if width == '1' else 'WORD ')
+        if value[0] == 'loc':
+            self.emit(save+'c:'+str(int(value[1]) & 65535))
+        else:
+            self.emit(load(*value), save+'0')
+        self.emit(load(*source), *actions, '@INDEX_STORED'+width+' '+self.address(base[1]))
+        return cursor+2
+
     def unit_code(self, text):
         self.unit += 1
-        lines = (dense_switches(lower_bytes(constant_byte_stores(local_updates(fill_loops(strided_loops(global_strided_loops(reuse_quotients(text)))))))) if self.optimize else text).splitlines()
+        lines = (indexed_operands(dense_switches(lower_bytes(constant_byte_stores(local_updates(fill_loops(strided_loops(global_strided_loops(reuse_quotients(variable_steps(stacked_for_loops(branching_conditions(fold_addresses(commute_constants(stored_address_temporaries(materialized_conditions(text)))))))))))))))) if self.optimize else text).splitlines()
         self.exports = {line.strip().split()[1] for line in lines
                         if line.strip().startswith(('exp ', 'exa '))}
         self.locals = ({line.strip().split()[1].split(',')[0] for line in lines
@@ -368,32 +504,37 @@ class Generator:
                     self.emit('@DOUBLE 1')
                     index += 1
                     continue
+            if op == 'addr':
+                # TOS is an index; add a static base, then access memory.
+                base = self.address(arg)
+                access = lines[index].strip().split()
+                if access[0] in ('inci','deci'):
+                    self.emit('@INDEX_STEP'+access[1]+' '+base+','+('1' if access[0] == 'inci' else '-1'))
+                else:
+                    self.emit('@INDEX_'+('LOAD' if access[0] == 'loi' else 'STORE')+access[1]+' '+base)
+                index += 1
+                continue
             if op=='ubinc':
                 self.emit('@BYTE_INC '+arg)
                 continue
-            if (self.optimize and op == 'lol' and index < len(lines) and
+            if (self.optimize and op in ('lol','loe') and index < len(lines) and
                     lines[index].strip() in ('adi 2','adu 2','ads 2')):
-                self.emit('@ADD_LOCAL '+arg)
+                self.emit(('@ADD_LOCAL ' if op == 'lol' else '@ADD_GLOBAL ')+
+                          (arg if op == 'lol' else self.address(arg)))
                 index += 1
                 continue
-            # A byte stored through a simple index waits in D instead of
-            # taking a RAM-stack round trip under the address.
-            if (self.optimize and op in ('llb','lol') and index+3 < len(lines) and
-                    lines[index].strip().startswith('lae ') and
-                    lines[index+1].strip().split()[0] in ('llb','lol') and
-                    lines[index+2].strip() == 'ads 2' and lines[index+3].strip() == 'sti 1'):
-                source = lines[index+1].strip().split()
-                self.emit('@LOCAL_'+('LOAD1 ' if op == 'llb' else 'LOAD2 ')+arg, '@SAVE_BYTE 0',
-                          '@LOCAL_'+('LOAD1 ' if source[0] == 'llb' else 'LOAD2 ')+source[1],
-                          '@INDEX_STORED1 '+self.address(lines[index].strip().split()[1]))
-                index += 4
+            # A value stored through a simple index waits in D (byte) or CD
+            # (word) instead of taking a RAM-stack round trip under the address.
+            stored = self.saved_store(lines, index-1) if self.optimize else None
+            if stored:
+                index = stored
                 continue
             if op in ('llb','slb'):
                 self.emit('@LOCAL_'+('LOAD1 ' if op=='llb' else 'STORE1 ')+arg)
                 continue
             if op == 'dcsa':
                 table,low,count,default=arg.split(',')
-                self.emit('@DENSE_SWITCH '+','.join((self.address(table),low,count,self.symbol(default))))
+                self.emit('@DENSE_SWITCH '+','.join((self.address(table),low,count,'0' if default == '0' else self.symbol(default))))
                 continue
             if op == 'bcmp':
                 condition,target,left,right=arg.split(',')
@@ -556,6 +697,28 @@ class Generator:
                           'LCM','INL','LBM','LHI HIGH ('+index_address+')',
                           'LLI LOW ('+index_address+')','LEM','INL','LDM')
                 loop,body,done,slow = (self.unique() for _ in range(4))
+                if 0 < count < 32768-256:
+                    # A stride below 32768-count cannot overflow the signed
+                    # index or wrap the address: mark through an absolute
+                    # pointer tested at the bottom; otherwise the index loop.
+                    pointer,mark,finish = self.unique(),self.unique(),self.unique()
+                    self.emit('LAD','NDI 128D','JFZ '+slow,'LAB',f'CPI {(32768-count)>>8}D','JFC '+loop,
+                              'LAB',f'CPI HIGH (65535D-(({base})+{count-1}D))','JFC '+loop,
+                              'LAD',f'CPI {count>>8}D','JTC '+pointer,'JFZ '+done,
+                              'LAE',f'CPI {count&255}D','JFC '+done)
+                    self.label(pointer)
+                    self.emit('LAE','ADI LOW ('+base+')','LLA','LAD',
+                              'ACI HIGH ('+base+')','LHA','JMP '+mark)
+                    self.label(mark+'BODY')
+                    self.emit(f'LMI {int(byte)&255}D','LAL','ADC','LLA',
+                              'LAH','ACB','LHA')
+                    self.label(mark)
+                    self.emit('LAH',f'CPI HIGH (({base})+{count}D)',
+                              'JTC '+mark+'BODY','JFZ '+finish,
+                              'LAL',f'CPI LOW (({base})+{count}D)','JTC '+mark+'BODY')
+                    self.label(finish)
+                    self.emit('LAL','SUI LOW ('+base+')','LEA','LAH',
+                              'SBI HIGH ('+base+')','LDA','JMP '+done)
                 self.label(loop)
                 self.emit('LAD','NDI 128D','JFZ '+slow,
                           'LAD',f'CPI {count>>8}D','JTC '+body,'JFZ '+done,
@@ -735,6 +898,12 @@ class Generator:
                 function = instruction.split()[2]
             if instruction.startswith('@'):
                 operation, argument = instruction.split(None, 1)
+                if operation in ('@SAVE_BYTE','@SAVE_WORD') and argument.startswith('c:'):
+                    # A constant needs no stack operand; any cached word stays.
+                    value = int(argument[2:])
+                    output += (['        LDI %dD' % (value & 255)] if operation == '@SAVE_BYTE' else
+                               ['        LCI %dD' % (value & 255), '        LDI %dD' % (value >> 8)])
+                    continue
                 if operation in ('@BYTE_CMP','@BYTE_INC'):
                     if pending: output.append('        CAL PUSH')
                 elif operation in ('@GLOBAL_LOAD2','@LOCAL_LOAD2','@LOCAL_LOAD1'):
@@ -788,14 +957,32 @@ class Generator:
                     output+=[item if item.endswith(':') else '        '+item for item in native]
                     pending=False
                     continue
-                if operation == '@SAVE_BYTE':
-                    output.append('        LDA')
+                if operation in ('@SAVE_BYTE','@SAVE_WORD'):
+                    output += ['        LDA'] if operation == '@SAVE_BYTE' else ['        LCA','        LDB']
                     pending = False
                     continue
-                if operation == '@INDEX_STORED1':
-                    native = ['ADI LOW ('+argument+')','LLA','LAB','ACI HIGH ('+argument+')','LHA','LMD']
+                if operation in ('@INDEX_STORED1','@INDEX_STORED2'):
+                    native = ['ADI LOW ('+argument+')','LLA','LAB','ACI HIGH ('+argument+')','LHA']
+                    native += ['LMD'] if operation.endswith('1') else ['LMC','INL','LMD']
                     output += ['        '+item for item in native]
                     pending = False
+                    continue
+                if operation in ('@INDEX_STEP1','@INDEX_STEP2'):
+                    base,delta = argument.rsplit(',',1)
+                    done = self.unique()
+                    native = ['ADI LOW ('+base+')','LLA','LAB','ACI HIGH ('+base+')','LHA',
+                              'LAM','ADI 1' if delta == '1' else 'SUI 1','LMA']
+                    if operation.endswith('2'):
+                        native += ['JFC '+done,'INL','LAM','ACI 0' if delta == '1' else 'SBI 0','LMA']
+                    output += ['        '+item for item in native]
+                    if operation.endswith('2'):output.append(done+':')
+                    pending = False
+                    continue
+                if operation == '@ADD_GLOBAL':
+                    native = ['LHI HIGH ('+argument+')','LLI LOW ('+argument+')',
+                              'ADM','LEA','INL','LAB','ACM','LBA','LAE']
+                    output += ['        '+item for item in native]
+                    pending = True
                     continue
                 if operation == '@ADD_LOCAL':
                     offset = int(argument)
@@ -993,7 +1180,7 @@ class Generator:
                     helpers += ['        RLC', '        LAB']
                 helpers += ['        RAR', '        LBA', '        LAE', '        RAR']
             helpers += ['        JMP '+name+'LOOP', name+'DONE: LAE', '        RET']
-        application = '\n'.join((optimize_functions(self.cached_code(),self.data,aligned=True,defer=True) if self.optimize else self.cached_code()) + self.data)
+        application = '\n'.join((optimize_functions(self.cached_code() if self.compact else stored_arguments(spill_pairs(self.cached_code())),self.data,aligned=True,defer=True) if self.optimize else self.cached_code()) + self.data)
         application = share_return_values(application)
         if self.optimize:
             application, frame_helpers = outline_frame_loads(application, 'FP')
@@ -1002,8 +1189,8 @@ class Generator:
         return runtime + '\n' + application + '\nACKEND:\nSTACKMIN EQU (ACKEND+255D) AND 0FF00H\n        END\n'
 
 
-def generate(units, *, pascal=False, optimize=True):
-    generator = Generator(pascal=pascal, optimize=optimize)
+def generate(units, *, pascal=False, optimize=True, compact=False):
+    generator = Generator(pascal=pascal, optimize=optimize, compact=compact)
     generator.static_main = optimize and not any(
         re.search(r'^\s*(?:cal|lpi)\s+\$(?:main|_m_a_i_n)\s*$', unit, re.M) for unit in units)
     for unit in units:

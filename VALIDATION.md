@@ -792,3 +792,30 @@ Hunt the Wumpus builds with SmallC's compact fallback (14,245 bytes). The workbo
 and runtime image were refreshed from these runs. RAM code figures apply each
 image's measured change in emitted bytes to the previous breakdown. SmallC e
 and TTT also count the 2-byte `SADDR` scratch.
+
+## ACK frontend lowering — 2026-11-05
+
+New EM rewrites target the Pascal, Modula-2, Occam and BASIC frontends:
+
+- commuted literals, folded constant indices and in-place steps
+- Pascal stack-free `for` loops and short-circuit conditions
+- Modula-2 power-of-two `DIV`/`MOD` and zero-default `CASE` tables
+- Occam in-place element updates and nested indices
+- BASIC direct array stores and branches
+
+All frontends also gain spill slots, stored arguments, shift-and-add `MUL` and
+long-division `DIVIDE`. Images that would not fit regenerate without spill
+slots and stored arguments.
+
+| Frontend | sieve | e | ttt (10 iterations) |
+| --- | ---: | ---: | ---: |
+| C | 83,422,156 → 83,458,402 | 81,860,644 → 72,381,076 | 571,062,078 → 540,176,488 |
+| Pascal | 315,372,124 → 110,809,008 | 271,948,964 → 86,600,010 | 2,291,398,212 → 1,079,021,212 |
+| Modula-2 | 217,585,250 → 122,990,822 | 247,899,190 → 72,233,596 | 1,566,758,444 → 986,412,804 |
+| Occam | 289,288,974 → 168,635,518 | 299,499,678 → 112,722,516 | 1,831,265,794 → 1,062,499,862 |
+| BASIC | 1,103,876,654 → 493,178,678 | 291,442,914 → 102,484,516 | 2,436,737,834 → 1,433,292,280 |
+
+All benchmark outputs are unchanged, and `tests/run.py --compile` passes with
+every frontend's example images rebuilt. The workbook and runtime image were
+refreshed. RAM code figures add each image's measured change in emitted bytes;
+BSS adds the 2-byte SPILL word where used and drops CSA's TAB where no longer linked.

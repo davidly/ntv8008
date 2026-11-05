@@ -51,6 +51,16 @@ class Compiler(unittest.TestCase):
         source='''MODULE Test; FROM InOut IMPORT WriteInt,Write,WriteLn;
 VAR a,b:INTEGER; BEGIN '''+'\n'.join(body)+' END Test.'
         self.assertEqual(self.compile_run(source),''.join(expected).encode())
+    def test_power_of_two_division(self):
+        # Constant DIV/MOD by 2**k lower to a shift and a mask (floor semantics).
+        body=[]; expected=[]
+        for a in (-32768,-257,-5,-4,-3,-1,0,1,3,4,5,255,32767):
+            for b in (1,2,4,256):
+                body.append(f'a:={"MIN(INTEGER)" if a==-32768 else a};WriteInt(a DIV {b},1);Write(" ");WriteInt(a MOD {b},1);WriteLn;')
+                expected.append(f'{a//b} {a%b}\n')
+        source='''MODULE Test; FROM InOut IMPORT WriteInt,Write,WriteLn;
+VAR a:INTEGER; BEGIN '''+'\n'.join(body)+' END Test.'
+        self.assertEqual(self.compile_run(source),''.join(expected).encode())
     def test_nested_and_var(self):
         self.assertEqual(self.compile_run('''MODULE Test;
 FROM InOut IMPORT WriteInt,WriteLn;

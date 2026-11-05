@@ -1026,4 +1026,281 @@ buf
         reentrant=em.replace(' pro $main,4\n',' pro $h,0\n lpi $main\n asp 2\n ret 0\n end 0\n pro $main,4\n')
         self.assertNotIn('LHI 62D',generate([reentrant]))
 
+    def test_runtime_multiply_and_divide(self):
+        # Variable operands reach the runtime: shift/add MUL, counted and
+        # long DIVIDE paths, with signed truncation and remainders.
+        values=(0,1,2,3,7,10,127,128,255,256,257,1000,4095,16383,32767,32768,40000,65534,65535)
+        divisors=(1,2,3,7,10,127,255,256,257,1000,32767,32768,65535)
+        signed=lambda v:v-65536 if v&32768 else v
+        body=[]
+        def check(left,right,operation,expected):
+            body.append(f''' loc {left}
+ stl -2
+ loc {right}
+ stl -4
+ lol -2
+ lol -4
+ {operation} 2
+ loc {expected&65535}
+ cmi 2
+ zne *9
+ lol -2
+ lol -4
+ mlu 2
+ loc {(left*right)&65535}
+ cmi 2
+ zne *9
+''')
+        for left in values:
+            for right in divisors:
+                check(left,right,'dvu',left//right)
+                check(left,right,'rmu',left%right)
+                a,b=signed(left),signed(right)
+                quotient=abs(a)//abs(b)*(1 if (a<0)==(b<0) else -1)
+                check(left,right,'dvi',quotient)
+                check(left,right,'rmi',a-quotient*b)
+        for start in range(0,len(body),150):
+            em=' pro $main,4\n'+''.join(body[start:start+150])+''' loc 75
+ cal $putchar
+ asp 2
+ loc 0
+ ret 2
+9
+ loc 33
+ cal $putchar
+ asp 2
+ loc 0
+ ret 2
+ end 4
+'''
+            with self.subTest(start=start):
+                self.assertEqual(self.execute(em,True),b'K')
+
+    def program(self,body,locals_=4):
+        return f' pro $main,{locals_}\n'+body+f''' loc 75
+ cal $putchar
+ asp 2
+ loc 0
+ ret 2
+9
+ loc 33
+ cal $putchar
+ asp 2
+ loc 0
+ ret 2
+ end {locals_}
+warr
+ bss 20,0,0
+barr
+ bss 10,0,0
+idx
+ con 3I1,0I1,9I1,1I1
+g
+ bss 2,0,0
+v
+ bss 2,0,0
+total
+ bss 2,0,0
+tmp
+ con tmp
+'''
+
+    def test_frontend_shapes(self):
+        # Literal-first commutative operations, folded constant indices,
+        # stepped variables, nested indices and in-place element updates.
+        body=''
+        for value in (0,1,7,255,256,32767,65535):
+            body+=f''' loc {value}
+ stl -2
+ loc 3
+ dup 2
+ mli 2
+ loc 9
+ cmi 2
+ zne *9
+ loc 10
+ lol -2
+ mli 2
+ loc {(value*10)&65535}
+ cmi 2
+ zne *9
+ loc 255
+ lol -2
+ and 2
+ loc {value&255}
+ cmi 2
+ zne *9
+ lol -2
+ lae warr
+ loc 3
+ dup 2
+ adu 2
+ ads 2
+ sti 2
+ lae warr+6
+ loi 2
+ lol -2
+ cmi 2
+ zne *9
+ loc {value}
+ ste g
+ loe g
+ inc
+ ste g
+ loe g
+ loc {(value+1)&65535}
+ cmi 2
+ zne *9
+ lol -2
+ loc 1
+ sbu 2
+ stl -2
+ lol -2
+ loc {(value-1)&65535}
+ cmi 2
+ zne *9
+ loc {value}
+ lae warr
+ loc 4
+ ads 2
+ sti 2
+ lae warr
+ loc 2
+ lol -4
+ mlu 2
+ ads 2
+ loi 2
+ inc
+ lae warr
+ loc 2
+ lol -4
+ mlu 2
+ ads 2
+ sti 2
+ lae warr+4
+ loi 2
+ loc {(value+1)&65535}
+ cmi 2
+ zne *9
+'''
+        # lol -4 is 2 for the update above; nested byte index barr[idx[i]].
+        body=' loc 2\n stl -4\n'+body
+        for i,expected in enumerate((3,0,9,1)):
+            body+=f''' loc {expected+40}
+ lae barr
+ loc {expected}
+ ads 2
+ sti 1
+ loc {i}
+ stl -2
+ lae barr
+ lae idx
+ lol -2
+ ads 2
+ loi 1
+ ads 2
+ loi 1
+ loc {expected+40}
+ cmi 2
+ zne *9
+'''
+        self.differential(self.program(body),b'K')
+
+    def test_short_circuit_and_materialized_conditions(self):
+        body=''
+        for a in (4,5,6):
+            for b in (6,7,8):
+                expected=(a==5 and b==7) or a!=b
+                body+=f''' loc {a}
+ stl -2
+ loc {b}
+ stl -4
+ lol -2
+ loc 5
+ cms 2
+ teq
+ lol -4
+ loc 7
+ cms 2
+ teq
+ and 2
+ lol -2
+ lol -4
+ cms 2
+ tne
+ ior 2
+ {'zeq' if expected else 'zne'} *9
+ lol -2
+ lol -4
+ blt *{100+a*10+b}
+ loc 0
+ bra *{200+a*10+b}
+{100+a*10+b}
+ loc -1
+{200+a*10+b}
+ {'zeq' if a<b else 'zne'} *9
+'''
+        self.differential(self.program(body),b'K')
+
+    def test_stacked_for_loops_and_address_temporaries(self):
+        # Pascal for loops: upward, downward and zero-trip, with final values.
+        body=''
+        for first,last,step in ((0,9,'inc'),(9,0,'dec'),(5,3,'inc'),(3,5,'dec')):
+            count=max(0,(last-first+1) if step=='inc' else (first-last+1))
+            final=last if count else 77
+            test='bgt' if step=='inc' else 'blt'
+            body+=f''' loc 77
+ ste v
+ zre total
+ loc {first}
+ dup 2
+ loc {last}
+ {test} *{first*100+last*10+1}
+{first*100+last*10+2}
+ ste v
+ loe total
+ inc
+ ste total
+ loe v
+ dup 2
+ loc {last}
+ beq *{first*100+last*10+1}
+ {step}
+ bra *{first*100+last*10+2}
+{first*100+last*10+1}
+ asp 2
+ loe total
+ loc {count}
+ cmi 2
+ zne *9
+ loe v
+ loc {final}
+ cmi 2
+ zne *9
+'''
+        # BASIC stores an element address in a temporary, then the value.
+        for value in (0,1,65535):
+            body+=f''' loc 3
+ stl -2
+ lae warr
+ lol -2
+ loc 4
+ adi 2
+ dup 2
+ adu 2
+ ads 2
+ ste tmp
+ loc {value}
+ lol -2
+ sbi 2
+ loe tmp
+ sti 2
+ lae warr+14
+ loi 2
+ loc {(value-3)&65535}
+ cmi 2
+ zne *9
+'''
+        self.differential(self.program(body),b'K')
+
 if __name__=='__main__': unittest.main()

@@ -28,7 +28,7 @@
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "README.md": {
-      "sha256": "b870a13c9e2c63f254360f06ed6fa9a26e92e1bf51b6cd68826312b3ed4fef1d",
+      "sha256": "c03d0420c17bb3df7b240285cb43b95be1b74aecf5c867ddb99797da2619dbbe",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
@@ -38,7 +38,7 @@
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "VALIDATION.md": {
-      "sha256": "eb468b9a001f25998e6ebff65bacc9c3bed4f4b933950f2b983a12384e8bf995",
+      "sha256": "ef53e46c97aa1673372165b6492dca6f439a625a66fa45e81c49ac35ec0e442e",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
@@ -168,17 +168,17 @@
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "ack/README.md": {
-      "sha256": "881d2a9f8698b7c3e18a84a935c48dea7805a2e752392dc573ef444ff0517378",
+      "sha256": "0d91e0431b3c011b6326c112d24fb78fd4248c0c466a35ce6a6112722bab4779",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "ack/ack_bytes.py": {
-      "sha256": "b94b0f2c845b1d250def96219ec2e9b41104bd6c98fad1d1065cdff4063aeb7d",
+      "sha256": "1ba37f67afeb236ba132272b28b8af80a804ad0f2fc4d1b8040d55701dda5ed4",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "ack/basic.py": {
-      "sha256": "690e4ac5bdf54ae387ccda6e878c0cdc881006907c63155b1c5347923edf5032",
+      "sha256": "09382dae758af0111ba25fab4cb1a61afa899414b44d44855300b9da25ce5e34",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
@@ -193,7 +193,7 @@
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
     "ack/basic/examples/arithmetic.hex": {
-      "sha256": "8677148db03d85e3fd5755c0a1f64dfd07d0974deb1af0b254c46ce9962aa9b0",
+      "sha256": "6b3ccb4f33eec4d0d362b48f78840b1231cc81628529ad1f7a4e863c95043a34",
       "license": "BSD-3-Clause",
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
@@ -203,7 +203,7 @@
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
     "ack/basic/examples/e.hex": {
-      "sha256": "786f901aa6d31ed5884783190e3d062957b67d2ece2abee47ca6962b85cee14c",
+      "sha256": "c34c04be047358e370dcfd4ce485825339656b5e43ad81648ae06f1bf0845564",
       "license": "BSD-3-Clause",
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
@@ -213,7 +213,7 @@
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
     "ack/basic/examples/hello.hex": {
-      "sha256": "9a988cb02821b304108534a5597713edf112a37638357058cd0ea9e56ee399a5",
+      "sha256": "caca522338329337adf677b2c5d490bfb2e7666c59381c258279d329013d0b2c",
       "license": "BSD-3-Clause",
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
@@ -223,7 +223,7 @@
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
     "ack/basic/examples/sieve.hex": {
-      "sha256": "22e92ca2013ab655cdfaf5f5117023fdc1827a17d052463cdc3f9e7109d60318",
+      "sha256": "9880162276df384ae7db170409da8347e71f6ac0d145d8b68d3ae0e0769afee3",
       "license": "BSD-3-Clause",
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
@@ -233,7 +233,7 @@
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
     "ack/basic/examples/ttt.hex": {
-      "sha256": "551affabe6669dd601ad18eca5ae5a1c26c45eb3b90bac8308fbe2a4a17ff564",
+      "sha256": "c9c10ce23cabffaad139e9e48709fb897f8e223734954b17be32fa957ecc4244",
       "license": "BSD-3-Clause",
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
@@ -273,12 +273,12 @@
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "ack/codegen.py": {
-      "sha256": "86450036f1ed6217f5068d90f8bed136a666e45eb37de7a9bbc5e38af2912061",
+      "sha256": "f08f4eaa101e6e88a502d639c547f742c62017fd336f5240ef7ce75212a4bfa1",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "ack/compile.py": {
-      "sha256": "88d5a951cea5e42b1d03605e99001f4a2909044c4cd0a42947ebbcaf07cb2a35",
+      "sha256": "d166228ccc2a3ffc5e8183b58dcbcb082c88b8987e2f6f1099c3a7314086ecde",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
@@ -298,7 +298,7 @@
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
     "ack/examples/arithmetic.hex": {
-      "sha256": "fb2d6798be55323d31e86244a6740051cacfd563eb15a9cd4ab1bcf333b037e6",
+      "sha256": "b48b0eedea1d38bd1d0f1985d2b2fedcfae44d221a5662d832df2226aa21e3c5",
       "license": "BSD-3-Clause",
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
@@ -308,7 +308,7 @@
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
     "ack/examples/e.hex": {
-      "sha256": "c2a0905a66b56ac144f38d214586483f56df0d06797eb1086356c2fd259bb4b0",
+      "sha256": "4b9972630e8ec876d75e66c2af59590378eaf1ee0815af4370bfecee88f7761b",
       "license": "BSD-3-Clause",
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
@@ -318,7 +318,7 @@
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
     "ack/examples/hello.hex": {
-      "sha256": "2110dfa57ce2439d0aee0fb86e146e1a397ea8253a7b784330110817ffb05557",
+      "sha256": "ff95c82b7f681851347b11e9403db80926a2508162bb3f50c5ee4ea0cddfd932",
       "license": "BSD-3-Clause",
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
@@ -328,7 +328,7 @@
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
     "ack/examples/sieve.hex": {
-      "sha256": "ff79953b545dd5f39f51e0f6b9a694b9fd8db8d983f33ac33c4adb3a1ee879a0",
+      "sha256": "69913a7cd2f6747c228decd5932e04bc38292fb197720d4a627a09bd1d57f8c0",
       "license": "BSD-3-Clause",
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
@@ -338,7 +338,7 @@
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
     "ack/examples/ttt.hex": {
-      "sha256": "894f65cae126f2cc31e7de465c1b7c8e8cb161cf1904506aca74dc178100a2be",
+      "sha256": "12db417dd93744ebdfb6f9dc1fc3053cd7b8c052d155a0e2ba06d931c61f7af8",
       "license": "BSD-3-Clause",
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
@@ -568,12 +568,12 @@
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "ack/memory.py": {
-      "sha256": "0852ab20842fddf4cd488d7e78492f23547a5b901bfd275f13906958fce905f2",
+      "sha256": "b81054346c79d633f3f69c78146cd320c0414e69cffbd2bd5aa84acd65e50f13",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "ack/modula2.py": {
-      "sha256": "afca3f9f8042ea8e017ace15c0582694457087d19729609db4ffc8086d50f5bb",
+      "sha256": "6c46646d083740569ac8f8ab727d82be00db5c642ca32a517bf31b3274eaf97d",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
@@ -588,7 +588,7 @@
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "ack/modula2/examples/arithmetic.hex": {
-      "sha256": "466e9cce89d5bf680b1c055a4b50172ffc833f136ae825a78b775db2b89f99de",
+      "sha256": "a29a963db286fd86e83d7c446c0fda232572be220d6d776619d8f73ba3d937b3",
       "license": "BSD-3-Clause",
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
@@ -598,7 +598,7 @@
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
     "ack/modula2/examples/e.hex": {
-      "sha256": "3594698ac0413a09d1331bd09575f3bde2200c81643000697bfb04e2836ac3b3",
+      "sha256": "0c7035a20e15e11d9168c3161e64794f22185483438e962b14c8a73d4d38c91a",
       "license": "BSD-3-Clause",
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
@@ -608,7 +608,7 @@
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
     "ack/modula2/examples/hello.hex": {
-      "sha256": "7c300c577c96f564b1eab3e232e4b1a27c6fec38d6a58ee70764a25c71cf4590",
+      "sha256": "bc881ade08d1a0142cd4f839d83872d2a6af7c202f5fe2aafa7a314f3aafc2d2",
       "license": "BSD-3-Clause",
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
@@ -618,7 +618,7 @@
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
     "ack/modula2/examples/sieve.hex": {
-      "sha256": "796fe42b9affac7fc3855685c2d481851244957670f9b4ff108b76d0421f7fba",
+      "sha256": "a84b2be0b33938e93784f5b1a2a736ff8857106e450d0730b213edececde47bd",
       "license": "BSD-3-Clause",
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
@@ -628,7 +628,7 @@
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
     "ack/modula2/examples/ttt.hex": {
-      "sha256": "8e43210f08949f89aa135958cd9fd915642769c4f864e59051dd1c7b68f24205",
+      "sha256": "0aeb08e97ce10d933a06f230314f88c32a17a8f45af39e58bcbbcd5970d59a35",
       "license": "BSD-3-Clause",
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
@@ -683,7 +683,7 @@
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "ack/occam.py": {
-      "sha256": "6eb34455ba88f941b835988e5d88c7ec7273cdab47389ebc6af36a033701fcbf",
+      "sha256": "4631a51f724303fb39c8b81beef67f37af3e0ab49e0a6d6e52a05e618093c43c",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
@@ -698,7 +698,7 @@
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "ack/occam/examples/arithmetic.hex": {
-      "sha256": "13c424ec4e944f441685bcfb32f0c343d5efeadb0c5506d27b5716c0b9d5c196",
+      "sha256": "81129bf5935c2fae0f79c9befb8f07ffdf9811decf07760d0f9dc6a23c2a84fe",
       "license": "BSD-3-Clause",
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
@@ -708,7 +708,7 @@
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
     "ack/occam/examples/e.hex": {
-      "sha256": "8306aeab45f281fcc4f6040ef0f9903deaff6e59a07a2a492515b366721007e1",
+      "sha256": "befe41e654a091da80f98a3caacdfacb2643802effc815843761d158b502e28d",
       "license": "BSD-3-Clause",
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
@@ -718,7 +718,7 @@
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
     "ack/occam/examples/hello.hex": {
-      "sha256": "f9d355563dcc27ee991a39aa2fefe187014e528312f340e8c25c32732b6c7611",
+      "sha256": "35b7c1baf67ccb5dcb3e88db43e2fdbc8b895f93ea2005073b712c51562d57fb",
       "license": "BSD-3-Clause",
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
@@ -728,7 +728,7 @@
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
     "ack/occam/examples/sieve.hex": {
-      "sha256": "2333c736c456350c71dfb00cd229de3ea5f58acdfee1cf83844a5386240ad5ec",
+      "sha256": "f53ab20ef6f417c1992c64c216d25efe97b1b14e03bf69ffc565188354d02149",
       "license": "BSD-3-Clause",
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
@@ -738,7 +738,7 @@
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
     "ack/occam/examples/ttt.hex": {
-      "sha256": "867e1386f0ec3e50a2a4446759f772cec6d0a1926cf1ac2a8ac74726c657779f",
+      "sha256": "719de8ed838440a51d01a32530a1881d1e364a0de10a6cddfd171c9fe3a1274d",
       "license": "BSD-3-Clause",
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
@@ -773,7 +773,7 @@
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "ack/pascal.py": {
-      "sha256": "8419dd1201eef9f229f61f684a10a22f3937dc0b72a69f449eedbd56b27d11c5",
+      "sha256": "f5779ece6679ee18d7a7035be9e53fa4171f6df540af9d60bb3269396883d56f",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
@@ -783,7 +783,7 @@
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "ack/pascal/examples/arithmetic.hex": {
-      "sha256": "6aab71aab2659672f38e6309b32db374caa4770dc4efc50c61a3578a0f7f962e",
+      "sha256": "fb51156edf7107728323445390537b769ef36e7804079d86e47da27bc57724f0",
       "license": "BSD-3-Clause",
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
@@ -793,7 +793,7 @@
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
     "ack/pascal/examples/e.hex": {
-      "sha256": "9f022f3c57bd23a740a4bfa34c33eb24a7a59e0b6df90b0294042c5aea8888d5",
+      "sha256": "6ebd6bc98d62788eb4c0f97e42da8c3315163c294f9f95beda3b95d3099b6dac",
       "license": "BSD-3-Clause",
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
@@ -803,7 +803,7 @@
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
     "ack/pascal/examples/hello.hex": {
-      "sha256": "65502e0606f879bd28346d96f643841d02f5e3826fe9d5ae468140e7f79782de",
+      "sha256": "fd341009e5b734e6f9f0f30d1d984bc67e244f87ce1ce236b63db0f42ef39024",
       "license": "BSD-3-Clause",
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
@@ -813,7 +813,7 @@
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
     "ack/pascal/examples/sieve.hex": {
-      "sha256": "b16c51f22b78164ce670309e6b4e2a1bfbdec429f8380a8345f0ac21181a22d2",
+      "sha256": "b6233376fba7ba65500bbed27782ea76b85805321dda7bc2e6775943e92b8759",
       "license": "BSD-3-Clause",
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
@@ -823,7 +823,7 @@
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
     "ack/pascal/examples/ttt.hex": {
-      "sha256": "820b576f0b238702132919a1dd3be40f7aa06342ff03f52b8346b7ad7d5e84e6",
+      "sha256": "88ae6d09eb1e38ea06c1b826f5c8f5ab8412bbf8b3327acf7de0254be2dafd18",
       "license": "BSD-3-Clause",
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
@@ -863,7 +863,7 @@
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "ack/runtime.asm": {
-      "sha256": "cd8f677a807ade61a1e66f7725005250cf8cbafd74b69b6b311fcfee2d1ab487",
+      "sha256": "5e6e1dba1853cdbf0823faffa4024928965a78102f71113439432b020712fdd6",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
@@ -903,12 +903,12 @@
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "docs/8008-runtimes.jpg": {
-      "sha256": "aad8847bcfbd2d8ed99ce033d6145eb2b3ed163e1864c4c6eb5d3cd049509e70",
+      "sha256": "6b09881135bcbc00a0b65727a12356052576621c78b04008ec932b20f2667663",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "docs/8008-runtimes.xlsx": {
-      "sha256": "a5eac56a150e2efe8651d2e8167ff2714f978ee00abeacf6791c5128c735fc34",
+      "sha256": "a1022bc1ce01051806a24cf3feaf8cc0272ba6d987a9fd18659c6baefe0fd7cd",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
@@ -1833,7 +1833,7 @@
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "tests/ack.py": {
-      "sha256": "5217af575a1269ed0f0e964a8eb5694670faa40b51e8037f3307f2fb82ef6493",
+      "sha256": "574b074452a8c2c03ec21a653ba2f3661249d36a3bfcdfc5f2df4755f4ade3c2",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
@@ -1848,7 +1848,7 @@
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "tests/ack_codegen.py": {
-      "sha256": "e2b44cc8dfc86b2816660d11fb0a99c20b94971b5a2adf99b41c6ba9c2f89ecf",
+      "sha256": "d115702fe50b6a0c934b99b24780908636f461d449b4fd5eae028a3ad442b290",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
@@ -1888,7 +1888,7 @@
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "tests/modula2.py": {
-      "sha256": "9e872b92038c21a3d9180aa9cc9bbe279638bdb45e94668614f0bf980be2a2d1",
+      "sha256": "fdb183ecf6ed327dd6e2f067043f45ed38d85468b06540e1621dc381872e389d",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },

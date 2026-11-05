@@ -25,6 +25,32 @@ def run(command, **kwargs):
     return result.stdout
 
 
+def image_end(image):
+    end = 0
+    for line in image.splitlines():
+        data = bytes.fromhex(line[1:])
+        if data[3] == 0:
+            end = max(end, int.from_bytes(data[1:3], 'big') + data[0])
+    return end
+
+
+def assemble_fitting(units, work, assembler, **options):
+    """Assemble the fastest image that leaves 512 bytes of stack.
+
+    Spill slots and stored arguments enlarge code; when the image would not
+    fit, generate again with compact RAM-stack calls.
+    """
+    for compact in (False, True):
+        assembly = generate(units, compact=compact, **options)
+        (work / 'program.asm').write_bytes(assembly.encode('ascii'))
+        run([assembler, work / 'program.asm', '-o' + str(work / 'program.hex')])
+        image = (work / 'program.hex').read_text()
+        # Keep at least 512 bytes between the image and the stack/variables.
+        if image_end(image) <= 0x3d00:
+            return image, assembly
+    raise CodegenError('code/data exceed 15616 bytes; at least 512 bytes of stack required')
+
+
 def compile_c_unit(source, work, index):
     compact, optimized, readable = [work / (str(index) + ext)
                                     for ext in ('.k', '.opt.k', '.e')]
@@ -51,19 +77,7 @@ def compile_sources(sources):
         work = Path(directory)
         for index, source in enumerate([*map(Path, sources), HERE / 'console.c']):
             units.append(compile_c_unit(source, work, index))
-        assembly = generate(units)
-        source, image = work / 'program.asm', work / 'program.hex'
-        source.write_bytes(assembly.encode('ascii'))
-        run([assembler, source, '-o' + str(image)])
-        output = image.read_text()
-        end = 0
-        for line in output.splitlines():
-            data = bytes.fromhex(line[1:])
-            if data[3] == 0:
-                end = max(end, int.from_bytes(data[1:3], 'big') + data[0])
-        # Keep at least 512 bytes between the image and the stack/variables.
-        if end > 0x3d00:
-            raise CodegenError('code/data exceed 15616 bytes; at least 512 bytes of stack required')
+        output, assembly = assemble_fitting(units, work, assembler)
         return output, assembly, '\n'.join(units)
 
 

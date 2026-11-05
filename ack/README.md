@@ -613,3 +613,62 @@ New tests cover:
 - byte stores, local adds and global increments
 - signed byte zero tests
 - deferred counters across calls and recursion
+
+## Pascal, Modula-2, Occam and BASIC lowering
+
+Each frontend spells common operations differently from the C frontend, so
+much of the native lowering never matched. New EM rewrites normalize them:
+
+- **All frontends.** A literal-first commutative operation such as `10*a[i]`
+  moves the literal after its side-effect-free operand, so constant
+  multiplication applies. Constant indices fold into static addresses
+  (`lae X; loc 1; dup 2; adu 2; ads 2; loi 2` → `loe X+2`). Load/step/store of
+  one variable becomes an in-place increment.
+- **Pascal.** `for` loops keep their counter in the variable instead of
+  carrying it on the EM stack across the back edge. `and`/`or` conditions over
+  side-effect-free comparisons branch directly instead of building 0/1 words.
+- **Modula-2.** Floor `DIV`/`MOD` by a power of two becomes a shift and a mask
+  instead of a runtime call. `CASE` without `ELSE` uses a jump table whose
+  default is address 0, matching `CSA`.
+- **Occam.** An element updated in place (`a[i] := a[i] + 1`) is read and
+  written through one address. A nested index such as `board[stack[sp]]` is
+  computed before its static base is added in registers.
+- **BASIC.** An array store no longer parks its element address in a temporary.
+  An `IF` comparison materialized as -1/0 only to be tested branches directly.
+
+Shared native changes:
+
+- **Spill slots.** A `PUSH` matched by a `POP` in the same straight-line run,
+  with no call, jump, label or stack-pointer access between, uses one of eight
+  `SPILL` scratch words instead of the RAM stack.
+- **Stored arguments.** A software call's arguments and return word are stored
+  downward into a block reserved by one checked `ADDSP`.
+- **Runtime multiply and divide.** `MUL` shifts and adds once per multiplier
+  bit. `DIVIDE` uses 16-step long division when a divisor below 256 gives a
+  quotient of at least 256; small quotients keep the subtraction loop.
+- **Other lowering.** Locals use inline frame addresses. Indexed stores hold
+  word values in CD and constant values in registers. Index scaling accepts
+  `inc`/`dec`. Global strided loops use the guarded pointer form.
+
+Spill slots and stored arguments add code. When an image would exceed 15,616
+bytes, every driver regenerates it without them.
+
+| Frontend | Sieve | E | TTT (ten iterations) |
+| --- | ---: | ---: | ---: |
+| C | 83,458,402 (0.0%) | 72,381,076 (-11.6%) | 540,176,488 (-5.4%) |
+| Pascal | 110,809,008 (-64.9%) | 86,600,010 (-68.2%) | 1,079,021,212 (-52.9%) |
+| Modula-2 | 122,990,822 (-43.5%) | 72,233,596 (-70.9%) | 986,412,804 (-37.0%) |
+| Occam | 168,635,518 (-41.7%) | 112,722,516 (-62.4%) | 1,062,499,862 (-42.0%) |
+| BASIC | 493,178,678 (-55.3%) | 102,484,516 (-64.8%) | 1,433,292,280 (-41.2%) |
+
+Changes are relative to the previous table. Outputs are unchanged.
+Differential tests cover each rewrite shape and check that each actually fires
+on its test input. They also cover runtime multiplication and division over
+boundary and signed values (a broken long-division path fails), Modula-2 floor
+`DIV`/`MOD` by powers of two, and stored arguments with nested calls,
+recursion and spill slots.
+
+Reusing a repeated Occam element address within a block was evaluated and not
+adopted. Keeping it costs a store and reload (about 72 states) against about
+112 states per reuse, so it pays only for three or more uses, and it needs
+alias tracking across Occam's shared workspace.

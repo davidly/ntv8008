@@ -10,6 +10,7 @@ Q EQU RSP+12D
 REM EQU RSP+14D
 SIGNQ EQU RSP+16D
 SIGNR EQU RSP+17D
+SPILL EQU RSP+40D              ; eight words for straight-line PUSH/POP pairs
         ORG 0040H
         LHI HIGH RSP
         LLI LOW RSP
@@ -265,28 +266,37 @@ MUL:
         LMA
         INL
         LMB
-        LAI 0
         LBI 0
+        LEI 0
+; Shift and add: BE accumulates, X doubles, CD shifts right until zero.
 MULLOOP:
-        LEA
-        LAC
-        ORD
+        LAD
+        ORC                    ; also clears carry for the shift below
         JTZ MULDONE
+        LAD
+        RAR
+        LDA
         LAC
-        NDA
-        JFZ MULDEC
-        DCD
-MULDEC: DCC
-        LAE
-        LHI HIGH X
+        RAR
+        LCA
         LLI LOW X
+        JFC MULSHIFT
+        LAE
         ADM
         LEA
         INL
         LAB
         ACM
         LBA
-        LAE
+        DCL
+MULSHIFT:
+        LAM
+        ADA
+        LMA
+        INL                    ; INL preserves carry
+        LAM
+        RAL
+        LMA
         JMP MULLOOP
 MULDONE:
         LAE
@@ -297,6 +307,15 @@ DIVIDE: LEA
         LAC
         ORD
         JTZ DIVZERO
+        ; A divisor below 256 not above the dividend's high byte gives a
+        ; quotient of at least 256: use long division instead of counting.
+        LAB
+        CPC
+        JTC DIVCOUNT
+        LAD
+        NDA
+        JTZ DIVLONG
+DIVCOUNT:
         LAE
         LHI 0
         LLI 0
@@ -325,6 +344,34 @@ DIVDONE:
         LMB
         LAC
         LBD
+        RET
+; BE shifts left into remainder D, taking quotient bits in at E's bottom.
+DIVLONG:
+        LLI 16D
+DIVSTEP:
+        LAE
+        ADA
+        LEA
+        LAB
+        RAL
+        LBA
+        LAD
+        RAL
+        JTC DIVSUB             ; nine-bit remainder exceeds the divisor
+        CPC
+        JTC DIVNEXT
+DIVSUB: SUC
+        INE                    ; quotient bit; E's bit 0 is clear after the shift
+DIVNEXT:
+        LDA
+        DCL
+        JFZ DIVSTEP
+        LHI HIGH REM
+        LLI LOW REM
+        LMD
+        INL
+        LMI 0
+        LAE
         RET
 UDIV:
         LCA

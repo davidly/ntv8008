@@ -60,7 +60,9 @@ def dense_switches(text):
         cursor=i+1;values=[]
         while cursor<len(lines) and lines[cursor].strip().startswith('rom '):
             values.extend(v.strip() for v in lines[cursor].strip()[4:].split(','));cursor+=1
-        if len(values)<4 or not re.fullmatch(r'\*\d+',values[0]):continue
+        # A zero default (Modula-2 CASE without ELSE) jumps to address 0, as CSA does.
+        if len(values)<4 or not re.fullmatch(r'\*\d+|0(?:[IU]2)?',values[0]):continue
+        if not values[0].startswith('*'):values[0]='0'
         low=re.fullmatch(r'(-?\d+)(?:I2)?',values[1]);span=re.fullmatch(r'(\d+)(?:I2)?',values[2])
         if not low or not span:continue
         count=int(span[1])+1

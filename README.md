@@ -302,6 +302,18 @@ sieve, e and TTT (33.2%, 30.4% and 19.6% fewer clocks); ACK C takes **166.84**,
 **163.72** and **114.21** (43.8%, 52.2% and 21.3% fewer). The other ACK frontends
 improve by up to 40.9% (Modula-2 sieve). Outputs and benchmark sources are unchanged.
 
+A further ACK pass targets the other frontends, whose EM the C-oriented lowering
+had largely missed. Pascal, Modula-2, Occam and BASIC now run their benchmarks
+41–71% faster: for example, Pascal sieve falls from 630.74 to **221.62 seconds**,
+Modula-2 e from 495.80 to **144.47**, and BASIC TTT from 487.35 to **286.66** per
+iteration. All ACK frontends also gain the following:
+
+- short-lived expression words go to scratch slots instead of the RAM stack
+- call arguments are stored into one reserved block
+- multiplication uses shift-and-add, and division by a small divisor uses long division
+
+ACK C e and TTT improve by 11.6% and 5.4%. See the [ACK notes](ack/README.md).
+
 Occam now places eligible sequential procedure workspaces in static BSS,
 including ttt's search arrays. This reduces target cycles by 56.9% for sieve,
 9.8% for e, and 55.0% for ttt, without changing the algorithms, array sizes or

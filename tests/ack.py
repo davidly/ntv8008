@@ -224,6 +224,49 @@ int main(void)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.stdout, f'22,1,12,{rec(3)}'.encode())
 
+    def test_stored_arguments_and_spill_slots(self):
+        # Argument blocks are reserved once and stored in place; short-lived
+        # expression words use scratch slots. Nested calls inside arguments,
+        # recursion and older stack words must keep their values.
+        source = '''#include <stdio.h>
+static int one(int a) { return a + 1; }
+static int six(int a, int b, int c, int d, int e, int f)
+{ return a - 2*b + 3*c - 4*d + 5*e - 6*f; }
+static int mix(int a, int b, int c) { return a * 100 + b * 10 + c; }
+static int depth(int n, int total) { return n ? depth(n - 1, total + n) : total; }
+static unsigned char cells[12];
+int main(void)
+{
+    int i, k = 7, sum = 0;
+    for (i = 0; i < 12; ++i) cells[i] = i * 3;
+    for (i = 0; i < 6; ++i) {
+        sum += six(i, k, i + k, cells[i], cells[i + 1] + 1, one(i) * 2);
+        sum += mix(one(i), cells[(i * 5) % 12], mix(1, i, 2));
+        sum ^= 1000 - (cells[i] + (cells[i + 2] - (k - cells[i + 4])));
+    }
+    putu(sum & 32767); putchar(','); putu(depth(30, 5));
+    return 0;
+}
+'''
+        def six(a,b,c,d,e,f): return a-2*b+3*c-4*d+5*e-6*f
+        cells=[i*3 for i in range(12)];k=7;total=0
+        wrap=lambda v:((v+32768)&65535)-32768
+        for i in range(6):
+            total=wrap(total+six(i,k,i+k,cells[i],cells[i+1]+1,(i+1)*2))
+            total=wrap(total+(i+1)*100+cells[(i*5)%12]*10+(100+i*10+2))
+            total=wrap(total^(1000-(cells[i]+(cells[i+2]-(k-cells[i+4])))))
+        with tempfile.TemporaryDirectory(prefix='ack C test ') as directory:
+            path = Path(directory, 'program.c')
+            path.write_text(source)
+            image, assembly, _ = compiler.compile_sources([path])
+            self.assertIn('ARGS', assembly)
+            self.assertIn('SPILL', assembly)
+            path = path.with_suffix('.hex')
+            path.write_text(image)
+            result = run('-n:200000000', path, timeout=60)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout, f'{total & 32767},{5 + sum(range(31))}'.encode())
+
     def test_calls_switch_and_input(self):
         text = '''#include <stdio.h>
 static int deep(int n) { int local = n; return n ? local + deep(n-1) : 0; }

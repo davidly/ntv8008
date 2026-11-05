@@ -9,7 +9,7 @@ import sys
 import tempfile
 
 from codegen import CodegenError, generate
-from compile import ROOT, HERE, TOOLS, SUFFIX, run, compile_c_unit
+from compile import ROOT, HERE, TOOLS, SUFFIX, run, compile_c_unit, assemble_fitting
 from wirth import trim_runtime, lower_fixed_arrays
 
 BASIC_SIZES = '-Vw2p2f4'
@@ -59,17 +59,7 @@ def compile_source(source):
                  compile_c_unit(HERE/'pascal/runtime.c', work, 'arrays'),
                  compile_c_unit(HERE/'console.c', work, 'console')]
         units = [program, *trim_runtime(program, units)]
-        assembly = generate(units, pascal=True)
-        (work/'program.asm').write_bytes(assembly.encode('ascii'))
-        run([assembler, work/'program.asm', '-o'+str(work/'program.hex')])
-        image = (work/'program.hex').read_text()
-        end = 0
-        for line in image.splitlines():
-            record = bytes.fromhex(line[1:])
-            if record[3] == 0:
-                end = max(end, int.from_bytes(record[1:3],'big')+record[0])
-        if end > 0x3d00:
-            raise CodegenError('code/data exceed 15616 bytes; at least 512 bytes of stack required')
+        image, assembly = assemble_fitting(units, work, assembler, pascal=True)
         return image, assembly, '\n'.join(units)
 
 
