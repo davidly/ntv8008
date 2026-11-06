@@ -407,12 +407,19 @@ class PDP10:
             f = e + 2 if v < 64 else e
             name = six(m[f]) + '.' + six(m[f + 1] >> 18 << 18).strip()
             if op == 0o77:
-                self.channels[ac]['file'] = open(self.directory / name, 'w+b')
+                c = self.channels[ac]
+                file = open(self.directory / name, 'w+b')
+                if 'file' in c:
+                    c['file'].close()  # replaced, as the native runner does
+                c['file'] = file
                 self.pc += 1
             else:
                 try:
                     c = self.channels[ac]
-                    c['file'] = open(self.directory / name, 'rb')
+                    file = open(self.directory / name, 'rb')
+                    if 'file' in c:
+                        c['file'].close()
+                    c['file'] = file
                     c['lines'] = iter(c['file'].read().decode('ascii').splitlines())
                     self.pc += 1
                 except FileNotFoundError:
