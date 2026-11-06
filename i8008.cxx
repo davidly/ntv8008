@@ -104,7 +104,7 @@ I8008_FORCE_INLINE unsigned I8008::execute_decoded( uint8_t op )
             {
                 halted = true;
                 m_state |= stateHalted;
-                states = 4;
+                states = 4 | executionStopped;
             }
             else // LrM
             {
@@ -162,7 +162,7 @@ I8008_FORCE_INLINE unsigned I8008::execute_decoded( uint8_t op )
                 {
                     halted = true;
                     m_state |= stateHalted;
-                    states = 4;
+                    states = 4 | executionStopped;
                 }
                 else if ( d < 7 ) // INr, DCr: B, C, D, E, H, L only
                 {
@@ -173,6 +173,7 @@ I8008_FORCE_INLINE unsigned I8008::execute_decoded( uint8_t op )
                 {
                     invalid = ended = true;
                     m_state |= stateEnded;
+                    states |= executionStopped;
                 }
                 break;
             }
@@ -193,6 +194,7 @@ I8008_FORCE_INLINE unsigned I8008::execute_decoded( uint8_t op )
                 {
                     invalid = ended = true;
                     m_state |= stateEnded;
+                    states |= executionStopped;
                 }
                 break;
             }
@@ -272,9 +274,11 @@ I8008_FORCE_INLINE unsigned I8008::execute( uint8_t op, bool injected )
         I8008_CASE( 0xf8 ) I8008_CASE( 0xf9 ) I8008_CASE( 0xfa ) I8008_CASE( 0xfb ) I8008_CASE( 0xfc ) I8008_CASE( 0xfd ) I8008_CASE( 0xfe ) I8008_CASE( 0xff )
 #undef I8008_CASE
     }
-    unsigned clocks = states * 2;
+    unsigned clocks = ( states & 0xff ) * 2;
     cycles += clocks;
-    if ( m_tracer && ( halted || invalid ) )
+    // Only stop instructions need the tracer and public stop fields. Testing
+    // the decoder result keeps their loads off the normal instruction path.
+    if ( ( states & executionStopped ) && m_tracer )
         m_tracer->Trace( "%s at %04x, %llu cycles\n", invalid ? "undefined opcode" : "halt",
                          instructionAddress, (unsigned long long) cycles );
     return clocks;

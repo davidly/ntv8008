@@ -272,6 +272,20 @@ static void tracing( const char * path )
     memory[ 0x1235 ] = 0x16;
     check( cpu.interrupt( 0x46 ) == 22 );
     check( cpu.pc() == 0x1678 );
+    cpu.trace_instructions( false );
+    cpu.power_on( 0x3fff );
+    memory[ 0x3fff ] = 0xff;
+    check( instruction() == 8 );
+    check( cpu.pc() == 0 );
+    cpu.power_on( 0x2345 );
+    check( cpu.interrupt( 0x22 ) == 10 );
+    check( cpu.pc() == 0x2345 );
+    cpu.power_on( 0x3456 );
+    check( cpu.interrupt( 0x00 ) == 8 );
+    check( cpu.pc() == 0x3456 );
+    cpu.power_on( 0 );
+    memory[ 0 ] = 0x3a;
+    check( instruction() == 10 );
     cpu.set_tracer( 0 );
     cpu.trace_instructions( false );
     tracer.Shutdown();
@@ -288,6 +302,10 @@ static void tracing( const char * path )
     check( strstr( text, "JMP 1234" ) );
     check( strstr( text, "pc 1234, op 46, op2 78, op3 16" ) );
     check( strstr( text, "interrupt: CAL 1678" ) );
+    check( strstr( text, "halt at 3fff, 8 cycles" ) );
+    check( strstr( text, "undefined opcode at 2345, 10 cycles" ) );
+    check( strstr( text, "halt at 3456, 8 cycles" ) );
+    check( strstr( text, "undefined opcode at 0000, 10 cycles" ) );
 }
 
 int main( int argc, char * argv[] )

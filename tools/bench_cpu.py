@@ -15,7 +15,7 @@ from bench_parity import ROOT, command, pin
 
 def variants(source, header):
     start = source.index('    switch ( op )\n', source.index('I8008_FORCE_INLINE unsigned I8008::execute('))
-    end = source.index('    unsigned clocks = states * 2;', start)
+    end = source.index('    unsigned clocks = ', start)
     runtime = source[:start]+'    states = execute_decoded( op );\n'+source[end:]
     # Restore ordinary compiler inlining choices for the runtime baseline.
     for signature in ('uint8_t I8008::fetch(', 'void I8008::set_reg(',
@@ -27,6 +27,18 @@ def variants(source, header):
     return {'runtime':(runtime,runtime_header), 'specialized':(source,header)}
 
 
+def stop_variants(source, header):
+    """Reconstruct the previous stop-field checks, retaining opcode dispatch."""
+    before = source.replace('4 | executionStopped', '4')
+    before = before.replace('                    states |= executionStopped;\n', '')
+    before = before.replace('( states & 0xff ) * 2', 'states * 2')
+    before = before.replace('( states & executionStopped ) && m_tracer',
+                            'm_tracer && ( halted || invalid )')
+    if before == source:
+        raise ValueError('cannot locate decoder stop markers')
+    return {'runtime':(before,header), 'specialized':(source,header)}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--compiler', choices=('gcc','msvc'), default='msvc' if os.name=='nt' else 'gcc')
@@ -34,6 +46,8 @@ def main():
     parser.add_argument('--pin', type=int)
     parser.add_argument('--output', type=Path)
     parser.add_argument('--extra', action='store_true', help='also measure assembly and SmallC sieve/e/TTT')
+    parser.add_argument('--stop-check', action='store_true',
+                        help='compare stop-field checks with decoder stop markers instead of opcode decoding')
     args = parser.parse_args()
     if args.samples < 1 or (args.pin is not None and args.pin < 0):
         parser.error('samples must be positive and CPU number nonnegative')
@@ -48,7 +62,8 @@ def main():
     for image in workloads.values():
         if not image.is_file():
             parser.error(f'missing image {image}; run setup --ack --smallc first')
-    implementations = variants((ROOT/'i8008.cxx').read_text(), (ROOT/'i8008.hxx').read_text())
+    implementations = (stop_variants if args.stop_check else variants)(
+        (ROOT/'i8008.cxx').read_text(), (ROOT/'i8008.hxx').read_text())
     suffix = '.exe' if os.name=='nt' else ''
     samples, checks = {}, {}
     with tempfile.TemporaryDirectory(prefix='8008 decode ') as directory:
@@ -88,7 +103,8 @@ def main():
                     samples.setdefault(variant,{}).setdefault(workload,[]).append(seconds/runs)
             print(f'Finished {"warmup" if round==0 else "sample "+str(round)}', file=sys.stderr, flush=True)
     medians = {v:{w:statistics.median(t) for w,t in ws.items()} for v,ws in samples.items()}
-    print('| Workload | Runtime decode (ms) | Specialized (ms) | Host time saved |')
+    print('| Workload | '+('Stop fields (ms) | Decoder marker (ms)' if args.stop_check else
+                          'Runtime decode (ms) | Specialized (ms)')+' | Host time saved |')
     print('| --- | ---: | ---: | ---: |')
     for w in workloads:
         before, after = medians['runtime'][w], medians['specialized'][w]

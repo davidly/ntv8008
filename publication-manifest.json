@@ -918,7 +918,7 @@
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "docs/emulator-performance.md": {
-      "sha256": "784af02c16a05fbed16de577438c16ea1b486ec8cdebd293bc34b9f190e017ff",
+      "sha256": "38a4f10c1ac51ca632ead082491861ea1dbf430d783ec7a4c96f1ee08e1ebc7c",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
@@ -1278,12 +1278,12 @@
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "i8008.cxx": {
-      "sha256": "b321818c4e5a8fec9864a7a5862d808941efbb42b257b6fc78c95ebfabb4f670",
+      "sha256": "656ce1b31808040ba03d05aa47e517f4df5ffa17f861adc6aa90af5d36880924",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "i8008.hxx": {
-      "sha256": "32d09262d79301774a7112f27d9014188e1b1d665fe0a8642c4bdaa78c8be074",
+      "sha256": "0e5cb535c2fb81ac6548cc37382b4ee2033f44ec3c579bf3ed56ded212410060",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
@@ -1878,7 +1878,7 @@
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "tests/cpu.cxx": {
-      "sha256": "e96842f5c72ec9b3a824c3fafc3ed4beac39f2f5d7f5e6174eb134ac46ecb46a",
+      "sha256": "f496d0d2212cf5729868fe2ab99e4c442eb719f14586a0b3af41a560d3e71470",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
@@ -1998,7 +1998,7 @@
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "tools/bench_cpu.py": {
-      "sha256": "f6414784629b4eaf0902afa713d9a8047fa6972f2e363a6f3b873f260f529a00",
+      "sha256": "5f679aa3f7b38c6ff5b011ff28e9f45d02a9c4f4e95b7bbb913747eec2819307",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },

@@ -140,3 +140,50 @@ harness verifies matching guest cycle counts and console hashes for every run.
 The tool does not change the checkout. As with parity, measurements are specific
 to the tested x64 hosts; other machines and compilers can be measured with the
 tools rather than assuming the same percentage gain.
+
+
+## Decoder stop markers (2026-11-06)
+
+The decoder now returns a stop marker with its T-state count for HLT and
+undefined opcodes. The execution wrapper tests that marker before reading the
+tracer pointer or public halt/error fields. Normal instructions avoid those
+loads. The original instruction address, public flags, stop behavior and trace
+messages are retained; the marker is private and excluded from guest clocks.
+
+Against commit 89a1b5e, seven measured samples after warmup, shuffled order,
+one pinned CPU and the CPU-only harness gave these median milliseconds per run:
+
+| Workload | GCC before | GCC after | Host time saved | MSVC before | MSVC after | Host time saved |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| ack-sieve | 11.237 | 10.808 | 3.82% | 12.535 | 12.390 | 1.16% |
+| ack-e | 10.118 | 9.589 | 5.23% | 10.615 | 10.366 | 2.34% |
+| ack-ttt | 52.175 | 50.023 | 4.12% | 54.008 | 53.804 | 0.38% |
+| asm-sieve | 4.072 | 3.965 | 2.63% | 4.074 | 4.077 | -0.08% |
+| asm-e | 1.490 | 1.371 | 8.01% | 1.706 | 1.693 | 0.78% |
+| asm-ttt | 1.316 | 1.262 | 4.15% | 1.362 | 1.317 | 3.29% |
+| smallc-sieve | 11.409 | 11.075 | 2.93% | 12.691 | 12.721 | -0.23% |
+| smallc-e | 11.721 | 11.121 | 5.13% | 12.802 | 12.481 | 2.50% |
+| smallc-ttt | 48.380 | 46.780 | 3.31% | 54.989 | 54.313 | 1.23% |
+| basic-e | 77.261 | 73.202 | 5.25% | 84.362 | 82.772 | 1.89% |
+
+The geometric-mean host-time reduction is 4.47% with GCC and 1.33% with MSVC.
+The two MSVC sieve differences below 0.3% are too small to treat as meaningful.
+Every measured run had identical guest cycle counts and console hashes. These
+host-speed changes do not alter target-runtime spreadsheet values or guest RAM.
+The GCC benchmark text segment grows by 184 bytes, from 39,306 to 39,490.
+
+Moving halt/error instruction-address capture out of the normal path was also
+tried, but regressed MSVC workloads. Combining branch operand fetches was not
+retained. The selected version retains the original trace address capture.
+Tests exercise normal and injected halts/undefined opcodes, including PC wrap.
+
+Reproduce the paired stop-check comparison with:
+
+```sh
+python3 tools/bench_cpu.py --compiler gcc --stop-check --samples 7 --pin 0 --extra --output /tmp/stop-check-gcc.json
+```
+
+For MSVC, run the same command with Windows Python and `--compiler msvc` from
+an x64 Visual Studio developer prompt. The baseline reconstructs the previous
+stop-field check while retaining the current opcode dispatch. Both variants run
+the CPU tests first; the benchmark checks guest clocks and output hashes.

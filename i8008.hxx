@@ -45,6 +45,8 @@ private:
     const char * (*m_symbolLookup)( uint16_t, uint16_t & ) = 0;
     mutable const char * m_previousSymbol = 0;
     enum { stateHalted = 1, stateEnded = 2, stateTrace = 4 };
+    // Decoder result: low byte is T states; this bit marks HLT/undefined opcodes.
+    enum { executionStopped = 0x100 };
     unsigned m_state = 0;
     void sync_state() // preserve direct writes to the public stop fields between calls
     {
