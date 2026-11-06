@@ -1278,12 +1278,12 @@
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "i8008.cxx": {
-      "sha256": "d2239db277af10a72bedb2f7248f25488f11fded54b96439f904e69422650745",
+      "sha256": "b321818c4e5a8fec9864a7a5862d808941efbb42b257b6fc78c95ebfabb4f670",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "i8008.hxx": {
-      "sha256": "e430def35fa68fbdbc5f5359d5034199ec6b4599a92efa35fc2d0ab64f61ee64",
+      "sha256": "32d09262d79301774a7112f27d9014188e1b1d665fe0a8642c4bdaa78c8be074",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },

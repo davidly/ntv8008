@@ -9,10 +9,13 @@ extern void i8008_output( uint8_t port, uint8_t value );
 // Keep small CPU operations inline when opcode dispatch specializes their operands.
 #if defined( _MSC_VER )
 #define I8008_FORCE_INLINE __forceinline
+#define I8008_NOINLINE __declspec(noinline)
 #elif defined( __GNUC__ ) || defined( __clang__ )
 #define I8008_FORCE_INLINE inline __attribute__((always_inline))
+#define I8008_NOINLINE __attribute__((noinline))
 #else
 #define I8008_FORCE_INLINE inline
+#define I8008_NOINLINE
 #endif
 
 struct I8008
@@ -58,4 +61,5 @@ private:
     void alu( unsigned operation, uint8_t value );
     unsigned execute_decoded( uint8_t op );
     unsigned execute( uint8_t op = 0, bool injected = false );
+    unsigned execute_outlined( uint8_t op = 0, bool injected = false );
 };

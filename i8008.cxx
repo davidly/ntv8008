@@ -280,17 +280,26 @@ I8008_FORCE_INLINE unsigned I8008::execute( uint8_t op, bool injected )
     return clocks;
 } //execute
 
+// Each inlined copy of execute() specializes all 256 opcodes, which is slow
+// to optimize (especially with MSVC /GL). Only emulate()'s normal loop needs
+// it inline; single steps, injected instructions and the rare counter-wrap
+// loop share this one out-of-line copy.
+I8008_NOINLINE unsigned I8008::execute_outlined( uint8_t op, bool injected )
+{
+    return execute( op, injected );
+} //execute_outlined
+
 unsigned I8008::step()
 {
     sync_state();
-    return execute();
+    return execute_outlined();
 } //step
 
 unsigned I8008::interrupt( uint8_t instruction )
 {
     halted = ended = false;
     m_state &= stateTrace;
-    return execute( instruction, true );
+    return execute_outlined( instruction, true );
 } //interrupt
 
 uint64_t I8008::emulate( uint64_t maxcycles )
@@ -303,7 +312,7 @@ uint64_t I8008::emulate( uint64_t maxcycles )
     if ( limit < start || limit > UINT64_MAX - 21 )
     {
         while ( cycles - start < maxcycles )
-            if ( !execute() )
+            if ( !execute_outlined() )
                 break;
     }
     else
