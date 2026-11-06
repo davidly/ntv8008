@@ -243,6 +243,72 @@ class Native(unittest.TestCase):
                 else:
                     self.assertEqual(cpu.run_native(5), output)
 
+    def test_monitor_control_blocks_at_memory_boundary(self):
+        def sixbit(text):
+            value = 0
+            for ch in text.ljust(6):
+                value = value << 6 | (ord(ch)-32)
+            return value
+
+        cases = []
+        for address in (RH-2, RH-1, RH):
+            cases.append(('open', 0o50, address, address > RH-2))
+        for op in (0o76, 0o77):
+            for extended in (False, True):
+                last_valid = RH-3 if extended else RH-1
+                for address in (last_valid, last_valid+1, RH):
+                    cases.append(('extended' if extended else 'original', op,
+                                  address, address > last_valid))
+        for op in (0o56, 0o57, 0o66, 0o67):
+            for address in (RH-2, RH-1, RH):
+                cases.append(('header', op, address, address > RH-2))
+        for kind,op,address,invalid in cases:
+            for native in (False, True):
+                with self.subTest(kind=kind,op=oct(op),address=address,native=native):
+                    cpu = self.machine(random.Random(0))
+                    cpu.m[:] = [0]*len(cpu.m)
+                    cpu.pc = 64
+                    cpu.input = io.StringIO('X\n')
+                    if kind == 'open':
+                        program = [instruction(op, 1, address), instruction(0o255)]
+                    else:
+                        program = [instruction(0o50, 1, 0o2000), instruction(0o255),
+                                   instruction(op, 1, address if kind!='header' else 0),
+                                   instruction(0o255)]
+                        if kind == 'header':
+                            cpu.m[0o2002] = address << 18 | address
+                        else:
+                            f = address+2 if kind=='extended' else address
+                            if f <= RH:
+                                cpu.m[f] = sixbit('TEST')
+                            if f+1 <= RH:
+                                cpu.m[f+1] = sixbit('DAT')
+                    program.append(instruction(0o47, address=0o12))
+                    cpu.m[64:64+len(program)] = program
+                    run = cpu.run_native if native else cpu.run
+                    if invalid:
+                        with self.assertRaisesRegex(RuntimeError if native else IndexError,
+                                                    'list (?:assignment )?index out of range'):
+                            run(10)
+                    else:
+                        self.assertEqual(run(10), '')
+
+    def test_monitor_input_cannot_overrun_guest_memory(self):
+        for native in (False, True):
+            with self.subTest(native=native):
+                cpu = self.machine(random.Random(0))
+                cpu.m[:] = [0]*len(cpu.m)
+                cpu.pc = 64
+                base = 0o140000 + 0o1000  # channel 1 input buffer
+                cpu.input = io.StringIO('X'*((len(cpu.m)-base)*5)+'\n')
+                cpu.m[0o2002] = 0o3000
+                program = [instruction(0o50, 1, 0o2000), instruction(0o255),
+                           instruction(0o56, 1), instruction(0o47, address=0o12)]
+                cpu.m[64:64+len(program)] = program
+                with self.assertRaisesRegex(RuntimeError if native else IndexError,
+                                            'list (?:assignment )?index out of range'):
+                    (cpu.run_native if native else cpu.run)(10)
+
 
 if __name__ == '__main__':
     unittest.main()

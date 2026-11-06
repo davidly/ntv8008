@@ -80,6 +80,13 @@ static std::string octal( long long value, int width = 0 )
 
 [[noreturn]] static void fail( const std::string & message ) { throw std::runtime_error( message ); }
 
+static void check_memory( size_t address, size_t words )
+{
+    const size_t count = sizeof m / sizeof m[ 0 ];
+    if ( address > count || words > count - address )
+        fail( "IndexError: list index out of range" );
+}
+
 static Channel * find( int ac )
 {
     auto it = channels.find( ac );
@@ -541,6 +548,7 @@ static void execute( Word ir, uint32_t at )
         ; // GETTAB is unavailable; use the runtime's fallback
     else if ( op == 050 ) // OPEN
     {
+        check_memory( e, 3 );
         flush_channel( ac );
         Channel * old = find( ac );
         if ( old && old->file )
@@ -557,6 +565,7 @@ static void execute( Word ir, uint32_t at )
     else if ( op == 076 || op == 077 ) // LOOKUP, ENTER (extended or original block)
     {
         uint32_t f = v < 64 ? e + 2 : e;
+        check_memory( f, 2 );
         std::string name = sixbit( m[ f ] ) + "." + sixbit( m[ f + 1 ] >> 18 << 18 );
         std::string path = directory + "/" + name;
         if ( op == 077 )
@@ -606,6 +615,7 @@ static void execute( Word ir, uint32_t at )
     {
         Channel & c = require( ac );
         uint32_t h = c.out;
+        check_memory( h, 3 );
         uint32_t base = 0100000 + ac * 01000;
         flush_channel( ac );
         c.written = 0;
@@ -619,6 +629,7 @@ static void execute( Word ir, uint32_t at )
     {
         Channel & c = require( ac );
         uint32_t h = c.in;
+        check_memory( h, 3 );
         uint32_t base = 0140000 + ac * 01000;
         std::string line;
         if ( c.hasLines )
@@ -639,6 +650,7 @@ static void execute( Word ir, uint32_t at )
         while ( !line.empty() && line.back() == '\n' )
             line.pop_back();
         std::string data = line + "\r\n";
+        check_memory( base, data.size() / 5 + ( data.size() % 5 != 0 ) );
         for ( int i = 0; i < 128; i++ )
             m[ base + i ] = 0;
         for ( size_t i = 0; i < data.size(); i++ )

@@ -1353,7 +1353,7 @@
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
     "plm8/pdp10.cxx": {
-      "sha256": "9a5df6be38282cd488eb93cd5b3bc1ce65ec4edf4c02620e72c0c89d03fe62bd",
+      "sha256": "601b8edb9ed7f4d0dd7f2a3f30a7a2a4ba514c945cd9a25d79e4f9ab23428ddc",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
@@ -1923,7 +1923,7 @@
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "tests/pdp10.py": {
-      "sha256": "4f9838aae13bd6168603d18a643c7efd6920ef0bb7dde1a45fb126816794cce3",
+      "sha256": "c335edfc6965157c70409ee6b2a4fa30766e628444b6572d77dfe140e2e95a06",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
