@@ -69,6 +69,35 @@ class Compiler(unittest.TestCase):
         with patch.object(compiler,'lower_assignments',lambda program:program):
             self.assertEqual(self.compile_run(text),expected)
 
+    def test_loop_lowering_matches_generic_path(self):
+        # Constant steps fold, variable steps get ascending/descending copies
+        # (renaming labels in nested IFs and loops), GOSUB bodies stay shared,
+        # and sums and comparisons match the unoptimized lowering.
+        from unittest.mock import patch
+        text="""10 DEFINT A-Z
+20 DIM A(20)
+30 FOR I=0 TO 20:A(I)=I*3:NEXT I
+40 C=0:FOR I=20 TO 0 STEP -2:C=C+A(I):NEXT I:PRINT C;I
+50 FOR S=-3 TO 3 STEP 2
+60 C=0:FOR J=10 TO 10+6*S STEP S
+70 IF J>12 THEN C=C+1 ELSE C=C+J
+80 FOR K=1 TO 2:C=C+K:NEXT K
+90 NEXT J:PRINT C;J;
+100 NEXT S:PRINT
+110 S=4:FOR J=1 TO 20 STEP S:GOSUB 200:NEXT J:PRINT C
+120 FOR J=5 TO 1 STEP S:C=999:NEXT J:PRINT C;J
+130 X=3:Y=7:IF X<Y THEN PRINT "LT"
+140 IF Y>=X THEN PRINT "GE"
+150 END
+200 C=C+J:RETURN
+"""
+        expected=self.compile_run(text)
+        identity=lambda program:program
+        with patch.multiple(compiler,constant_for_steps=identity,versioned_steps=identity,
+                            accumulations=identity,word_compares=identity):
+            self.assertEqual(self.compile_run(text),expected)
+        self.assertEqual(expected.split(b'\n')[0],b' 330 -2 ')
+
     def test_for_directions_empty_and_bound_evaluation(self):
         self.assertEqual(self.compile_run('''10 DEFINT A-Z
 20 X=0:S=-2:H=1

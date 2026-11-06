@@ -338,6 +338,12 @@ including ttt's search arrays. This reduces target cycles by 56.9% for sieve,
 outputs. Its driver falls back to stack storage when static workspace would
 leave insufficient RAM. The workbook includes the relocated arrays in BSS.
 
+ACK BASIC now folds constant FOR steps, tests a variable step's sign once per
+loop instead of on every iteration, and compares word variables directly.
+Sieve falls from 975.65 to **634.53 seconds** (35.0% fewer clocks); e and TTT
+improve slightly, to 204.12 and 281.21. The other frontends' images are
+unchanged. See the [ACK BASIC notes](ack/basic/README.md#for-loop-and-comparison-performance).
+
 Sieve includes all ten passes; E produces 192 digits. TTT is normalized to one
 iteration (6493 search nodes). Assembly, b8008 and SCELBAL run one TTT iteration;
 ACK languages, SmallC, PL/M and Forth run ten, so divide their reported total

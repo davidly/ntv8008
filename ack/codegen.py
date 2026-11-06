@@ -294,6 +294,21 @@ class Generator:
             raise CodegenError('unsupported comparison: ' + condition)
         self.label(done)
 
+    def word_compare(self, condition, target):
+        """Branch on signed AB versus CD, as compare_branch does without a constant."""
+        done = self.unique()
+        native = ['LEA', 'LAB']
+        if condition not in ('eq', 'ne'):
+            native += ['XRI 80H', 'LBA', 'LAD', 'XRI 80H', 'LDA', 'LAB']
+        native.append('CPD')
+        if condition not in ('eq', 'ne'):
+            native.append('JTC ' + (target if condition in ('lt', 'le') else done))
+        native += ['JFZ ' + (target if condition in ('gt', 'ge', 'ne') else done), 'LAE', 'CPC']
+        native += {'eq': ['JTZ ' + target], 'ne': ['JFZ ' + target], 'lt': ['JTC ' + target],
+                   'ge': ['JFC ' + target], 'le': ['JTC ' + target, 'JTZ ' + target],
+                   'gt': ['JTC ' + done, 'JFZ ' + target]}[condition]
+        return native + [done + ':']
+
     def indexed_access(self, lines, index, base):
         """Fuse a constant base, scalar index, scaling, and memory access.
 
@@ -559,6 +574,11 @@ class Generator:
                 operands=[('g:'+self.address(value[2:]) if value.startswith('g:') else value)
                           for value in (left,right)]
                 self.emit('@BYTE_CMP '+','.join((condition,self.symbol(target),*operands)))
+                continue
+            if op == 'wcmp':
+                condition,target,left,right=arg.split(',')
+                self.emit('@WORD_CMP '+','.join((condition,self.symbol(target),
+                          *('g:'+self.address(value[2:]) for value in (left,right)))))
                 continue
             if op in ('mes', 'exp', 'exa', 'ina', 'inp', 'fil', 'lin', 'lni'):
                 if (op == 'mes' and self.function == 'F_MAIN' and
@@ -925,7 +945,7 @@ class Generator:
                     output += (['        LDI %dD' % (value & 255)] if operation == '@SAVE_BYTE' else
                                ['        LCI %dD' % (value & 255), '        LDI %dD' % (value >> 8)])
                     continue
-                if operation in ('@BYTE_CMP','@BYTE_INC'):
+                if operation in ('@BYTE_CMP','@BYTE_INC','@WORD_CMP'):
                     if pending: output.append('        CAL PUSH')
                 elif operation in ('@GLOBAL_LOAD2','@LOCAL_LOAD2','@LOCAL_LOAD1'):
                     if pending:
@@ -983,6 +1003,16 @@ class Generator:
                     elif condition=='le': native+=['JTC '+target,'JTZ '+target]
                     else:
                         done=self.unique();native+=['JTC '+done,'JFZ '+target,done+':']
+                    output+=[item if item.endswith(':') else '        '+item for item in native]
+                    pending=False
+                    continue
+                if operation == '@WORD_CMP':
+                    # Load the right word into CD and the left into AB directly
+                    # from their static addresses; no stack or spill traffic.
+                    condition,target,left,right=argument.split(',')
+                    native=['LHI HIGH ('+right[2:]+')','LLI LOW ('+right[2:]+')','LCM','INL','LDM',
+                            'LHI HIGH ('+left[2:]+')','LLI LOW ('+left[2:]+')','LAM','INL','LBM',
+                            *self.word_compare(condition,target)]
                     output+=[item if item.endswith(':') else '        '+item for item in native]
                     pending=False
                     continue

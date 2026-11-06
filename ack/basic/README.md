@@ -122,9 +122,9 @@ Measured full-workload clock counts at the default 500 kHz clock:
 
 | Benchmark | Clock cycles | Approximate seconds |
 | --- | ---: | ---: |
-| sieve | 1,331,084,812 | 2,662.2 |
-| e | 324,261,038 | 648.5 |
-| ttt | 3,596,968,250 | 7,193.9 |
+| sieve | 317,265,600 | 634.5 |
+| e | 102,059,050 | 204.1 |
+| ttt | 1,406,038,082 | 2,812.1 |
 
 TTT's row includes all ten iterations; divide by ten for a per-iteration
 comparison. Sieve's segmented representation means its timing should be
@@ -166,3 +166,34 @@ optimizations. E can reuse a MOD calculation's quotient for a following DIV
 when its internal scalar operands remain unchanged. The BASIC sources remain
 unchanged. See the [shared backend notes](../README.md#native-pascal-arithmetic-and-quotient-reuse).
 The older stage tables retain their historical measurements.
+
+### FOR-loop and comparison performance
+
+With `-8`, the frontend keeps each FOR step in a temporary and tests its sign
+before every bound check. Those tests, and comparisons that passed one operand
+through a spill slot, cost sieve more than its segmentation. `optimize.py` now:
+
+* folds a step stored once from a literal into its uses. The sign tests become
+  nothing or a jump, the unreachable bound check is removed, and the variable
+  is stepped in place.
+* tests a variable step's sign once on entry, then runs an ascending or a
+  descending copy of the loop. A body is copied only if no label inside it is
+  referenced from outside, such as a GOSUB return point.
+* compares two global words with one native operation (`wcmp`) that loads them
+  straight into AB and CD.
+* evaluates `x = x + expression` with x loaded last, so the backend adds x
+  from memory instead of stacking the expression under it.
+
+No benchmark source, segment size, or iteration count changed, and the other
+ACK frontends' images are unchanged:
+
+| Benchmark | Before cycles | After cycles | Fewer cycles |
+| --- | ---: | ---: | ---: |
+| sieve | 487,824,822 | 317,265,600 | 35.0% |
+| e | 102,148,100 | 102,059,050 | 0.1% |
+| ttt | 1,418,358,456 | 1,406,038,082 | 0.9% |
+
+About a tenth of the remaining sieve time is the generic runtime dividing
+each segment's start by P, which counts quotients below 256 by subtraction.
+`tests/ack_basic.py` compares loops in both directions, nested bodies, GOSUB
+bodies, and zero-trip loops against the output with these passes disabled.

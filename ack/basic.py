@@ -18,6 +18,10 @@ _spec=importlib.util.spec_from_file_location('basic_optimize',RUNTIME/'optimize.
 _optimizations=importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(_optimizations)
 lower_assignments=_optimizations.lower_assignments
+constant_for_steps=_optimizations.constant_for_steps
+word_compares=_optimizations.word_compares
+accumulations=_optimizations.accumulations
+versioned_steps=_optimizations.versioned_steps
 
 
 def prepare_program(program):
@@ -31,7 +35,8 @@ def prepare_program(program):
                    lambda m:m[1]+names.get(m[2],m[2]),program,flags=re.M)
     if re.search(r' loc (?!-1\n)-?\d+\n cal \$_setchan',program):
         raise CodegenError('only console I/O is supported; DATA/READ and file channels are unavailable')
-    return lower_assignments(lower_fixed_arrays(program))
+    program=word_compares(lower_assignments(lower_fixed_arrays(constant_for_steps(program))))
+    return accumulations(versioned_steps(program))
 
 
 def compile_source(source):

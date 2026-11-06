@@ -18,8 +18,10 @@ def reuse_quotients(text):
     for name in tuple(private):
         token = re.compile(r'(?<![\w.$])'+re.escape(name)+r'(?![\w.$])')
         for line in lines:
+            # A wcmp operand is only read, like loe.
             if token.search(line) and line != name and not re.fullmatch(
-                    r' (loe|ste|zre|ine|dee|ina) '+re.escape(name),line):
+                    r' (loe|ste|zre|ine|dee|ina) '+re.escape(name),line) and not (
+                    line.startswith(' wcmp ') and 'g:'+name in line.split(',')[2:]):
                 private.remove(name)
                 break
     start = 0
