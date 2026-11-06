@@ -28,7 +28,7 @@
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "README.md": {
-      "sha256": "6823f3cbf0d2e4f14953f88a3313a8371719e8a50d39e0ec79cf00b6d81eae54",
+      "sha256": "e73f568a94a46a7f30c4d1c27a3ac8b2ec3c40296413f5ef60a81c894c1cf6a1",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
@@ -918,7 +918,7 @@
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "docs/emulator-performance.md": {
-      "sha256": "38a4f10c1ac51ca632ead082491861ea1dbf430d783ec7a4c96f1ee08e1ebc7c",
+      "sha256": "54be50a67e291939b88a57dfe33babe8d1fe9c8719698f04c4b9977540cc551c",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
@@ -1283,7 +1283,7 @@
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "i8008.hxx": {
-      "sha256": "0e5cb535c2fb81ac6548cc37382b4ee2033f44ec3c579bf3ed56ded212410060",
+      "sha256": "7edd53890468a81c5767a3d6cddcb50b1865fdc582e56d7bc8d7cb5b6d478863",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
@@ -1998,7 +1998,7 @@
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "tools/bench_cpu.py": {
-      "sha256": "5f679aa3f7b38c6ff5b011ff28e9f45d02a9c4f4e95b7bbb913747eec2819307",
+      "sha256": "f662ce14efffb1c51e2a8fb6b43960da1550e3313ca9f060beaf165bee2f100a",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },

@@ -187,3 +187,46 @@ For MSVC, run the same command with Windows Python and `--compiler msvc` from
 an x64 Visual Studio developer prompt. The baseline reconstructs the previous
 stop-field check while retaining the current opcode dispatch. Both variants run
 the CPU tests first; the benchmark checks guest clocks and output hashes.
+
+
+## H/L address loads (2026-11-06)
+
+M-register instructions form their address from H and L. GCC had merged the
+two byte reads into one 16-bit load. After a byte store to H or L, the CPU
+cannot forward that store to a wider load, so the load waits for the store to
+complete. Common 8008 code does exactly this: an INL, DCL or LLI followed by
+an LxM, LMx or ALU-with-M instruction. `address()` now masks H before shifting
+it. GCC then emits two byte loads, each forwarded from its own store. The
+computed address and all guest behavior are unchanged.
+
+Against commit 1495d7a, seven measured samples after warmup, shuffled order,
+one pinned CPU and the CPU-only harness, GCC 11.4, gave these median
+milliseconds per run:
+
+| Workload | 16-bit H/L load | Byte loads | Host time saved |
+| --- | ---: | ---: | ---: |
+| ack-sieve | 11.763 | 10.884 | 7.5% |
+| ack-e | 10.393 | 9.581 | 7.8% |
+| ack-ttt | 55.157 | 49.704 | 9.9% |
+| basic-e | 80.557 | 66.743 | 17.1% |
+| asm-sieve | 4.396 | 3.743 | 14.9% |
+| asm-e | 1.519 | 1.402 | 7.7% |
+| asm-ttt | 1.345 | 1.139 | 15.3% |
+| smallc-sieve | 12.164 | 11.027 | 9.3% |
+| smallc-e | 12.021 | 11.378 | 5.3% |
+| smallc-ttt | 50.288 | 48.272 | 4.0% |
+
+The geometric-mean host-time reduction is 9.99%. MSVC 19.44 already used two
+byte loads, and its paired run was within noise (geometric mean -0.42%).
+Guest cycle counts and console hashes matched for every run.
+
+Two other experiments were not retained. Keeping the PC, stack level and clock
+count in locals for the duration of `emulate()` was 6.7% slower with GCC once
+the H/L fix was applied. Testing one flag in `condition()` instead of packing
+all four was within noise on both compilers.
+
+Reproduce with:
+
+```sh
+python3 tools/bench_cpu.py --compiler gcc --address-load --samples 7 --pin 0 --extra --output /tmp/address-gcc.json
+```

@@ -392,5 +392,5 @@ symbol maps; `-t -i` automatically uses them without a `-m` argument.
 [Hunt the Wumpus](examples/wumpus/README.md) runs from one shared C source with
 either SmallC or ACK C, including human and computer play.
 
-[Host emulator performance](docs/emulator-performance.md) records parity and
-opcode-dispatch measurements and commands for reproducing them.
+[Host emulator performance](docs/emulator-performance.md) records parity,
+opcode-dispatch and H/L address-load measurements and commands for reproducing them.

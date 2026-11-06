@@ -39,6 +39,15 @@ def stop_variants(source, header):
     return {'runtime':(before,header), 'specialized':(source,header)}
 
 
+def address_variants(source, header):
+    """Reconstruct the merged 16-bit H/L address load, retaining everything else."""
+    current = 'return ( ( r[ 5 ] & 0x3f ) << 8 ) | r[ 6 ];'
+    if current not in header:
+        raise ValueError('cannot locate the H/L address expression')
+    before = header.replace(current, 'return ( ( r[ 5 ] << 8 ) | r[ 6 ] ) & 0x3fff;')
+    return {'runtime':(source,before), 'specialized':(source,header)}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--compiler', choices=('gcc','msvc'), default='msvc' if os.name=='nt' else 'gcc')
@@ -48,6 +57,8 @@ def main():
     parser.add_argument('--extra', action='store_true', help='also measure assembly and SmallC sieve/e/TTT')
     parser.add_argument('--stop-check', action='store_true',
                         help='compare stop-field checks with decoder stop markers instead of opcode decoding')
+    parser.add_argument('--address-load', action='store_true',
+                        help='compare a merged 16-bit H/L load with separate byte loads instead of opcode decoding')
     args = parser.parse_args()
     if args.samples < 1 or (args.pin is not None and args.pin < 0):
         parser.error('samples must be positive and CPU number nonnegative')
@@ -62,7 +73,10 @@ def main():
     for image in workloads.values():
         if not image.is_file():
             parser.error(f'missing image {image}; run setup --ack --smallc first')
-    implementations = (stop_variants if args.stop_check else variants)(
+    if args.stop_check and args.address_load:
+        parser.error('choose one of --stop-check and --address-load')
+    chosen = stop_variants if args.stop_check else address_variants if args.address_load else variants
+    implementations = chosen(
         (ROOT/'i8008.cxx').read_text(), (ROOT/'i8008.hxx').read_text())
     suffix = '.exe' if os.name=='nt' else ''
     samples, checks = {}, {}
@@ -103,8 +117,10 @@ def main():
                     samples.setdefault(variant,{}).setdefault(workload,[]).append(seconds/runs)
             print(f'Finished {"warmup" if round==0 else "sample "+str(round)}', file=sys.stderr, flush=True)
     medians = {v:{w:statistics.median(t) for w,t in ws.items()} for v,ws in samples.items()}
-    print('| Workload | '+('Stop fields (ms) | Decoder marker (ms)' if args.stop_check else
-                          'Runtime decode (ms) | Specialized (ms)')+' | Host time saved |')
+    columns = ('Stop fields (ms) | Decoder marker (ms)' if args.stop_check else
+               '16-bit H/L load (ms) | Byte loads (ms)' if args.address_load else
+               'Runtime decode (ms) | Specialized (ms)')
+    print('| Workload | '+columns+' | Host time saved |')
     print('| --- | ---: | ---: | ---: |')
     for w in workloads:
         before, after = medians['runtime'][w], medians['specialized'][w]

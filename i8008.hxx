@@ -55,7 +55,10 @@ private:
     void trace_state( uint16_t address, uint8_t op, bool injected ) const;
     const char * render_operation( uint8_t op, uint16_t operands ) const;
     uint8_t fetch();
-    I8008_FORCE_INLINE uint16_t address() const { return ( ( r[ 5 ] << 8 ) | r[ 6 ] ) & 0x3fff; }
+    // Masking H first keeps GCC from merging H and L into one 16-bit load. That
+    // load stalls after a byte store to H or L (INL then LAM, for example),
+    // because the store can't be forwarded to the wider load.
+    I8008_FORCE_INLINE uint16_t address() const { return ( ( r[ 5 ] & 0x3f ) << 8 ) | r[ 6 ]; }
     I8008_FORCE_INLINE uint8_t get_reg( unsigned n ) const { return ( 7 == n ) ? memory[ address() ] : r[ n ]; }
     void set_reg( unsigned n, uint8_t value );
     void set_szp( uint8_t value );
