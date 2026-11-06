@@ -67,20 +67,24 @@ class Downloads(unittest.TestCase):
         self.assertEqual([call.args[0] for call in sleep.call_args_list],[1,2])
 
     def test_permanent_http_error_is_not_retried(self):
-        error=bootstrap.urllib.error.HTTPError('url',404,'not found',{},None)
+        body=io.BytesIO()
+        error=bootstrap.urllib.error.HTTPError('url',404,'not found',{},body)
         with patch.object(bootstrap.urllib.request,'urlopen',side_effect=error) as fetch, \
              patch.object(bootstrap.time,'sleep') as sleep:
             with self.assertRaises(bootstrap.urllib.error.HTTPError):bootstrap.download('url')
         self.assertEqual(fetch.call_count,1)
         sleep.assert_not_called()
         error.close()
+        self.assertTrue(body.closed)
 
     def test_transient_http_errors_have_a_bounded_retry_count(self):
-        error=bootstrap.urllib.error.HTTPError('url',503,'unavailable',{},None)
+        body=io.BytesIO()
+        error=bootstrap.urllib.error.HTTPError('url',503,'unavailable',{},body)
         with patch.object(bootstrap.urllib.request,'urlopen',side_effect=error) as fetch, \
              patch.object(bootstrap.time,'sleep'):
             with self.assertRaises(bootstrap.urllib.error.HTTPError):bootstrap.download('url')
         self.assertEqual(fetch.call_count,3)
+        self.assertTrue(body.closed)
 
     def test_checksum_mismatch_is_not_cached_or_retried(self):
         import tempfile
