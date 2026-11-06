@@ -12,7 +12,9 @@ CSTACK  EQU 3F00H
 PE      EQU VARS+64D
 LINE    EQU VARS+66D
 LAST    EQU VARS+68D
-STKP    EQU VARS+70D
+; The stack pointer, return scratch and return jump share the stack's page,
+; so calls and returns change only L. Pushes stop below RETJMP.
+STKP    EQU CSTACK+255D
 TLEN    EQU VARS+73D
 RSTART  EQU VARS+74D
 KSTART  EQU VARS+75D
@@ -49,12 +51,12 @@ SOURCE  EQU VARS+119D
 TARGET  EQU VARS+121D
 ENDPTR  EQU VARS+123D
 PSAVE   EQU VARS+125D
-EXPECTC EQU VARS+127D
 MSIGN   EQU VARS+128D
 RCOUNT  EQU VARS+129D
 OLDEND  EQU VARS+130D
 AWIDTH  EQU VARS+132D
-RETA    EQU VARS+133D
+RETA    EQU CSTACK+254D
+RETJMP  EQU CSTACK+251D
 CACHEIX EQU VARS+134D
 FOROLD  EQU VARS+135D
 LINKED  EQU VARS+137D
@@ -107,6 +109,9 @@ TCHR    EQU 0A9H
         JMP START
         ORG 40H
 START:
+        LHI HIGH RETJMP
+        LLI LOW RETJMP
+        LMI 44H                ; JMP opcode; SRET patches its operand
         XRA
         ST STKP
         ST MODE
@@ -241,12 +246,14 @@ SKIP:
         CAL GET
         JMP SKIP
 EXPECT:
-        ST EXPECTC
-        CAL GET
-        LHI HIGH EXPECTC
-        LLI LOW EXPECTC
+        ; Compare the next token with A in place; advance only on a match.
+        LHB
+        LLC
         CPM
         JFZ SYNTAX
+        INC
+        RFZ
+        INB
         RET
 ; Decimal reader. Arithmetic is deliberately modulo 65536.
 NUMBER:
@@ -511,17 +518,23 @@ ENTERLINE:
         LAD
         ORE
         JTZ PROMPT
-        CAL GET
+        ; Skip the record length byte without reading it.
+        INC
+        JFZ DISPATCH
+        INB
 DISPATCH:
         ; Variables precede keyword tokens; implicit assignments dominate.
         CAL PEEK
         CPI 91D
         JTC DISPATLOW
-        CAL GET
-        CPI TPRINT
-        JTZ PRINT
-        CPI TLET
-        JTZ ASSIGN
+        ; A already holds the keyword; just advance past it.
+        INC
+        JFZ DISPATKEY
+        INB
+DISPATKEY:
+        ; Ordered by dynamic frequency in loops: each miss costs 17 states.
+        CPI TNEXT
+        JTZ NEXT
         CPI TIF
         JTZ IF
         CPI TGOTO
@@ -530,10 +543,12 @@ DISPATCH:
         JTZ GOSUB
         CPI TRETURN
         JTZ GRETURN
+        CPI TPRINT
+        JTZ PRINT
+        CPI TLET
+        JTZ ASSIGN
         CPI TFOR
         JTZ FOR
-        CPI TNEXT
-        JTZ NEXT
         CPI TDIM
         JTZ DIM
         CPI TEND
@@ -1587,7 +1602,7 @@ CMPTRUEZ:
 ; Checked software word stack for parser values and return addresses.
 VPUSH:
         LD STKP
-        CPI 252D
+        CPI 250D
         JFC STACKERR
         LLA
         LHI HIGH CSTACK
@@ -1631,25 +1646,25 @@ LPOP:
         ST LEFT+1D
         RET
 SRET:
+        ; H stays on the stack page: only L moves between the slots.
         ST RETA
-        LD STKP
-        CPI 2D
-        JTC STACKERR
+        INL
+        LAM
         SUI 2D
-        ST STKP
+        JTC STACKERR
+        LMA
         LLA
-        LHI HIGH CSTACK
         LAM
-        ST RETJMP+1D
-        LD STKP
-        ADI 1D
-        LLA
-        LHI HIGH CSTACK
+        LLI LOW RETJMP+1D
+        LMA
+        LLI LOW STKP
+        LLM
+        INL
         LAM
-        ST RETJMP+2D
+        LLI LOW RETJMP+2D
+        LMA
         LD RETA
-RETJMP:
-        JMP 0D
+        JMP RETJMP
 ; Text at DE, zero terminated. BC is preserved.
 TEXT:
         LHD

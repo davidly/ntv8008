@@ -14,7 +14,9 @@ CSTACK  EQU 3F00H
 PE      EQU VARS+64D
 LINE    EQU VARS+66D
 LAST    EQU VARS+68D
-STKP    EQU VARS+70D
+; The stack pointer, return scratch and return jump share the stack's page,
+; so calls and returns change only L. Pushes stop below RETJMP.
+STKP    EQU CSTACK+255D
 TLEN    EQU VARS+73D
 RSTART  EQU VARS+74D
 KSTART  EQU VARS+75D
@@ -51,12 +53,12 @@ SOURCE  EQU VARS+119D
 TARGET  EQU VARS+121D
 ENDPTR  EQU VARS+123D
 PSAVE   EQU VARS+125D
-EXPECTC EQU VARS+127D
 MSIGN   EQU VARS+128D
 RCOUNT  EQU VARS+129D
 OLDEND  EQU VARS+130D
 AWIDTH  EQU VARS+132D
-RETA    EQU VARS+133D
+RETA    EQU CSTACK+254D
+RETJMP  EQU CSTACK+251D
 CACHEIX EQU VARS+134D
 FOROLD  EQU VARS+135D
 LINKED  EQU VARS+137D
@@ -109,12 +111,15 @@ TCHR    EQU 0A9H
         JMP START
         ORG 40H
 START:
+        LHI HIGH RETJMP
+        LLI LOW RETJMP
+        LMI 44H                ; JMP opcode; SRET patches its operand
         XRA
 ; ST STKP
-        LHI HIGH STKP
         LLI LOW STKP
         LMA
 ; ST MODE
+        LHI HIGH MODE
         LLI LOW MODE
         LMA
 ; ST LINKED
@@ -138,6 +143,7 @@ PROMPT:
         LLI LOW STKP
         LMA
 ; ST MODE
+        LHI HIGH MODE
         LLI LOW MODE
         LMA
         LAI 62D
@@ -145,7 +151,10 @@ PROMPT:
         CAL READLINE
         LBI HIGH RAW
         LCI LOW RAW
-        CAL PEEK
+; CAL PEEK
+        LHB
+        LLC
+        LAM
         NDA
         JTZ PROMPT
         CPI 48D
@@ -278,21 +287,23 @@ GET:
         INB
         RET
 SKIP:
-        CAL PEEK
+; CAL PEEK
+        LHB
+        LLC
+        LAM
         CPI 32D
         RFZ
         CAL GET
         JMP SKIP
 EXPECT:
-; ST EXPECTC
-        LHI HIGH EXPECTC
-        LLI LOW EXPECTC
-        LMA
-        CAL GET
-        LHI HIGH EXPECTC
-        LLI LOW EXPECTC
+        ; Compare the next token with A in place; advance only on a match.
+        LHB
+        LLC
         CPM
         JFZ SYNTAX
+        INC
+        RFZ
+        INB
         RET
 ; Decimal reader. Arithmetic is deliberately modulo 65536.
 NUMBER:
@@ -300,7 +311,10 @@ NUMBER:
         LDA
         LEA
 NUMLOOP:
-        CAL PEEK
+; CAL PEEK
+        LHB
+        LLC
+        LAM
         CPI 48D
         RTC
         CPI 58D
@@ -366,7 +380,10 @@ TOKCAP:
         LLC
         DCL
         LMA
-        CAL PEEK
+; CAL PEEK
+        LHB
+        LLC
+        LAM
         CAL UPPER
         CPI 65D
         JTC TOKFIND
@@ -482,7 +499,10 @@ TOKPUNCT:
         CAL EMIT
         JMP TOKLOOP
 TOKLESS:
-        CAL PEEK
+; CAL PEEK
+        LHB
+        LLC
+        LAM
         CPI 61D
         JTZ TOKLE
         CPI 62D
@@ -499,7 +519,10 @@ TOKNE:
         LAI TNE
         JMP TOKEM
 TOKMORE:
-        CAL PEEK
+; CAL PEEK
+        LHB
+        LLC
+        LAM
         CPI 61D
         JTZ TOKGE
         LAI 62D
@@ -631,17 +654,26 @@ ENTERLINE:
         LAD
         ORE
         JTZ PROMPT
-        CAL GET
+        ; Skip the record length byte without reading it.
+        INC
+        JFZ DISPATCH
+        INB
 DISPATCH:
         ; Variables precede keyword tokens; implicit assignments dominate.
-        CAL PEEK
+; CAL PEEK
+        LHB
+        LLC
+        LAM
         CPI 91D
         JTC DISPATLOW
-        CAL GET
-        CPI TPRINT
-        JTZ PRINT
-        CPI TLET
-        JTZ ASSIGN
+        ; A already holds the keyword; just advance past it.
+        INC
+        JFZ DISPATKEY
+        INB
+DISPATKEY:
+        ; Ordered by dynamic frequency in loops: each miss costs 17 states.
+        CPI TNEXT
+        JTZ NEXT
         CPI TIF
         JTZ IF
         CPI TGOTO
@@ -650,10 +682,12 @@ DISPATCH:
         JTZ GOSUB
         CPI TRETURN
         JTZ GRETURN
+        CPI TPRINT
+        JTZ PRINT
+        CPI TLET
+        JTZ ASSIGN
         CPI TFOR
         JTZ FOR
-        CPI TNEXT
-        JTZ NEXT
         CPI TDIM
         JTZ DIM
         CPI TEND
@@ -685,7 +719,7 @@ ASSIGN:
         LHI HIGH STKP
         LLI LOW STKP
         LAM
-        CPI 252D
+        CPI 250D
         JFC STACKERR
         LLA
         LHI HIGH CSTACK
@@ -694,7 +728,6 @@ ASSIGN:
         LMI HIGH XR1
         INL
         LAL
-        LHI HIGH STKP
         LLI LOW STKP
         LMA
         JMP LVALUE
@@ -716,7 +749,7 @@ XR1:
         LHI HIGH STKP
         LLI LOW STKP
         LAM
-        CPI 252D
+        CPI 250D
         JFC STACKERR
         LLA
         LHI HIGH CSTACK
@@ -725,7 +758,6 @@ XR1:
         LMI HIGH XR2
         INL
         LAL
-        LHI HIGH STKP
         LLI LOW STKP
         LMA
         JMP EXPR
@@ -748,7 +780,10 @@ STOREVALUE:
         LMD
         JMP FINISH
 FINISH:
-        CAL PEEK
+; CAL PEEK
+        LHB
+        LLC
+        LAM
         NDA
         JTZ DISPATCH
         CPI 58D
@@ -788,7 +823,7 @@ IF:
         LHI HIGH STKP
         LLI LOW STKP
         LAM
-        CPI 252D
+        CPI 250D
         JFC STACKERR
         LLA
         LHI HIGH CSTACK
@@ -797,7 +832,6 @@ IF:
         LMI HIGH XR3
         INL
         LAL
-        LHI HIGH STKP
         LLI LOW STKP
         LMA
         JMP EXPR
@@ -808,21 +842,27 @@ IFTHEN:
         LAD
         ORE
         JTZ SKIPLINE
-        CAL PEEK
+; CAL PEEK
+        LHB
+        LLC
+        LAM
         CPI TNUM
         JTZ GOTO
         CPI TADDR
         JTZ GOTOADDR
         JMP DISPATCH
 GOTO:
-        CAL PEEK
+; CAL PEEK
+        LHB
+        LLC
+        LAM
         CPI TADDR
         JTZ GOTOADDR
 ; CALL EXPR
         LHI HIGH STKP
         LLI LOW STKP
         LAM
-        CPI 252D
+        CPI 250D
         JFC STACKERR
         LLA
         LHI HIGH CSTACK
@@ -831,7 +871,6 @@ GOTO:
         LMI HIGH XR4
         INL
         LAL
-        LHI HIGH STKP
         LLI LOW STKP
         LMA
         JMP EXPR
@@ -846,14 +885,17 @@ JUMPDE:
         LCE
         JMP DISPATCH
 GOSUB:
-        CAL PEEK
+; CAL PEEK
+        LHB
+        LLC
+        LAM
         CPI TADDR
         JTZ GOSUBADDR
 ; CALL EXPR
         LHI HIGH STKP
         LLI LOW STKP
         LAM
-        CPI 252D
+        CPI 250D
         JFC STACKERR
         LLA
         LHI HIGH CSTACK
@@ -862,7 +904,6 @@ GOSUB:
         LMI HIGH XR5
         INL
         LAL
-        LHI HIGH STKP
         LLI LOW STKP
         LMA
         JMP EXPR
@@ -1037,7 +1078,10 @@ BINDSTRING:
         JFZ BINDSTRING
         JMP BINDTOKEN
 BINDTARGET:
-        CAL PEEK
+; CAL PEEK
+        LHB
+        LLC
+        LAM
         CPI TNUM
         JFZ BINDTOKEN
         LEC
@@ -1050,7 +1094,10 @@ BINDTARGET:
         LMD
         CAL GET
         CAL GETWORD
-        CAL PEEK
+; CAL PEEK
+        LHB
+        LLC
+        LAM
         NDA
         JTZ BINDLOOK
         CPI 58D
@@ -1220,7 +1267,7 @@ EXPR:
         LHI HIGH STKP
         LLI LOW STKP
         LAM
-        CPI 252D
+        CPI 250D
         JFC STACKERR
         LLA
         LHI HIGH CSTACK
@@ -1229,13 +1276,15 @@ EXPR:
         LMI HIGH XR6
         INL
         LAL
-        LHI HIGH STKP
         LLI LOW STKP
         LMA
         JMP SUM
 XR6:
 EXPR1:
-        CAL PEEK
+; CAL PEEK
+        LHB
+        LLC
+        LAM
         CPI 60D
         JTZ EXPRCMP
         CPI 61D
@@ -1275,7 +1324,7 @@ CMPSLOW:
         LHI HIGH STKP
         LLI LOW STKP
         LAM
-        CPI 252D
+        CPI 250D
         JFC STACKERR
         LLA
         LHI HIGH CSTACK
@@ -1284,7 +1333,6 @@ CMPSLOW:
         LMI HIGH XR7
         INL
         LAL
-        LHI HIGH STKP
         LLI LOW STKP
         LMA
         JMP SUM
@@ -1303,7 +1351,7 @@ SUM:
         LHI HIGH STKP
         LLI LOW STKP
         LAM
-        CPI 252D
+        CPI 250D
         JFC STACKERR
         LLA
         LHI HIGH CSTACK
@@ -1312,13 +1360,15 @@ SUM:
         LMI HIGH XR8
         INL
         LAL
-        LHI HIGH STKP
         LLI LOW STKP
         LMA
         JMP TERM
 XR8:
 SUM1:
-        CAL PEEK
+; CAL PEEK
+        LHB
+        LLC
+        LAM
         CPI 43D
         JTZ SUMOP
         CPI 45D
@@ -1355,7 +1405,7 @@ SUMSLOW:
         LHI HIGH STKP
         LLI LOW STKP
         LAM
-        CPI 252D
+        CPI 250D
         JFC STACKERR
         LLA
         LHI HIGH CSTACK
@@ -1364,7 +1414,6 @@ SUMSLOW:
         LMI HIGH XR9
         INL
         LAL
-        LHI HIGH STKP
         LLI LOW STKP
         LMA
         JMP TERM
@@ -1418,7 +1467,10 @@ SUB:
         JMP SUM1
 TERM:
         ; Common atomic operands do not need FACTOR/LVALUE return frames.
-        CAL PEEK
+; CAL PEEK
+        LHB
+        LLC
+        LAM
         CPI TNUM
         JTZ TERMCONST
         CPI 65D
@@ -1429,7 +1481,10 @@ TERM:
         SUI 65D
         LEA
         LDI 0D
-        CAL PEEK
+; CAL PEEK
+        LHB
+        LLC
+        LAM
         CPI 40D
         JTZ TERMARRAY
         LAE
@@ -1445,7 +1500,7 @@ TERMARRAY:
         LHI HIGH STKP
         LLI LOW STKP
         LAM
-        CPI 252D
+        CPI 250D
         JFC STACKERR
         LLA
         LHI HIGH CSTACK
@@ -1454,7 +1509,6 @@ TERMARRAY:
         LMI HIGH XR10
         INL
         LAL
-        LHI HIGH STKP
         LLI LOW STKP
         LMA
         JMP INDEXED
@@ -1470,7 +1524,7 @@ TERMSLOW:
         LHI HIGH STKP
         LLI LOW STKP
         LAM
-        CPI 252D
+        CPI 250D
         JFC STACKERR
         LLA
         LHI HIGH CSTACK
@@ -1479,13 +1533,15 @@ TERMSLOW:
         LMI HIGH XR11
         INL
         LAL
-        LHI HIGH STKP
         LLI LOW STKP
         LMA
         JMP FACTOR
 XR11:
 TERM1:
-        CAL PEEK
+; CAL PEEK
+        LHB
+        LLC
+        LAM
         CPI 42D
         JTZ TERMOP
         CPI 47D
@@ -1528,7 +1584,7 @@ TERMRHS:
         LHI HIGH STKP
         LLI LOW STKP
         LAM
-        CPI 252D
+        CPI 250D
         JFC STACKERR
         LLA
         LHI HIGH CSTACK
@@ -1537,7 +1593,6 @@ TERMRHS:
         LMI HIGH XR12
         INL
         LAL
-        LHI HIGH STKP
         LLI LOW STKP
         LMA
         JMP FACTOR
@@ -1596,7 +1651,10 @@ FACTVAR:
         SUI 65D
         LEA
         LDI 0D
-        CAL PEEK
+; CAL PEEK
+        LHB
+        LLC
+        LAM
         CPI 40D
         JTZ FACTARRAY
         LAE
@@ -1612,7 +1670,7 @@ FACTARRAY:
         LHI HIGH STKP
         LLI LOW STKP
         LAM
-        CPI 252D
+        CPI 250D
         JFC STACKERR
         LLA
         LHI HIGH CSTACK
@@ -1621,7 +1679,6 @@ FACTARRAY:
         LMI HIGH XR13
         INL
         LAL
-        LHI HIGH STKP
         LLI LOW STKP
         LMA
         JMP INDEXED
@@ -1639,7 +1696,7 @@ PAREN:
         LHI HIGH STKP
         LLI LOW STKP
         LAM
-        CPI 252D
+        CPI 250D
         JFC STACKERR
         LLA
         LHI HIGH CSTACK
@@ -1648,7 +1705,6 @@ PAREN:
         LMI HIGH XR14
         INL
         LAL
-        LHI HIGH STKP
         LLI LOW STKP
         LMA
         JMP EXPR
@@ -1662,7 +1718,7 @@ NEGATIVE:
         LHI HIGH STKP
         LLI LOW STKP
         LAM
-        CPI 252D
+        CPI 250D
         JFC STACKERR
         LLA
         LHI HIGH CSTACK
@@ -1671,7 +1727,6 @@ NEGATIVE:
         LMI HIGH XR15
         INL
         LAL
-        LHI HIGH STKP
         LLI LOW STKP
         LMA
         JMP FACTOR
@@ -1684,7 +1739,7 @@ ABSVAL:
         LHI HIGH STKP
         LLI LOW STKP
         LAM
-        CPI 252D
+        CPI 250D
         JFC STACKERR
         LLA
         LHI HIGH CSTACK
@@ -1693,7 +1748,6 @@ ABSVAL:
         LMI HIGH XR16
         INL
         LAL
-        LHI HIGH STKP
         LLI LOW STKP
         LMA
         JMP FACTOR
@@ -1709,7 +1763,7 @@ PEEKVAL:
         LHI HIGH STKP
         LLI LOW STKP
         LAM
-        CPI 252D
+        CPI 250D
         JFC STACKERR
         LLA
         LHI HIGH CSTACK
@@ -1718,7 +1772,6 @@ PEEKVAL:
         LMI HIGH XR17
         INL
         LAL
-        LHI HIGH STKP
         LLI LOW STKP
         LMA
         JMP FACTOR
@@ -1751,7 +1804,10 @@ LVALUE:
         JFC SYNTAX
         LEA
         LDI 0D
-        CAL PEEK
+; CAL PEEK
+        LHB
+        LLC
+        LAM
         CPI 40D
         JTZ INDEXED
         LAE
@@ -1792,7 +1848,7 @@ INDEXSLOW:
         LHI HIGH STKP
         LLI LOW STKP
         LAM
-        CPI 252D
+        CPI 250D
         JFC STACKERR
         LLA
         LHI HIGH CSTACK
@@ -1801,7 +1857,6 @@ INDEXSLOW:
         LMI HIGH XR18
         INL
         LAL
-        LHI HIGH STKP
         LLI LOW STKP
         LMA
         JMP EXPR
@@ -1850,7 +1905,10 @@ IFCOND:
 IFOP:
         CAL ATOM
         JFZ IFFAIL
-        CAL PEEK
+; CAL PEEK
+        LHB
+        LLC
+        LAM
         CPI TTHEN
         JFZ IFFAIL
         CAL COMPARE
@@ -1870,7 +1928,10 @@ IFFAIL:
 SUMATOM:
         CAL ATOM
         RFZ
-        CAL PEEK
+; CAL PEEK
+        LHB
+        LLC
+        LAM
         CPI 42D
         JTZ IXFAIL
         CPI 47D
@@ -1897,7 +1958,10 @@ ATOM:
         JFC IXFAIL
         SUI 65D
         LEA
-        CAL PEEK
+; CAL PEEK
+        LHB
+        LLC
+        LAM
         CPI 40D
         JTZ ARRAYATOM
         LAE
@@ -2006,7 +2070,10 @@ SIMPLEVALUE:
         CAL ATOM
         JFZ IFFAIL
 IXCHECK:
-        CAL PEEK
+; CAL PEEK
+        LHB
+        LLC
+        LAM
         CPI 43D
         JTZ IXOFFSET
         CPI 45D
@@ -2080,7 +2147,10 @@ IXMOD:
         CAL GET
         CAL ATOM
         JFZ IFFAIL
-        CAL PEEK
+; CAL PEEK
+        LHB
+        LLC
+        LAM
         CAL IXFINISH
         RFZ
         CAL DIVIDE
@@ -2254,7 +2324,7 @@ VPUSH:
         LHI HIGH STKP
         LLI LOW STKP
         LAM
-        CPI 252D
+        CPI 250D
         JFC STACKERR
         LLA
         LHI HIGH CSTACK
@@ -2264,7 +2334,6 @@ VPUSH:
         INL
         LAL
 ; ST STKP
-        LHI HIGH STKP
         LLI LOW STKP
         LMA
         RET
@@ -2282,7 +2351,6 @@ VPOP:
         LLI LOW STKP
         LMA
         LLA
-        LHI HIGH CSTACK
         LAM
         INL
         LHM
@@ -2302,18 +2370,17 @@ LPOP:
         LLI LOW STKP
         LMA
         LLA
-        LHI HIGH CSTACK
         LAM
 ; ST LEFT
         LHI HIGH LEFT
         LLI LOW LEFT
         LMA
 ; LD STKP
+        LHI HIGH STKP
         LLI LOW STKP
         LAM
         ADI 1D
         LLA
-        LHI HIGH CSTACK
         LAM
 ; ST LEFT+1D
         LHI HIGH LEFT+1D
@@ -2321,45 +2388,31 @@ LPOP:
         LMA
         RET
 SRET:
+        ; H stays on the stack page: only L moves between the slots.
 ; ST RETA
         LHI HIGH RETA
         LLI LOW RETA
         LMA
-; LD STKP
-        LLI LOW STKP
+        INL
         LAM
-        CPI 2D
-        JTC STACKERR
         SUI 2D
-; ST STKP
-        LHI HIGH STKP
-        LLI LOW STKP
+        JTC STACKERR
         LMA
         LLA
-        LHI HIGH CSTACK
         LAM
-; ST RETJMP+1D
-        LHI HIGH RETJMP+1D
         LLI LOW RETJMP+1D
         LMA
-; LD STKP
-        LHI HIGH STKP
         LLI LOW STKP
+        LLM
+        INL
         LAM
-        ADI 1D
-        LLA
-        LHI HIGH CSTACK
-        LAM
-; ST RETJMP+2D
-        LHI HIGH RETJMP+2D
         LLI LOW RETJMP+2D
         LMA
 ; LD RETA
         LHI HIGH RETA
         LLI LOW RETA
         LAM
-RETJMP:
-        JMP 0D
+        JMP RETJMP
 ; Text at DE, zero terminated. BC is preserved.
 TEXT:
         LHD
@@ -2734,7 +2787,10 @@ DIVREMOK:
         RTZ
         JMP NEGATE
 PRINT:
-        CAL PEEK
+; CAL PEEK
+        LHB
+        LLC
+        LAM
         NDA
         JTZ PRINTEND
         CPI 58D
@@ -2747,7 +2803,7 @@ PRINT:
         LHI HIGH STKP
         LLI LOW STKP
         LAM
-        CPI 252D
+        CPI 250D
         JFC STACKERR
         LLA
         LHI HIGH CSTACK
@@ -2756,7 +2812,6 @@ PRINT:
         LMI HIGH XR19
         INL
         LAL
-        LHI HIGH STKP
         LLI LOW STKP
         LMA
         JMP EXPR
@@ -2779,7 +2834,7 @@ PRINTCHR:
         LHI HIGH STKP
         LLI LOW STKP
         LAM
-        CPI 252D
+        CPI 250D
         JFC STACKERR
         LLA
         LHI HIGH CSTACK
@@ -2788,7 +2843,6 @@ PRINTCHR:
         LMI HIGH XR20
         INL
         LAL
-        LHI HIGH STKP
         LLI LOW STKP
         LMA
         JMP EXPR
@@ -2796,7 +2850,10 @@ XR20:
         LAE
         OUT 10D
 PRINTSEP:
-        CAL PEEK
+; CAL PEEK
+        LHB
+        LLC
+        LAM
         CPI 59D
         JTZ PRINTMORE
         CPI 44D
@@ -2805,7 +2862,10 @@ PRINTSEP:
         OUT 10D
 PRINTMORE:
         CAL GET
-        CAL PEEK
+; CAL PEEK
+        LHB
+        LLC
+        LAM
         NDA
         JTZ DISPATCH
         CPI 58D
@@ -2935,7 +2995,10 @@ DIM:
         LHI HIGH FORVAR
         LLI LOW FORVAR
         LMA
-        CAL PEEK
+; CAL PEEK
+        LHB
+        LLC
+        LAM
         CPI TBYTE
         JFZ DIMNAME
         CAL GET
@@ -2971,7 +3034,7 @@ DIMNAME:
         LHI HIGH STKP
         LLI LOW STKP
         LAM
-        CPI 252D
+        CPI 250D
         JFC STACKERR
         LLA
         LHI HIGH CSTACK
@@ -2980,7 +3043,6 @@ DIMNAME:
         LMI HIGH XR21
         INL
         LAL
-        LHI HIGH STKP
         LLI LOW STKP
         LMA
         JMP EXPR
@@ -3127,7 +3189,10 @@ DIMTEST:
         LME
         INL
         LMD
-        CAL PEEK
+; CAL PEEK
+        LHB
+        LLC
+        LAM
         CPI 44D
         JFZ FINISH
         CAL GET
@@ -3149,7 +3214,7 @@ FOR:
         LHI HIGH STKP
         LLI LOW STKP
         LAM
-        CPI 252D
+        CPI 250D
         JFC STACKERR
         LLA
         LHI HIGH CSTACK
@@ -3158,7 +3223,6 @@ FOR:
         LMI HIGH XR22
         INL
         LAL
-        LHI HIGH STKP
         LLI LOW STKP
         LMA
         JMP EXPR
@@ -3177,7 +3241,7 @@ XR22:
         LHI HIGH STKP
         LLI LOW STKP
         LAM
-        CPI 252D
+        CPI 250D
         JFC STACKERR
         LLA
         LHI HIGH CSTACK
@@ -3186,7 +3250,6 @@ XR22:
         LMI HIGH XR23
         INL
         LAL
-        LHI HIGH STKP
         LLI LOW STKP
         LMA
         JMP EXPR
@@ -3204,7 +3267,10 @@ XR23:
         LME
         INL
         LMD
-        CAL PEEK
+; CAL PEEK
+        LHB
+        LLC
+        LAM
         CPI TSTEP
         JFZ FORSAVE
         CAL GET
@@ -3212,7 +3278,7 @@ XR23:
         LHI HIGH STKP
         LLI LOW STKP
         LAM
-        CPI 252D
+        CPI 250D
         JFC STACKERR
         LLA
         LHI HIGH CSTACK
@@ -3221,7 +3287,6 @@ XR23:
         LMI HIGH XR24
         INL
         LAL
-        LHI HIGH STKP
         LLI LOW STKP
         LMA
         JMP EXPR
@@ -3331,7 +3396,10 @@ NEXT:
         LHI HIGH FORVAR
         LLI LOW FORVAR
         LMA
-        CAL PEEK
+; CAL PEEK
+        LHB
+        LLC
+        LAM
         CPI 65D
         JTC NEXTGO
         CPI 91D
@@ -3610,7 +3678,10 @@ FORSCAN:
 ; ST KSTART
         LMA
         JFZ FORSCAN
-        CAL PEEK
+; CAL PEEK
+        LHB
+        LLC
+        LAM
         CPI 65D
         JTC FINISH
         CPI 91D
@@ -3647,7 +3718,7 @@ INPUT:
         LHI HIGH STKP
         LLI LOW STKP
         LAM
-        CPI 252D
+        CPI 250D
         JFC STACKERR
         LLA
         LHI HIGH CSTACK
@@ -3656,7 +3727,6 @@ INPUT:
         LMI HIGH XR25
         INL
         LAL
-        LHI HIGH STKP
         LLI LOW STKP
         LMA
         JMP LVALUE
@@ -3688,7 +3758,10 @@ XR25:
         LHI HIGH KMATCH
         LLI LOW KMATCH
         LMA
-        CAL PEEK
+; CAL PEEK
+        LHB
+        LLC
+        LAM
         CPI 45D
         JFZ INPUTPOS
         CAL GET
@@ -3698,7 +3771,10 @@ XR25:
         LLI LOW KMATCH
         LMA
 INPUTPOS:
-        CAL PEEK
+; CAL PEEK
+        LHB
+        LLC
+        LAM
         CPI 48D
         JTC SYNTAX
         CPI 58D
@@ -3740,7 +3816,7 @@ POKE:
         LHI HIGH STKP
         LLI LOW STKP
         LAM
-        CPI 252D
+        CPI 250D
         JFC STACKERR
         LLA
         LHI HIGH CSTACK
@@ -3749,7 +3825,6 @@ POKE:
         LMI HIGH XR26
         INL
         LAL
-        LHI HIGH STKP
         LLI LOW STKP
         LMA
         JMP EXPR
@@ -3769,7 +3844,7 @@ XR26:
         LHI HIGH STKP
         LLI LOW STKP
         LAM
-        CPI 252D
+        CPI 250D
         JFC STACKERR
         LLA
         LHI HIGH CSTACK
@@ -3778,7 +3853,6 @@ XR26:
         LMI HIGH XR27
         INL
         LAL
-        LHI HIGH STKP
         LLI LOW STKP
         LMA
         JMP EXPR

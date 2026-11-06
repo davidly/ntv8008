@@ -76,6 +76,10 @@ def adapt():
     source=(ROOT/'b8008/basic.src').read_text()
     for raw in source.splitlines():
         code = raw.split(';', 1)[0].strip().split()
+        if code == ['CAL', 'PEEK']:
+            # PEEK's body is as short as the call: expand it in place.
+            lines += ['; '+raw.strip(), '        LHB', '        LLC', '        LAM']
+            continue
         if not code or code[0] not in ('LD','ST','LDW','STW','CALL','RETURN'):
             lines.append(raw)
             continue
@@ -92,7 +96,7 @@ def adapt():
             serial += 1
             ret = 'XR'+str(serial)
             # Push the known return address directly, preserving live BC/DE.
-            lines += address('STKP') + ['        LAM', '        CPI 252D',
+            lines += address('STKP') + ['        LAM', '        CPI 250D',
                 '        JFC STACKERR', '        LLA', '        LHI HIGH CSTACK',
                 '        LMI LOW '+ret, '        INL', '        LMI HIGH '+ret,
                 '        INL', '        LAL'] + address('STKP') + [

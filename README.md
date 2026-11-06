@@ -227,6 +227,10 @@ array fits in RAM, avoiding SCELBAL's small segmented arrays. The interpreter
 and its HEX image are included under BSD-3-Clause; setup needs no historical
 BASIC download. Select it with `--languages b8008` in either performance script.
 
+A recent b8008 pass cuts sieve, E and TTT time by 12.3%, 9.2% and 10.1% (to
+4,778.9, 1,038.9 and 2,526.5 seconds) while shrinking the interpreter by 74 bytes;
+see [the b8008 notes](b8008/README.md).
+
 The performance script reports unavailable optional languages and runs every
 installed benchmark with `-p`. To select a subset:
 

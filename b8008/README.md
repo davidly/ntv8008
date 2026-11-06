@@ -171,13 +171,13 @@ program growth are checked against `3b00h`. The full sieve program and its
 * `ttt.bas`: ascending-move alpha-beta minimax, byte board/saved frames, root
   moves 0, 1, and 4; checks three draws and prints 6493 positions, one iteration.
 
-Measured at 500 kHz on 2026-11-01:
+Measured at 500 kHz on 2026-11-05:
 
 | Benchmark | b8008 cycles | b8008 seconds | SCELBAL seconds | Speedup |
 | --- | ---: | ---: | ---: | ---: |
-| Sieve, ten passes | 2,725,999,234 | 5,452.0 | 286,415.9 | 52.5x |
-| E, 192 digits | 572,235,530 | 1,144.5 | 16,176.1 | 14.1x |
-| TTT, one iteration | 1,404,531,196 | 2,809.1 | 118,046.0 | 42.0x |
+| Sieve, ten passes | 2,389,468,348 | 4,778.9 | 286,415.9 | 59.9x |
+| E, 192 digits | 519,443,760 | 1,038.9 | 16,176.1 | 15.6x |
+| TTT, one iteration | 1,263,246,970 | 2,526.5 | 118,046.0 | 46.7x |
 
 Literal branch resolution first reduced total cycles by 4.7% for sieve, 0.1%
 for e, and 12.7% for TTT. Streamlined software calls/returns, operand parsing,
@@ -201,7 +201,19 @@ further 9.5%, 3.6%, and 4.3%. The byte divider, less operand-stack traffic, and
 shorter initialization/return sequences then save another 0.5%, 8.1%, and 1.1%.
 A complete atomic MOD shortcut and a register loop count in byte division then
 reduce E cycles by another 11.7%, leaving sieve/TTT effectively unchanged.
-The full sieve leaves 281 bytes below workspace; no benchmark workload was reduced.
+The latest pass reduces sieve, E and TTT cycles by a further 12.3%, 9.2% and
+10.1%, and shrinks the interpreter by 74 bytes:
+
+- `PEEK` is expanded in place: its body is as short as the call.
+- `EXPECT` compares the next token in place, without a scratch byte or a call to `GET`.
+- The software stack pointer, the saved return value and the return jump share
+  the stack's page, so calls, returns and value pushes/pops change only L. The
+  stack holds 250 bytes, stopping below that jump.
+- Statement keywords are tested in order of dynamic frequency (`NEXT`, `IF`,
+  `GOTO`, `GOSUB`, `RETURN` first).
+- Line entry and keyword dispatch advance past bytes they have already read.
+
+The full sieve leaves 355 bytes below workspace; no benchmark workload was reduced.
 
 Timings include session loading/tokenization and execution, excluding host I/O
 waits. Use `-p` or `perfrun` for cycle counts and estimated 500 kHz runtime.

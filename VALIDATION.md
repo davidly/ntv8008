@@ -857,3 +857,26 @@ addresses. Every benchmark is faster (0.3-7.6%) and smaller.
 
 Outputs are unchanged, and `tests/run.py --compile` passes with every image
 rebuilt. The workbook and runtime image were refreshed.
+
+## b8008 interpreter performance — 2026-11-05
+
+The interpreter does the following:
+
+- expands `PEEK` in place
+- compares `EXPECT` tokens without a scratch byte
+- keeps the software stack pointer, saved return value and return jump on the
+  stack's page, so the stack holds 250 bytes
+- tests statement keywords by frequency
+- skips already-read bytes on line entry and dispatch
+
+Code shrinks by 74 bytes, leaving the full sieve 355 bytes below workspace.
+
+| Benchmark | Before (clocks) | After (clocks) | Change |
+| --- | ---: | ---: | ---: |
+| sieve (10 passes) | 2,725,999,234 | 2,389,468,348 | -12.3% |
+| e | 572,235,530 | 519,443,760 | -9.2% |
+| ttt (1 iteration) | 1,404,531,196 | 1,263,246,970 | -10.1% |
+
+Outputs are unchanged and all 46 b8008 tests pass, including image
+reproduction, the `?STACK` nesting limit and error recovery. The workbook and
+runtime image were refreshed.
