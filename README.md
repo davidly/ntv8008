@@ -323,6 +323,11 @@ runs when it doesn't. ACK also inlines its frame entry, exit, stack adjustments
 and argument stores in that copy. The same fast copies take Modula-2 TTT from
 197.28 to 167.47 seconds and Pascal from 215.80 to 192.06.
 
+A shared peephole now drops register loads of a value the register already
+holds on every path. TTT falls to **67.50 seconds** for SmallC and **67.79**
+for ACK C. Sieve improves by 1–8% across the compilers (ACK C 156.55, SmallC
+159.05 seconds), and every benchmark image is slightly smaller.
+
 Occam now places eligible sequential procedure workspaces in static BSS,
 including ttt's search arrays. This reduces target cycles by 56.9% for sieve,
 9.8% for e, and 55.0% for ttt, without changing the algorithms, array sizes or

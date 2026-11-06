@@ -717,3 +717,23 @@ also inlines `ENTER`, `ADDSP` (as a low-byte store), stored-argument writes and
 Sieve changes by under 0.2%; e, Occam and BASIC are unchanged, and all outputs
 are unchanged. The fast copies add code: ttt grows by about 1.4K bytes for C and
 4K for Pascal and Modula-2. Images that would not fit regenerate without them.
+
+## Known register values
+
+`known_values` in `tools/peephole8008.py` runs last on each function. A forward
+must-analysis over the control-flow graph tracks registers loaded with
+immediates, and copies of them; any other write forgets the register. A `LrI x`
+is dropped where r already holds x on every path. The function's entry label,
+labels whose address is taken, and call return points start with nothing known.
+The main beneficiaries are repeated `LHI 3EH` in anchored frames and repeated
+array-page loads in loops.
+
+| Frontend | Sieve | E | TTT (ten iterations) |
+| --- | ---: | ---: | ---: |
+| C | 78,277,174 (-6.1%) | 71,409,060 (-1.3%) | 338,934,702 (-4.6%) |
+| Pascal | 105,445,012 (-4.8%) | 86,266,650 (-0.4%) | 951,007,344 (-1.0%) |
+| Modula-2 | 120,252,670 (-2.2%) | 71,906,460 (-0.5%) | 823,844,194 (-1.6%) |
+| Occam | 155,888,862 (-7.6%) | 112,388,868 (-0.3%) | 1,050,614,134 (-1.1%) |
+| BASIC | 487,824,822 (-1.1%) | 102,148,100 (-0.3%) | 1,418,358,456 (-1.0%) |
+
+Outputs are unchanged, and every image shrinks by 12-92 bytes.

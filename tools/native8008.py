@@ -266,12 +266,12 @@ def optimize_functions(code,data,aligned=False,defer=False,anchor=False):
         block=cache_bytes(block,data)
         if defer:block=defer_byte_updates(block,data)
         block=cache_frame_registers(block,data)
-        from peephole8008 import shorten, thread_jumps
+        from peephole8008 import shorten, thread_jumps, known_values
         block=shorten(simplify_values(cache_frame_addresses(block,data,aligned,serial),data),data)
         if anchor:
             from anchor8008 import anchor_frames
             block=anchor_frames(block,data)
-        return thread_jumps(block)
+        return known_values(thread_jumps(block),data)
     for line in code:
         if line.strip().startswith('; function '):
             if block:result+=finish(block)

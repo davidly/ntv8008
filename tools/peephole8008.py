@@ -135,3 +135,75 @@ def thread_jumps(lines, limit=4):
             continue
         cleaned.append(line)
     return cleaned
+
+
+def known_values(lines, data):
+    """Drop `LrI x` where r already holds x on every path.
+
+    A forward must-analysis tracks registers loaded with immediates (and
+    register copies of them) over the function's control-flow graph; any other
+    write forgets the register. Return points of software calls and other
+    labels without predecessors start with nothing known. LrI affects no flags.
+    """
+    from native8008 import graph, registers
+    nodes = [(line, None) for line in lines]
+    successors = graph(nodes, data)
+    preds = [[] for _ in lines]
+    for p, targets in enumerate(successors):
+        for target in targets:
+            preds[target].append(p)
+    names = 'ABCDEHL'
+    # Entries reachable from outside the CFG: the function's own label (self
+    # calls are graph edges, other callers are not) and taken addresses.
+    function = next((l.strip().split()[2] for l in lines if l.strip().startswith('; function ')), None)
+    taken = set(re.findall(r'(?:LOW|HIGH) \(([^)+\s]+)', '\n'.join(lines)))
+    for line in data:
+        if line.strip().startswith('DW '):
+            taken.update(re.findall(r'[A-Za-z_$][\w$]*', line.strip()[3:]))
+    roots = {i for i, line in enumerate(lines) if line.strip().endswith(':') and
+             (line.strip()[:-1] == function or line.strip()[:-1] in taken)}
+
+    def transfer(index, state):
+        text = lines[index].strip()
+        if not text or text.startswith(';') or text.endswith(':'):
+            return state
+        match = re.fullmatch(r'L([A-EHL])I (.+)', text)
+        if match:
+            state = dict(state);state[match[1]] = match[2]
+            return state
+        copy = re.fullmatch(r'L([A-EHL])([A-EHL])', text)
+        if copy:
+            state = dict(state)
+            if copy[2] in state:
+                state[copy[1]] = state[copy[2]]
+            else:
+                state.pop(copy[1], None)
+            return state
+        written = registers(text)[1]
+        return {r: v for r, v in state.items() if not written & (1 << names.index(r))}
+
+    TOP = None
+    incoming = [TOP] * len(lines);outgoing = [TOP] * len(lines)
+    changed = True
+    while changed:
+        changed = False
+        for i in range(len(lines)):
+            if i == 0 or not preds[i] or i in roots:
+                state = {}
+            else:
+                known = [outgoing[p] for p in preds[i] if outgoing[p] is not TOP]
+                if not known:
+                    continue
+                state = dict(known[0])
+                for other in known[1:]:
+                    state = {r: v for r, v in state.items() if other.get(r) == v}
+            result = transfer(i, state)
+            if incoming[i] != state or outgoing[i] != result:
+                incoming[i], outgoing[i], changed = state, result, True
+    output = []
+    for i, line in enumerate(lines):
+        match = re.fullmatch(r'L([A-EHL])I (.+)', line.strip())
+        if match and incoming[i] is not TOP and incoming[i].get(match[1]) == match[2]:
+            continue
+        output.append(line)
+    return output

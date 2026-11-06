@@ -842,3 +842,18 @@ the original copies run, and check the results against a Python model. The
 workbook and runtime image were refreshed. RAM code figures add each image's
 measured change in emitted bytes; the page padding is an address hole and is
 excluded.
+
+## Known register value peephole — 2026-11-05
+
+A shared pass drops `LrI x` where a forward must-analysis proves r already
+holds x on every path. Function entries, taken addresses and call return points
+start unknown. Unit tests cover joins, copies, self-call edges and taken
+addresses. Every benchmark is faster (0.3-7.6%) and smaller.
+
+| Benchmark | Before (clocks) | After (clocks) |
+| --- | ---: | ---: |
+| SmallC sieve / e / TTT | 84,067,844 / 86,463,518 / 351,117,402 | 79,524,472 / 85,485,246 / 337,510,922 |
+| ACK C sieve / e / TTT | 83,362,902 / 72,381,076 / 355,097,342 | 78,277,174 / 71,409,060 / 338,934,702 |
+
+Outputs are unchanged, and `tests/run.py --compile` passes with every image
+rebuilt. The workbook and runtime image were refreshed.

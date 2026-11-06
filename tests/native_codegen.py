@@ -179,6 +179,31 @@ RSP EQU 3F00H
         self.assertEqual(after[0],b'AAB')
         self.assertTrue(any('cached byte local' in t for t in after[2]))
 
+    def test_known_register_values(self):
+        from peephole8008 import known_values
+        code=lambda *lines:['        '+l if not l.endswith(':') and not l.startswith(';') else l for l in lines]
+        strip=lambda lines:[l.strip() for l in lines]
+        # Straight line: the second LHI is redundant, LLI after a write is not.
+        self.assertEqual(strip(known_values(code('; function F','F:','LHI 62D','LLI 4D','LAM',
+                                                  'LHI 62D','LLA','LLI 4D','RET'),[])),
+                         ['; function F','F:','LHI 62D','LLI 4D','LAM','LLA','LLI 4D','RET'])
+        # A join keeps only values every path agrees on.
+        lines=code('; function F','F:','LHI 1D','JTZ X','LHI 2D','X:','LHI 1D','RET')
+        self.assertEqual(strip(known_values(lines,[])).count('LHI 1D'),2)
+        lines=code('; function F','F:','LHI 1D','JTZ X','LBI 0','X:','LHI 1D','RET')
+        self.assertEqual(strip(known_values(lines,[])).count('LHI 1D'),1)
+        # Copies carry known values; unknown sources clear them.
+        lines=code('; function F','F:','LBI 7D','LCB','LCI 7D','LCA','LCI 7D','RET')
+        self.assertEqual(strip(known_values(lines,[])),
+                         ['; function F','F:','LBI 7D','LCB','LCA','LCI 7D','RET'])
+        # The entry (also reached by self calls) and taken addresses start unknown.
+        lines=code('; function F','F:','LHI 1D','LHI 1D','JMP F')
+        self.assertEqual(strip(known_values(lines,[])).count('LHI 1D'),1)
+        lines=code('; function F','F:','LHI 1D','JMP G','G:','LHI 1D','LAI LOW (G)','RET')
+        self.assertEqual(strip(known_values(lines,[])).count('LHI 1D'),2)
+        lines=code('; function F','F:','LHI 1D','JMP G','G:','LHI 1D','RET')
+        self.assertEqual(strip(known_values(lines,['T:','        DW G'])).count('LHI 1D'),2)
+
     def test_join_keeps_values_and_scratch_results(self):
         helpers=('PUSH: LHI HIGH SAVE',' LLI LOW SAVE',' LMA',' INL',' LMB',' LEI 77D',' RET',
                  'POP: LHI HIGH SAVE',' LLI LOW SAVE',' LAM',' INL',' LBM',' LEI 88D',' RET','SAVE: DB 0,0')

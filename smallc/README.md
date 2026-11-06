@@ -647,3 +647,18 @@ TTT falls from 471,672,546 to **351,117,402 cycles** for ten iterations
 took to show that tic-tac-toe can't be won. Outputs and node counts are unchanged.
 A test recurses 60 levels, so the walk leaves the stack page and runs both
 copies, a switch and a `continue` scan, and checks the result against a model.
+
+## Known register values
+
+`known_values` in `tools/peephole8008.py` runs last on each function. A forward
+must-analysis over the control-flow graph tracks registers loaded with
+immediates, and copies of them; any other write forgets the register. A `LrI x`
+is dropped where r already holds x on every path. The function's entry label,
+labels whose address is taken, and call return points start with nothing known.
+The main beneficiaries are repeated `LHI 3EH` in anchored frames and repeated
+array-page loads in loops.
+
+SmallC sieve falls from 84,067,844 to **79,524,472 cycles** (-5.4%), e from
+86,463,518 to **85,485,246** (-1.1%) and TTT from 351,117,402 to
+**337,510,922** (-3.9%, **67.50 seconds** per iteration). Outputs are unchanged
+and images shrink by 40-188 bytes.
