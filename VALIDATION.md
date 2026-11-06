@@ -880,3 +880,15 @@ Code shrinks by 74 bytes, leaving the full sieve 355 bytes below workspace.
 Outputs are unchanged and all 46 b8008 tests pass, including image
 reproduction, the `?STACK` nesting limit and error recovery. The workbook and
 runtime image were refreshed.
+
+## Native PDP-10 runner for PL/M — 2026-11-05
+
+`plm8/pdp10.cxx`, built by `m.sh`/`m.bat`, translates the Python PDP-10 runner
+into C++. `pdp10.py` still validates and loads the compiler images, and
+`compile.py` uses the native runner when it is built (`PLM8_PYTHON=1` forces
+Python). Compiling TTT falls from 9.43 to 0.094 seconds, and `tests/plm8.py`
+from 20.8 to 0.6 seconds. All five examples produce byte-identical HEX and
+listings with either runner.
+
+`tests/pdp10.py` compares final memory, PC and outcome for 150 seeded random
+programs under both runners; a one-off run of 2,000 seeds found no differences.

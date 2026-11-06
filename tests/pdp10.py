@@ -7,7 +7,9 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'plm8'))
-from pdp10 import PDP10, MASK, RH, SIGN, pred
+import random
+import tempfile
+from pdp10 import NATIVE, PDP10, MASK, RH, SIGN, pred
 
 
 def instruction(op, ac=0, address=0, index=0, indirect=False):
@@ -158,6 +160,88 @@ class Runner(unittest.TestCase):
             self.execute(0o254, ac=4)
         with self.assertRaisesRegex(RuntimeError, 'unsupported PDP-10 opcode 777 at 000077'):
             self.execute(0o777)
+
+
+@unittest.skipUnless(NATIVE.is_file(), 'native runner not built; run m.sh or m.bat')
+class Native(unittest.TestCase):
+    """The native runner must match the Python reference instruction for instruction."""
+    OPS = ([0o200 + i for i in range(16)] + list(range(0o220, 0o224)) + list(range(0o230, 0o234)) +
+           list(range(0o270, 0o300)) + list(range(0o300, 0o400)) + list(range(0o400, 0o700)) +
+           [0o240, 0o241, 0o242, 0o246, 0o250, 0o251, 0o252, 0o253, 0o254, 0o255,
+            0o260, 0o261, 0o262, 0o263, 0o264, 0o265, 0o266, 0o267, 0o133, 0o134, 0o135, 0o136, 0o137,
+            0o001, 0o777])
+
+    def setUp(self):
+        # Overwritten UUO vectors can reach file I/O; keep any files private.
+        self.directory = tempfile.TemporaryDirectory(prefix='pdp10 native ')
+        self.addCleanup(self.directory.cleanup)
+
+    def machine(self, generator):
+        cpu = object.__new__(PDP10)
+        cpu.m = [0] * (RH + 1)
+        cpu.channels = {}
+        cpu.input = io.StringIO()
+        cpu.output = io.StringIO()
+        cpu.directory = Path(self.directory.name)
+        cpu.pc = 0o1000
+        cpu.m[0o41] = instruction(0o255)  # local UUOs return through JFCL
+        for ac in range(1, 16):
+            cpu.m[ac] = generator.choice((0, 1, MASK, SIGN, SIGN - 1, 0o1000, 0o2000 << 18 | 0o2000,
+                                          generator.getrandbits(36)))
+        for address in range(0o2000, 0o2100):
+            cpu.m[address] = generator.getrandbits(36)
+        for address in range(0o3000, 0o3010):
+            # Byte instructions use only these well-formed pointers: position
+            # <= 36 and size <= 27 keep every word below 2**64. (Real code never
+            # uses wider bytes; Python's unbounded integers would then differ.)
+            position, size = generator.randrange(37), generator.randrange(1, 28)
+            cpu.m[address] = position << 30 | size << 24 | generator.randrange(0o2000, 0o2100)
+        for address in range(0o1000, 0o1100):
+            op = generator.choice(self.OPS)
+            if 0o133 <= op <= 0o137:
+                cpu.m[address] = instruction(op, generator.randrange(16), generator.randrange(0o3000, 0o3010))
+                continue
+            cpu.m[address] = instruction(op, generator.randrange(16), generator.choice(
+                (generator.randrange(0o2000, 0o2100), generator.randrange(0o1000, 0o1100),
+                 generator.randrange(64), generator.randrange(0o4000, RH + 1))),
+                generator.choice((0, 0, 0, generator.randrange(16))), generator.random() < 0.05)
+        cpu.m[0o1100] = instruction(0o47, address=0o12)  # EXIT
+        return cpu
+
+    def test_random_programs_match_reference(self):
+        for seed in range(150):
+            with self.subTest(seed=seed):
+                reference, native = self.machine(random.Random(seed)), self.machine(random.Random(seed))
+                try:
+                    reference.run(400)
+                    expected = 'finished'
+                except (RuntimeError, ZeroDivisionError, IndexError, KeyError):
+                    expected = 'error'
+                try:
+                    native.run_native(400, state=True)
+                    outcome = 'finished'
+                except RuntimeError:
+                    outcome = 'error'
+                self.assertEqual(outcome, expected)
+                self.assertEqual(native.pc, reference.pc)
+                differences = [a for a in range(RH + 1) if native.m[a] != reference.m[a]]
+                self.assertEqual(differences, [], [(oct(a), reference.m[a], native.m[a]) for a in differences[:5]])
+
+    def test_monitor_output_and_errors(self):
+        for program, output, failure in (
+                ([instruction(0o51, 1, 0o2000), instruction(0o47, address=0o12)], 'X', None),
+                ([instruction(0o254, 4)], '', 'HALT'),
+                ([instruction(0o777)], '', 'unsupported PDP-10 opcode 777 at 001000'),
+                ([instruction(0o254, address=0o1000)], '', 'instruction limit')):
+            with self.subTest(program=program):
+                cpu = self.machine(random.Random(0))
+                cpu.m[0o2000] = ord('X')
+                cpu.m[0o1000:0o1000 + len(program)] = program
+                if failure:
+                    with self.assertRaisesRegex(RuntimeError, failure):
+                        cpu.run_native(5)
+                else:
+                    self.assertEqual(cpu.run_native(5), output)
 
 
 if __name__ == '__main__':

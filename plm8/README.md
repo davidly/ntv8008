@@ -28,8 +28,10 @@ These are the 8008 compilers, not the similarly named PLM81/PLM82 8080 compilers
 
 The compiler's Fortran source was not found. The locally supplied original PDP-10
 executables run under `pdp10.py`, a Python 3 runner for the integer instructions
-and Fortran I/O they use. No Fortran compiler, assembler, historical operating
-system, third-party Python packages, or network access is needed to compile.
+and Fortran I/O they use. `m.sh`/`m.bat` also build `pdp10.cxx`, a native
+translation of that runner about 100x faster; `compile.py` uses it when built.
+No Fortran compiler, assembler, historical operating system, third-party Python
+packages, or network access is needed to compile.
 Generated programs run as ordinary machine code in the unmodified 8008 emulator.
 
 ## Compile and run
@@ -67,8 +69,8 @@ Arithmetic prints `OK` after checking byte wraparound, 16-bit arithmetic,
 multiply/divide/remainder, shifts, indexed arrays, based pointers, and procedure
 calls. Sieve runs ten iterations over 8191 odd candidates and prints `1899`.
 It uses 167,529,328 clock periods, approximately 335.06 seconds at 500 kHz.
-Compilation runs separately and is considerably slower than executing the
-compiled program.
+Compilation runs separately on the PDP-10 runner; with the native runner it
+takes well under a second.
 
 The `e` and `ttt` examples port the algorithms from the DOS Intel PL/M-83
 examples. Compile them with `compile.py` or either rebuild script:
@@ -157,6 +159,38 @@ before and after these changes. `tests/pdp10.py` tests addressing, move forms,
 self-modifying code, nested instruction execution, conditional jumps, monitor
 output, and instruction/indirection limits without needing the historical
 compiler images. Both main test scripts include it unconditionally.
+
+### Native runner
+
+`pdp10.cxx` translates `PDP10.execute` and its monitor calls line for line into
+C++. `pdp10.py` still validates the image checksums, loads the image and patches
+the accounting wrapper. `PDP10.run_native()` then passes the loaded memory, entry
+point, console input and work directory to the native program, which returns
+the console output and error text.
+
+`compile.py` uses the native runner when `plm8/pdp10` (`pdp10.exe` on Windows)
+exists, unless `PLM8_PYTHON=1` selects the Python reference. Without a C++
+build, compilation falls back to Python automatically.
+
+Compile times on Linux, including both passes and HEX conversion:
+
+| Example | Python | Native |
+| --- | ---: | ---: |
+| Hello | 0.57 s | 0.036 s |
+| Arithmetic | 1.85 s | 0.048 s |
+| Sieve | 0.59 s | 0.044 s |
+| E | 1.80 s | 0.047 s |
+| TTT | 9.43 s | 0.094 s |
+
+All five examples produce byte-identical HEX and listings with either runner,
+and `tests/plm8.py` falls from 20.8 to 0.6 seconds.
+
+`tests/pdp10.py` runs 150 seeded random programs under both runners, starting
+from identical memory, and requires the same final memory, PC and outcome. The
+programs cover moves, arithmetic, Boolean, halfword, test, shift, stack, jump,
+byte and local-UUO instructions. A one-off run of 2,000 seeds (about 725,000
+instructions) found no differences. Nested XCT/UUO execution is bounded like
+Python's recursion limit.
 
 ## Recovery and provenance
 

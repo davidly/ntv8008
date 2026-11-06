@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """Run the original Intel PL/M-8 3.3 cross-compiler and write modern Intel HEX."""
 import argparse
+import os
 from pathlib import Path
 import re
 import sys
 import tempfile
 
-from pdp10 import PDP10
+from pdp10 import NATIVE, PDP10
 
 UPSTREAM = Path(__file__).resolve().parent / 'upstream'
 
@@ -70,7 +71,9 @@ def compile_source(source):
                            ('plm2.sav', '$B=7\n$Q=1\n$F=1\n$G=1\n$M=1\n\n')):
             runner = PDP10(UPSTREAM / name, data, directory)
             try:
-                listing = runner.run()
+                # The native runner is much faster; PLM8_PYTHON=1 forces the reference.
+                native = NATIVE.is_file() and not os.environ.get('PLM8_PYTHON')
+                listing = runner.run_native() if native else runner.run()
             except (RuntimeError, OSError, StopIteration, ZeroDivisionError) as error:
                 raise CompileError(f'{name}: {error}\n{runner.output.getvalue()}') from error
             logs.append(listing)

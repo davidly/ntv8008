@@ -7,8 +7,14 @@ Instruction encodings and monitor calls: DEC PDP-10 System Reference Manual
 """
 import hashlib
 import io
+import os
 from pathlib import Path
 import struct
+import subprocess
+import tempfile
+
+# pdp10.cxx, built by m.sh/m.bat: a native translation of execute() below.
+NATIVE = Path(__file__).with_name('pdp10.exe' if os.name == 'nt' else 'pdp10')
 
 MASK = (1 << 36) - 1
 RH = (1 << 18) - 1
@@ -90,6 +96,31 @@ class PDP10:
             for channel in self.channels.values():
                 if 'file' in channel:
                     channel['file'].close()
+
+    def run_native(self, budget=50_000_000, state=False):
+        """Run the loaded image with the native runner; same results as run().
+
+        With state=True, also copy the final memory and PC back (for tests).
+        """
+        with tempfile.TemporaryDirectory(prefix='pdp10-') as scratch:
+            memory, source, listing, final = (Path(scratch, name) for name in
+                                              ('memory.bin', 'input.txt', 'output.txt', 'final.bin'))
+            memory.write_bytes(struct.pack('<%dQ' % len(self.m), *self.m))
+            source.write_bytes(self.input.getvalue().encode('ascii'))
+            command = [str(NATIVE), str(memory), str(self.pc), str(source),
+                       str(self.directory), str(listing), str(budget)]
+            result = subprocess.run(command + ([str(final)] if state else []), capture_output=True)
+            text = listing.read_bytes().decode('ascii') if listing.exists() else ''
+            if state and final.exists():
+                words = struct.unpack('<%dQ' % (len(self.m) + 1), final.read_bytes())
+                self.m[:] = words[:-1]
+                self.pc = words[-1]
+        self.output = io.StringIO(text)
+        self.output.seek(0, io.SEEK_END)
+        if result.returncode:
+            raise RuntimeError(result.stderr.decode('ascii', 'replace').strip() or
+                               f'native PDP-10 runner failed ({result.returncode})')
+        return text
 
     def ea(self, ir):
         for _ in range(30):
