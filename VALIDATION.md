@@ -915,5 +915,5 @@ the Tymshare tape, on the same PDP-10 runner. `tests/int8.py` runs a08, PL/M
 and MAC8 programs in it and requires ntv8008's console output and clock
 periods exactly. They agree on every program, including the 9,523,146-clock e
 and 25,430,180-clock sieve benchmarks. Forty random programs give identical
-final registers, flags and clock periods in both simulators. INT8 charges 20
-states for `HLT` where ntv8008 charges 4; the comparison allows for that.
+final registers, flags and clock periods in both simulators. INT8 adds 16
+states once, when a session first runs; the comparison allows for that.

@@ -289,9 +289,9 @@ reads input ports from values set with its `SET PORT n = v.` command.
 
 `-a` selects another entry address. `-n` sets a limit in clock periods (default
 2,000,000,000) through INT8's `CYCLE` breakpoint. `-p` reports clock periods
-like `ntv8008 -p`. INTERP/8 counts 8008 states (two clock periods each) and
-charges 20 for `HLT`, against the 4 states that ntv8008 charges. The report
-converts INT8's count to ntv8008's measure; the a08 e benchmark is 9,523,146
+like `ntv8008 -p`. INTERP/8 counts 8008 states (two clock periods each). It
+adds 16 states once, at a session's first `GO`; `HLT` costs the datasheet's 4
+states, as in ntv8008. The report converts INT8's count to ntv8008's measure; the a08 e benchmark is 9,523,146
 clock periods in both. E runs in 0.5 seconds and sieve in 1.3 seconds with
 the native runner.
 

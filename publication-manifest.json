@@ -38,7 +38,7 @@
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "VALIDATION.md": {
-      "sha256": "71eb3e5505baf67726062bcdf340764b9faa03833bb64dcd68d10b00fb68ffa9",
+      "sha256": "10ee95d5d70f2868c3db34e6bb6d709c50a3fcd22acfd2f181fb2b0a17b449b9",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
@@ -1318,7 +1318,7 @@
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "plm8/README.md": {
-      "sha256": "ffa0846ecd44b56ced3d8d849ce556648260ce33ceba22997eacf45ded29c271",
+      "sha256": "ac573771688b0dbb930bee4a6af8b3db7581117d3b89ce5fbc6beff67ac15ee8",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
@@ -1358,7 +1358,7 @@
       "origin": "Project example/port; any inherited CC0 material remains CC0; PROVENANCE.md"
     },
     "plm8/int8.py": {
-      "sha256": "2de4160978fdd147431953502f1656da48d06a63212d536baf3df1362d0faadd",
+      "sha256": "233a2db74859da1b5e409730f8d9f790ddf2affc4b5f681b5e7e8a0950feecdf",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
@@ -1903,7 +1903,7 @@
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },
     "tests/int8.py": {
-      "sha256": "2d66c5b8c145002f4535edcd89d8e18966f7390bcb5f6cbfec8b9cdf40d50afe",
+      "sha256": "d0dd3ad9dbd8c53ddf7b50f185181b0e6e8be252ffd95db3340d08609f9ca95c",
       "license": "BSD-3-Clause",
       "origin": "Project contribution or publication documentation; THIRD_PARTY_NOTICES.md"
     },

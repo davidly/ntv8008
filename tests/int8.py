@@ -96,7 +96,7 @@ def int8_state(obj, load):
     names = lines[header].split()
     state = dict(zip(names, values))
     states = int(re.search(r'^HLT CYCLE (\d+)$', transcript, re.M).group(1))
-    return [int(state[r]) for r in REGISTERS], [int(c) for c in state['CYZSP']], 2 * (states - int8.HALT_STATES)
+    return [int(state[r]) for r in REGISTERS], [int(c) for c in state['CYZSP']], 2 * (states - int8.START_STATES)
 
 
 @unittest.skipUnless((UPSTREAM / 'int8.sav').is_file(), 'optional Intel INT8 image not supplied; see plm8/README.md')

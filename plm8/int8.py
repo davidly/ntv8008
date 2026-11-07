@@ -12,9 +12,9 @@ from pdp10 import NATIVE, PDP10
 
 UPSTREAM = Path(__file__).resolve().parent / 'upstream'
 CONSOLE = 0o101 | 10 << 1  # OUT 10, ntv8008's console port
-# INTERP/8 counts 8008 states but charges 20 for HLT; ntv8008 counts clock
-# periods (two per state) and charges HLT 4 states.
-HALT_STATES = 16
+# INTERP/8 counts 8008 states, and adds 16 once, when a session first runs;
+# HLT itself costs the usual 4. ntv8008 counts clock periods, two per state.
+START_STATES = 16
 
 
 def read_hex(text):
@@ -90,7 +90,7 @@ def run_program(obj, load, memory, entry=64, limit=2_000_000_000):
     The output is the A register at every executed OUT 10, recovered from an
     INT8 trace of exactly the addresses that hold that opcode.
     """
-    states = limit // 2 + HALT_STATES
+    states = limit // 2 + START_STATES
     traces = ''.join(f'TRACE {a}.\n' for a in sorted(memory) if memory[a] == CONSOLE)
     session = f'$F\n{load}\n{traces}CYCLE {states}.\nSET PC = {entry}.\nGO.\n$E\n'
     # Roughly 35 PDP-10 instructions simulate one 8008 state.
@@ -109,7 +109,7 @@ def run_program(obj, load, memory, entry=64, limit=2_000_000_000):
         elif line.strip() == 'O10' and a is not None:
             character = chr(a & 127)  # ntv8008's 7-bit console maps CR to LF
             output.append('\n' if character == '\r' else character)
-    return ''.join(output), 2 * (int(halted.group(1)) - HALT_STATES)
+    return ''.join(output), 2 * (int(halted.group(1)) - START_STATES)
 
 
 def main():
@@ -133,7 +133,7 @@ def main():
         output, clocks = run_program(obj, load, memory, args.address, args.cycles)
         sys.stdout.write(output)
         if args.p:
-            print(f'{clocks} cycles (INTERP/8 {clocks // 2 + HALT_STATES} states)')
+            print(f'{clocks} cycles (INTERP/8 {clocks // 2 + START_STATES} states)')
     except (OSError, ValueError, CompileError) as error:
         print(f'INT8: {error}', file=sys.stderr)
         return 1
