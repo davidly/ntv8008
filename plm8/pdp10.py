@@ -34,7 +34,12 @@ class Finished(Exception):
     pass
 
 
+KI10_MAC8E = '38482a33d6541e3342b5079c019ab6b1a981c469f45893700c75918046198481'
+
+
 class PDP10:
+    ki = False  # KA10 unless the image was built for the KI10
+
     def __init__(self, image, source, directory):
         self.m = [0] * (1 << 18)
         self.channels = {}
@@ -42,12 +47,17 @@ class PDP10:
         self.input = io.StringIO(source)
         self.output = io.StringIO()
         raw = Path(image).read_bytes()
-        if hashlib.sha256(raw).hexdigest() not in (
+        digest = hashlib.sha256(raw).hexdigest()
+        if digest not in (
                 'b25f17bbd43130de88a846a76fd439ed4558ad88fe2e19345b8fd1447209dcd4',  # PLM1
                 'ba3c4c66470e1331d4f27ce49d1488938678447647c444e3228bf292eadfc39d',  # PLM2
                 '4bae9ba8b51d1acdec947cd6fe37bc66c79520d52760fcfa919ab51cdf7e0d17',  # MAC8
-                'e18aa6902b694e4564e632c85e9aa9a431e5aa480932d2a0a63eee87a4d0f708'):  # INT8
+                'e18aa6902b694e4564e632c85e9aa9a431e5aa480932d2a0a63eee87a4d0f708',  # INT8
+                KI10_MAC8E):
             raise ValueError('compiler image checksum mismatch')
+        # MAC8E was built for the KI10, whose stack and AOBJ instructions
+        # count the two halves separately; its runtime refuses to run on a KA10.
+        self.ki = digest == KI10_MAC8E
         if len(raw) % 8:
             raise ValueError('truncated compiler image')
         words = struct.unpack('<' + 'Q' * (len(raw) // 8), raw)
@@ -75,11 +85,11 @@ class PDP10:
         # service. Return from that wrapper only; compiler code is unchanged.
         # Verify the surrounding instructions so another image cannot be
         # mistaken for one of the recovered executables. MAC8's wrapper has
-        # one more instruction (MOVNI 2,1) before its return.
+        # one more instruction (MOVNI 2,1) before its return, MAC8E's one fewer.
         matches = [a for a in range(len(self.m) - 11)
                    if self.m[a + 3] == 0o200076000000
                    and self.m[a + 4] == 0o200136000001
-                   and 0o267716000002 in (self.m[a + 9], self.m[a + 10])]
+                   and 0o267716000002 in (self.m[a + 8], self.m[a + 9], self.m[a + 10])]
         if len(matches) != 1:
             raise ValueError('unrecognized Tymshare accounting wrapper')
         self.m[matches[0]] = 0o267716000002  # JRA 16,2(16)
@@ -110,7 +120,7 @@ class PDP10:
                                               ('memory.bin', 'input.txt', 'output.txt', 'final.bin'))
             memory.write_bytes(struct.pack('<%dQ' % len(self.m), *self.m))
             source.write_bytes(self.input.getvalue().encode('ascii'))
-            command = [str(NATIVE), str(memory), str(self.pc), str(source),
+            command = [str(NATIVE), *(['--ki'] if self.ki else []), str(memory), str(self.pc), str(source),
                        str(self.directory), str(listing), str(budget)]
             result = subprocess.run(command + ([str(final)] if state else []), capture_output=True)
             text = listing.read_bytes().decode('ascii') if listing.exists() else ''
@@ -124,6 +134,12 @@ class PDP10:
             raise RuntimeError(result.stderr.decode('ascii', 'replace').strip() or
                                f'native PDP-10 runner failed ({result.returncode})')
         return text
+
+    def step(self, word, delta):
+        """Add delta to both halves: carrying across them on a KA10, not on a KI10."""
+        if self.ki:
+            return ((word >> 18) + delta & RH) << 18 | (word + delta & RH)
+        return (word + delta * 0o1000001) & MASK
 
     def ea(self, ir):
         for _ in range(30):
@@ -286,18 +302,18 @@ class PDP10:
         elif op == 0o255:
             pass
         elif op == 0o260:
-            m[ac] = (av + 0o1000001) & MASK
+            m[ac] = self.step(av, 1)
             m[m[ac] & RH] = self.pc
             self.pc = e
         elif op == 0o261:
-            m[ac] = (av + 0o1000001) & MASK
+            m[ac] = self.step(av, 1)
             m[m[ac] & RH] = v
         elif op == 0o262:
             m[e] = m[av & RH]
-            m[ac] = (av - 0o1000001) & MASK
+            m[ac] = self.step(av, -1)
         elif op == 0o263:
             self.pc = m[av & RH] & RH
-            m[ac] = (av - 0o1000001) & MASK
+            m[ac] = self.step(av, -1)
         elif op == 0o264:
             m[e] = self.pc
             self.pc = e + 1 & RH
@@ -340,7 +356,7 @@ class PDP10:
             m[ac] = val >> 36 & MASK
             m[ac + 1 & 15] = val & MASK
         elif op in (0o252, 0o253):
-            m[ac] = (av + 0o1000001) & MASK
+            m[ac] = self.step(av, 1)
             if (signed(m[ac]) < 0) == (op == 0o253):
                 self.pc = e
         elif 0o133 <= op <= 0o137:  # IBP, ILDB, LDB, IDPB, DPB
@@ -376,6 +392,11 @@ class PDP10:
             self.pc += 1
         elif op == 0o47 and e in (0o23, 0o27, 0o30, 0o24):  # timing/job queries
             m[ac] = 0
+        elif op == 0o47 and 0o777736 <= e <= 0o777745:
+            # Tymshare software-interrupt setup (CALLI -42 to -33) in newer
+            # runtimes such as MAC8E's. They halt unless these succeed; no
+            # interrupt is ever raised.
+            self.pc += 1
         elif op == 0o47 and e >= 0o400000:
             pass
         elif op == 0o51:  # TTCALL: clear input, write string, write character

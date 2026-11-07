@@ -243,6 +243,27 @@ class Native(unittest.TestCase):
                 else:
                     self.assertEqual(cpu.run_native(5), output)
 
+    def test_ki10_halfword_arithmetic_and_tymshare_calls(self):
+        # AOBJN from -1 carries into the left half on a KA10 but not on a KI10;
+        # PUSH does the same. Tymshare's interrupt calls skip their HALT.
+        for ki in (False, True):
+            for native in (False, True):
+                with self.subTest(ki=ki, native=native):
+                    cpu = self.machine(random.Random(0))
+                    cpu.m[:] = [0]*len(cpu.m)
+                    cpu.ki = ki
+                    cpu.pc = 64
+                    cpu.m[1] = cpu.m[2] = MASK
+                    cpu.m[64:69] = [instruction(0o252, 1, 65), instruction(0o261, 2, 0o2000),
+                                    instruction(0o47, 3, 0o777744), instruction(0o254, 4),
+                                    instruction(0o47, address=0o12)]
+                    if native:
+                        cpu.run_native(10, state=True)
+                    else:
+                        cpu.run(10)
+                    self.assertEqual(cpu.m[1], 0 if ki else 1 << 18)
+                    self.assertEqual(cpu.m[2], 0 if ki else 1 << 18)
+
     def test_output_buffer_ring_and_core(self):
         # The Fortran runtime reads the size in a buffer's ring link word and
         # may then return buffer memory with CORE, which always succeeds here.

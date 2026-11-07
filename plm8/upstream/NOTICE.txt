@@ -1,5 +1,6 @@
 Intel PL/M-8 compiler, passes PLM1 and PLM2, version 3.3, the
-Intel MAC8 8008 macro cross-assembler, version 2.4, and the
+Intel MAC8 8008 macro cross-assembler, version 2.4 and the expanded
+version 2.3 (MAC8E), and the
 Intel INTERP/8 8008 simulator (INT8), version 2.1.
 Original software: Intel Corporation; PDP-10 Fortran/Tymshare runtime authors.
 These historical third-party executables are not newly authored project code.
@@ -10,8 +11,10 @@ https://vtda.org/bits/software/DEC/PDP-10/tymshare/169278.tape.bz2
 Catalog:
 https://vtda.org/bits/software/DEC/PDP-10/tymshare/169278.txt
 Directory: (UPL), files PLM1.SAV and PLM2.SAV, catalog dates February 1976,
-MAC8.SAV, catalog date 1976-01-09, and INT8.SAV, catalog date 1975-11-27.
+MAC8.SAV, catalog date 1976-01-09, MAC8E.SAV (no valid catalog date), and
+INT8.SAV, catalog date 1975-11-27.
 Runtime banners: PLM1 VERS 3.3; PLM2 VERS 3.3; 8008 MACRO ASSEMBLER, VER 2.4;
+EXPANDED VERSION OF MAC8 RELEASED 7/20/75 with 8008 MACRO ASSEMBLER, VER 2.3;
 INTERP/8 VERS 2.1.
 
 Recovered with plm8/recover.py. Each original 36-bit word is represented
@@ -24,4 +27,5 @@ efc4e6661dc5033f3c95c399a491608bd3aace1ab665ecf9ab2922f620410315  169278.tape.bz
 b25f17bbd43130de88a846a76fd439ed4558ad88fe2e19345b8fd1447209dcd4  plm1.sav
 ba3c4c66470e1331d4f27ce49d1488938678447647c444e3228bf292eadfc39d  plm2.sav
 4bae9ba8b51d1acdec947cd6fe37bc66c79520d52760fcfa919ab51cdf7e0d17  mac8.sav
+38482a33d6541e3342b5079c019ab6b1a981c469f45893700c75918046198481  mac8e.sav
 e18aa6902b694e4564e632c85e9aa9a431e5aa480932d2a0a63eee87a4d0f708  int8.sav

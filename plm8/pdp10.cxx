@@ -4,7 +4,8 @@
 // Python runner remains the reference. pdp10.py validates and loads the
 // compiler image, then passes the loaded memory and entry point here.
 //
-// usage: pdp10 memory.bin entry input.txt directory output.txt budget [final.bin]
+// usage: pdp10 [--ki] memory.bin entry input.txt directory output.txt budget [final.bin]
+// --ki selects KI10 stack and AOBJ arithmetic, which counts the halves separately.
 // Exit 0 when the program EXITs; otherwise 2 with the error on stderr. The
 // console output produced so far is written to output.txt either way, and the
 // optional final.bin receives the final memory followed by the PC (for tests).
@@ -28,6 +29,15 @@ static std::string output;
 static std::string input;
 static size_t inputAt = 0;
 static std::string directory;
+static bool ki10 = false;
+
+// Add delta to both halves: carrying across them on a KA10, not on a KI10.
+static Word step( Word word, int delta )
+{
+    if ( ki10 )
+        return ( ( ( word >> 18 ) + delta ) & RH ) << 18 | ( ( word + delta ) & RH );
+    return ( word + (Word) ( delta * 01000001LL ) ) & MASK;
+}
 
 struct Finished {};
 
@@ -355,24 +365,24 @@ static void execute( Word ir, uint32_t at )
         ;
     else if ( op == 0260 )
     {
-        m[ ac ] = ( av + 01000001 ) & MASK;
+        m[ ac ] = step( av, 1 );
         m[ m[ ac ] & RH ] = pc;
         pc = e;
     }
     else if ( op == 0261 )
     {
-        m[ ac ] = ( av + 01000001 ) & MASK;
+        m[ ac ] = step( av, 1 );
         m[ m[ ac ] & RH ] = v;
     }
     else if ( op == 0262 )
     {
         m[ e ] = m[ av & RH ];
-        m[ ac ] = ( av - 01000001 ) & MASK;
+        m[ ac ] = step( av, -1 );
     }
     else if ( op == 0263 )
     {
         pc = (uint32_t) ( m[ av & RH ] & RH );
-        m[ ac ] = ( av - 01000001 ) & MASK;
+        m[ ac ] = step( av, -1 );
     }
     else if ( op == 0264 )
     {
@@ -459,7 +469,7 @@ static void execute( Word ir, uint32_t at )
     }
     else if ( op == 0252 || op == 0253 )
     {
-        m[ ac ] = ( av + 01000001 ) & MASK;
+        m[ ac ] = step( av, 1 );
         if ( ( sgn( m[ ac ] ) < 0 ) == ( op == 0253 ) )
             pc = e;
     }
@@ -517,6 +527,13 @@ static void execute( Word ir, uint32_t at )
     }
     else if ( op == 047 && ( e == 023 || e == 027 || e == 030 || e == 024 ) ) // timing/job queries
         m[ ac ] = 0;
+    else if ( op == 047 && e >= 0777736 && e <= 0777745 )
+    {
+        // Tymshare software-interrupt setup (CALLI -42 to -33) in newer
+        // runtimes such as MAC8E's. They halt unless these succeed; no
+        // interrupt is ever raised.
+        pc = ( pc + 1 ) & RH;
+    }
     else if ( op == 047 && e >= 0400000 )
         ;
     else if ( op == 051 ) // TTCALL: clear input, write string, write character
@@ -701,9 +718,15 @@ static bool read_file( const char * path, std::string & text )
 
 int main( int argc, char ** argv )
 {
+    if ( argc > 1 && !strcmp( argv[ 1 ], "--ki" ) )
+    {
+        ki10 = true;
+        argc--;
+        argv++;
+    }
     if ( argc != 7 && argc != 8 )
     {
-        fprintf( stderr, "usage: pdp10 memory.bin entry input.txt directory output.txt budget [final.bin]\n" );
+        fprintf( stderr, "usage: pdp10 [--ki] memory.bin entry input.txt directory output.txt budget [final.bin]\n" );
         return 2;
     }
     std::string image;

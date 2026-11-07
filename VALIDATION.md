@@ -917,3 +917,12 @@ periods exactly. They agree on every program, including the 9,523,146-clock e
 and 25,430,180-clock sieve benchmarks. Forty random programs give identical
 final registers, flags and clock periods in both simulators. INT8 adds 16
 states once, when a session first runs; the comparison allows for that.
+
+## MAC8E and KI10 arithmetic — 2026-11-07
+
+MAC8E, the expanded MAC8 2.3 from the same tape, needs a KI10. The PDP-10
+runner now has a KI10 mode, selected for that image only, in which the stack
+and `AOBJ` instructions count the two halves separately. It also accepts
+Tymshare's software-interrupt setup calls (`CALLI -42` to `-33`), which no
+other image makes. MAC8E assembles all eight translated a08 programs to the
+a08 images, and its symbol table holds 3,990 labels against MAC8 2.4's 490.

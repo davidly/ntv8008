@@ -252,6 +252,21 @@ class MAC8(unittest.TestCase):
         text, _ = mac8.assemble_source('        ORG 64 ; lowercase comment' + ' ' * 80 + 'x\n        HLT\n')
         self.assertEqual(image(text), {64: 0})
 
+    @unittest.skipUnless((ROOT / 'plm8/upstream/mac8e.sav').is_file(), 'optional MAC8E image not supplied')
+    def test_expanded(self):
+        # MAC8E, the 1975 expanded MAC8 2.3, needs KI10 arithmetic and the
+        # Tymshare interrupt calls. It gives the same images, and its symbol
+        # table holds 3,990 labels where MAC8's holds 490.
+        for name in ('sieve', 'b8008'):
+            with self.subTest(name=name):
+                text, listing = mac8.assemble_source(translate_a08((ROOT / f'a08/{name}.asm').read_text()), True)
+                self.assertIn('8008 MACRO ASSEMBLER, VER 2.3', listing)
+                self.assertEqual(image(text), image((ROOT / f'a08/{name}.hex').read_text()))
+        labels = ''.join(f'L{i:04d}:  DB {i % 256}\n' for i in range(491))
+        with self.assertRaisesRegex(mac8.CompileError, 'PROGRAM ERROR'):
+            mac8.assemble_source(labels)
+        self.assertEqual(len(image(mac8.assemble_source(labels, True)[0])), 491)
+
     def test_errors(self):
         with tempfile.TemporaryDirectory(prefix='mac8 test ') as directory:
             output = Path(directory, 'old.hex')

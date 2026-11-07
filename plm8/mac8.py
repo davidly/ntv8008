@@ -30,8 +30,12 @@ def code_field(line):
     return line
 
 
-def assemble_object(source, symbols=False):
-    """Return MAC8's own object file and the listing; symbols adds its symbol table."""
+def assemble_object(source, symbols=False, expanded=False):
+    """Return MAC8's own object file and the listing; symbols adds its symbol table.
+
+    expanded selects MAC8E, the 1975 expanded MAC8 2.3, whose symbol table is
+    eight times larger.
+    """
     source.encode('ascii')
     lines = source.expandtabs(8).splitlines()
     for number, line in enumerate(lines, 1):
@@ -51,12 +55,13 @@ def assemble_object(source, symbols=False):
         lines.append('        END')
     with tempfile.TemporaryDirectory(prefix='mac8-') as directory:
         Path(directory, 'FOR20.DAT').write_text('\n'.join(lines) + '\n', encoding='ascii')
-        runner = PDP10(UPSTREAM / 'mac8.sav', ('$T=1\n' if symbols else '') + CONTROLS, directory)
+        image = UPSTREAM / ('mac8e.sav' if expanded else 'mac8.sav')
+        runner = PDP10(image, ('$T=1\n' if symbols else '') + CONTROLS, directory)
         try:
             native = NATIVE.is_file() and not os.environ.get('PLM8_PYTHON')
             console = runner.run_native(BUDGET) if native else runner.run(BUDGET)
         except (RuntimeError, OSError, StopIteration, ZeroDivisionError) as error:
-            raise CompileError(f'mac8.sav: {error}\n{runner.output.getvalue()}') from error
+            raise CompileError(f'{image.name}: {error}\n{runner.output.getvalue()}') from error
         listing = Path(directory, 'FOR22.DAT').read_text(encoding='ascii').replace('\r', '')
         if 'NO PROGRAM ERRORS' not in console:
             # MAC8 flags each erroneous listing line in its first column.
@@ -65,8 +70,8 @@ def assemble_object(source, symbols=False):
         return Path(directory, 'FOR21.DAT').read_text(encoding='ascii'), listing
 
 
-def assemble_source(source):
-    result, listing = assemble_object(source)
+def assemble_source(source, expanded=False):
+    result, listing = assemble_object(source, expanded=expanded)
     return convert_hex(result), listing
 
 
@@ -75,9 +80,11 @@ def main():
     parser.add_argument('source', type=Path)
     parser.add_argument('-o', '--output', type=Path, help='HEX path (default: source.hex)')
     parser.add_argument('--listing', type=Path, help='save the assembler listing')
+    parser.add_argument('--expanded', action='store_true',
+                        help='use MAC8E, the expanded 2.3 assembler with about 4,000 symbols instead of 500')
     args = parser.parse_args()
     try:
-        output, listing = assemble_source(args.source.read_text(encoding='ascii'))
+        output, listing = assemble_source(args.source.read_text(encoding='ascii'), args.expanded)
         if args.listing:
             args.listing.write_text(listing, encoding='ascii')
         destination = args.output or args.source.with_suffix('.hex')

@@ -266,6 +266,32 @@ work files also gained their missing line feeds (TTT's `FOR21.DAT` had 141
 CRs but 125 LFs). The PL/M passes read lines the same either way, so all five
 examples' HEX and listings are byte-identical with both runners.
 
+### MAC8E, the expanded assembler
+
+`MAC8E.SAV` prints `EXPANDED VERSION OF MAC8 RELEASED 7/20/75` and then
+`8008 MACRO ASSEMBLER, VER 2.3`. Its symbol table holds 3,990 labels where
+MAC8 2.4's holds 490; the 4,460-line b8008 interpreter already defines 422. Use
+it with `--expanded`:
+
+```sh
+python3 plm8/mac8.py --expanded program.asm
+```
+
+MAC8E was built for the KI10 processor. Its runtime checks for one by running
+`AOBJN` on -1: a KA10 carries into the left half and a KI10 does not. On a
+KA10 it prints `?KI-10 CODE WILL NOT RUN ON A KA-10`. The runner selects KI10
+halfword arithmetic for `AOBJN`, `AOBJP`, `PUSH`, `POP`, `PUSHJ` and `POPJ`
+for this image only; the other images keep the KA10 behavior they were tested
+with. MAC8E's newer Fortran runtime also sets up Tymshare's software-interrupt
+system with monitor calls `CALLI -42` through `CALLI -33` and halts unless
+they succeed. The runner accepts them and never raises an interrupt. None of
+the other images make these calls.
+
+The eight translated a08 programs assemble to the same bytes with MAC8E as with
+MAC8 and a08. `tests/mac8.py` checks sieve and b8008 with MAC8E, and that 491
+labels fail in MAC8 but assemble in MAC8E. `recover.py` and `setup.py
+--plm-tape` recover `mac8e.sav`; with `--plm-images` it is optional.
+
 ## INTERP/8 simulator
 
 `INT8.SAV` in the same directory is Intel's INTERP/8 2.1, the 8008 instruction

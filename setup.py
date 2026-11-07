@@ -43,8 +43,8 @@ def main():
     parser.add_argument('--scelbal',action='store_true',help='download and build optional noncommercial SCELBAL')
     parser.add_argument('--accept-scelbal-terms',action='store_true',help='acknowledge SCELBAL educational/historical/noncommercial terms in scelbal/NOTICE.txt')
     parser.add_argument('--forth-source',type=Path,help='use lawfully obtained pinned Forth sources from this directory')
-    parser.add_argument('--plm-images',type=Path,help='use lawfully obtained pinned PLM1/PLM2 (and optional MAC8/INT8) images from this directory')
-    parser.add_argument('--plm-tape',type=Path,help='recover PL/M, MAC8 and INT8 images from a lawfully obtained pinned tape archive')
+    parser.add_argument('--plm-images',type=Path,help='use lawfully obtained pinned PLM1/PLM2 (and optional MAC8/MAC8E/INT8) images from this directory')
+    parser.add_argument('--plm-tape',type=Path,help='recover PL/M, MAC8, MAC8E and INT8 images from a lawfully obtained pinned tape archive')
     args=parser.parse_args()
     if args.scelbal and not args.accept_scelbal_terms:
         parser.error('--scelbal requires --accept-scelbal-terms; read scelbal/NOTICE.txt')
@@ -93,7 +93,8 @@ def main():
                 'plm1.sav':'b25f17bbd43130de88a846a76fd439ed4558ad88fe2e19345b8fd1447209dcd4',
                 'plm2.sav':'ba3c4c66470e1331d4f27ce49d1488938678447647c444e3228bf292eadfc39d'})
             for name,digest in (('mac8.sav','4bae9ba8b51d1acdec947cd6fe37bc66c79520d52760fcfa919ab51cdf7e0d17'),
-                                ('int8.sav','e18aa6902b694e4564e632c85e9aa9a431e5aa480932d2a0a63eee87a4d0f708')):
+                                ('int8.sav','e18aa6902b694e4564e632c85e9aa9a431e5aa480932d2a0a63eee87a4d0f708'),
+                                ('mac8e.sav','38482a33d6541e3342b5079c019ab6b1a981c469f45893700c75918046198481')):
                 if (args.plm_images/name).is_file():
                     supplied_files(args.plm_images,ROOT/'plm8/upstream',{name:digest})
         for name in ('hello','arithmetic','sieve','e','ttt'):
