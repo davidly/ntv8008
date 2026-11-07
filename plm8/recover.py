@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Re-extract the original PL/M-8 and MAC8 images from Tymshare tape 169278."""
+"""Re-extract the original PL/M-8, MAC8 and INT8 images from Tymshare tape 169278."""
 import argparse
 import bz2
 import hashlib
@@ -11,6 +11,7 @@ IMAGES = {
     'plm1.sav': 'b25f17bbd43130de88a846a76fd439ed4558ad88fe2e19345b8fd1447209dcd4',
     'plm2.sav': 'ba3c4c66470e1331d4f27ce49d1488938678447647c444e3228bf292eadfc39d',
     'mac8.sav': '4bae9ba8b51d1acdec947cd6fe37bc66c79520d52760fcfa919ab51cdf7e0d17',
+    'int8.sav': 'e18aa6902b694e4564e632c85e9aa9a431e5aa480932d2a0a63eee87a4d0f708',
 }
 
 

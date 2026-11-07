@@ -14,7 +14,7 @@ def main():
     parser.add_argument('--basic-benchmarks',action='store_true',help='include slow optional SCELBAL benchmarks')
     args=parser.parse_args()
     compilers={'ack','smallc','pascal','modula2','ack_basic','occam','snake','native_codegen','starters','practical','wumpus'}
-    tests=('wumpus','practical','symbols','integration','starters','pdp10','plm8','mac8','forth','ack','smallc','robson','b8008','pascal',
+    tests=('wumpus','practical','symbols','integration','starters','pdp10','plm8','mac8','int8','forth','ack','smallc','robson','b8008','pascal',
            'modula2','occam','stack','snake','native_codegen','array_codegen','ack_bootstrap','ack_msvc','ack_codegen','runtime_prune','outline8008','occam_storage','smallc_codegen','ack_basic','publication')
     if args.basic_benchmarks:
         tests+=('basic_benchmarks',)

@@ -18,8 +18,9 @@ Alternatively use `--plm-tape /path/to/169278.tape.bz2` to recover images from a
 lawfully obtained matching archive. Pins and provenance are in
 [upstream/NOTICE.txt](upstream/NOTICE.txt). Setup validates inputs and rebuilds
 all five examples locally. The tape option also recovers the
-[MAC8 assembler](#mac8-assembler); with `--plm-images`, a pinned `mac8.sav` in
-the same directory is optional. Compiler images and generated HEX stay ignored.
+[MAC8 assembler](#mac8-assembler) and [INTERP/8 simulator](#interp8-simulator);
+with `--plm-images`, pinned `mac8.sav` and `int8.sav` files in the same directory
+are optional. Compiler images and generated HEX stay ignored.
 The following usage assumes setup is complete; it does not assert historical
 software use or redistribution rights.
 
@@ -265,6 +266,53 @@ work files also gained their missing line feeds (TTT's `FOR21.DAT` had 141
 CRs but 125 LFs). The PL/M passes read lines the same either way, so all five
 examples' HEX and listings are byte-identical with both runners.
 
+## INTERP/8 simulator
+
+`INT8.SAV` in the same directory is Intel's INTERP/8 2.1, the 8008 instruction
+set simulator that Intel supplied with MAC8 and PL/M. It is also Fortran and
+runs on the same PDP-10 runner. `int8.py` loads an Intel HEX file from any of
+this project's tools, or MAC8 source that it assembles with its symbol table.
+It runs the program from address 64 to `HLT`:
+
+```sh
+python3 plm8/int8.py -p a08/e.hex
+python3 plm8/int8.py plm8/examples/hello.hex
+python3 plm8/int8.py plm8/examples/mac8hello.asm
+```
+
+INTERP/8 records port output but does not print it. To show console output,
+`int8.py` traces exactly the addresses that hold `OUT 10` (opcode 55H), the
+ntv8008 console port. INT8 prints the registers before each traced
+instruction, so the A value above each `O10` is the character written. The
+console therefore matches ntv8008's. Keyboard input is not connected; INT8
+reads input ports from values set with its `SET PORT n = v.` command.
+
+`-a` selects another entry address. `-n` sets a limit in clock periods (default
+2,000,000,000) through INT8's `CYCLE` breakpoint. `-p` reports clock periods
+like `ntv8008 -p`. INTERP/8 counts 8008 states (two clock periods each) and
+charges 20 for `HLT`, against the 4 states that ntv8008 charges. The report
+converts INT8's count to ntv8008's measure; the a08 e benchmark is 9,523,146
+clock periods in both. E runs in 0.5 seconds and sieve in 1.3 seconds with
+the native runner.
+
+`--commands file` sends an INT8 command session after loading, with the PC
+set to the entry address, and prints INT8's transcript. The commands found in
+its keyword table are `LOAD`, `REFER`, `TRACE`, `GO`, `RUN`, `CONV`, `PUNCH`,
+`INTER`, `SET`, `TIME`, `CYCLE`, `DISPLAY`, `END`, `ALTER` and `BASE`; each ends
+with a period. Examples that work include `DISPLAY CPU.`, `DISPLAY SYM.`,
+`DISPLAY MEMORY 0 TO 15.`, `BASE HEX.`, `TRACE 64 TO 80.`, `CYCLE 1000.`,
+`SET PC = 64.` and `GO.`. INT8 accepts at most 16 data bytes per HEX record,
+so `int8.py` rewrites every image in MAC8's 16-byte record format.
+
+`tests/int8.py` runs five a08 programs (hello, count, sieve, e and ttt), PL/M
+hello and arithmetic, and the MAC8 example. Each must produce ntv8008's console
+output and clock periods exactly. It also runs 40 seeded random programs in both
+simulators and requires identical final registers, flags and clock periods. The
+programs mix register, immediate and memory ALU operations, rotates,
+increments, conditional jumps, and conditional calls to a subroutine that ends
+with a conditional return. A symbol-table session, the cycle limit, and
+agreement between the Python and native runners are checked too.
+
 ## Recovery and provenance
 
 The images came from the `(UPL)` directory of Tymshare tape **169278**, archived
@@ -281,23 +329,24 @@ python3 plm8/recover.py /tmp/169278.tape.bz2 --output /tmp/recovered-plm8
 ```
 
 This downloads roughly 379 MiB. Recovery verifies the compressed tape's SHA-256,
-extracts only the two compiler files and `MAC8.SAV`, and verifies their SHA-256
-before writing.
+extracts only the two compiler files, `MAC8.SAV` and `INT8.SAV`, and verifies
+their SHA-256 before writing.
 Each extracted 36-bit word is stored in an eight-byte little-endian container;
 the original word values, entry instructions, and trailing tape words remain.
 An off-by-one in the older `tito` extractor drops the final word of a file's
 first tape record. `recover.py` includes that word; both compiler images were
 verified by independent extraction with the corrected utility. The MAC8 image
-reproduces the object file in the tape's own 1974 `MAC8.EXA` session.
+reproduces the object file in the tape's own 1974 `MAC8.EXA` session, and INT8
+loads it and lists its symbols as the tape's `INT8.EXA` session shows.
 
 The host runner installs the saved Fortran local-UUO vector and provides local
 TTY/DSK I/O. It returns immediately from the old Tymshare RTYACT accounting
 wrapper, which depends on a discontinued service. The wrapper is recognized by
 its instruction sequence (MAC8's has one more instruction before the return),
-and all three complete images are hash-checked.
+and all four complete images are hash-checked.
 Only that accounting entry is changed in the runner's memory; the files on
 disk and the compiler's parser and code generator remain unchanged.
-The runner deliberately supports these three executables, not general PDP-10
+The runner deliberately supports these four executables, not general PDP-10
 software, floating-point programs, or arbitrary TYMCOM-X services.
 
 Useful references:
@@ -325,8 +374,9 @@ e against Python Decimal and
 TTT against an independent minimax search, exercise multi-buffer intermediate
 files and `DO CASE`, reject invalid source/object records, and check CLI paths
 with spaces and preservation of existing HEX output after a compile error.
-`python3 tests/mac8.py` runs the [MAC8 tests](#mac8-assembler); both main test
-scripts include it.
+`python3 tests/mac8.py` and `python3 tests/int8.py` run the
+[MAC8](#mac8-assembler) and [INTERP/8](#interp8-simulator) tests; both main test
+scripts include them.
 
 ### Inlined TTT win dispatch
 

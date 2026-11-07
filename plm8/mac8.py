@@ -30,7 +30,8 @@ def code_field(line):
     return line
 
 
-def assemble_source(source):
+def assemble_object(source, symbols=False):
+    """Return MAC8's own object file and the listing; symbols adds its symbol table."""
     source.encode('ascii')
     lines = source.expandtabs(8).splitlines()
     for number, line in enumerate(lines, 1):
@@ -50,7 +51,7 @@ def assemble_source(source):
         lines.append('        END')
     with tempfile.TemporaryDirectory(prefix='mac8-') as directory:
         Path(directory, 'FOR20.DAT').write_text('\n'.join(lines) + '\n', encoding='ascii')
-        runner = PDP10(UPSTREAM / 'mac8.sav', CONTROLS, directory)
+        runner = PDP10(UPSTREAM / 'mac8.sav', ('$T=1\n' if symbols else '') + CONTROLS, directory)
         try:
             native = NATIVE.is_file() and not os.environ.get('PLM8_PYTHON')
             console = runner.run_native(BUDGET) if native else runner.run(BUDGET)
@@ -61,8 +62,12 @@ def assemble_source(source):
             # MAC8 flags each erroneous listing line in its first column.
             flagged = [line for line in listing.splitlines() if re.match(r' [A-Z] ', line)]
             raise CompileError('\n'.join(flagged + [console.strip().splitlines()[-1]]))
-        result = Path(directory, 'FOR21.DAT').read_text(encoding='ascii')
-        return convert_hex(result), listing
+        return Path(directory, 'FOR21.DAT').read_text(encoding='ascii'), listing
+
+
+def assemble_source(source):
+    result, listing = assemble_object(source)
+    return convert_hex(result), listing
 
 
 def main():

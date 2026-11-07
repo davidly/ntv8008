@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""PDP-10 integer/Fortran runtime subset for the recovered PL/M-8 3.3 passes and MAC8.
+"""PDP-10 integer/Fortran runtime subset for the recovered PL/M-8 3.3, MAC8 and INT8.
 
 This is a compiler runner, not a general PDP-10 or TYMCOM-X emulator.
 Instruction encodings and monitor calls: DEC PDP-10 System Reference Manual
@@ -45,7 +45,8 @@ class PDP10:
         if hashlib.sha256(raw).hexdigest() not in (
                 'b25f17bbd43130de88a846a76fd439ed4558ad88fe2e19345b8fd1447209dcd4',  # PLM1
                 'ba3c4c66470e1331d4f27ce49d1488938678447647c444e3228bf292eadfc39d',  # PLM2
-                '4bae9ba8b51d1acdec947cd6fe37bc66c79520d52760fcfa919ab51cdf7e0d17'):  # MAC8
+                '4bae9ba8b51d1acdec947cd6fe37bc66c79520d52760fcfa919ab51cdf7e0d17',  # MAC8
+                'e18aa6902b694e4564e632c85e9aa9a431e5aa480932d2a0a63eee87a4d0f708'):  # INT8
             raise ValueError('compiler image checksum mismatch')
         if len(raw) % 8:
             raise ValueError('truncated compiler image')

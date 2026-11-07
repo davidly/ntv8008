@@ -1,4 +1,4 @@
-// Native PDP-10 runner for the recovered PL/M-8 3.3 passes and MAC8 assembler.
+// Native PDP-10 runner for the recovered PL/M-8 3.3, MAC8 and INT8 programs.
 //
 // A direct translation of pdp10.py's PDP10.execute and its monitor calls; the
 // Python runner remains the reference. pdp10.py validates and loads the
