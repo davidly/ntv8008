@@ -243,6 +243,26 @@ class Native(unittest.TestCase):
                 else:
                     self.assertEqual(cpu.run_native(5), output)
 
+    def test_output_buffer_ring_and_core(self):
+        # The Fortran runtime reads the size in a buffer's ring link word and
+        # may then return buffer memory with CORE, which always succeeds here.
+        for native in (False, True):
+            with self.subTest(native=native):
+                cpu = self.machine(random.Random(0))
+                cpu.m[:] = [0]*len(cpu.m)
+                cpu.pc = 64
+                cpu.m[0o2002] = 0o3000 << 18
+                cpu.m[64:70] = [instruction(0o50, 1, 0o2000), instruction(0o255), instruction(0o67, 1),
+                                instruction(0o47, 2, 0o11), instruction(0o254, 4), instruction(0o47, address=0o12)]
+                if native:
+                    cpu.run_native(10, state=True)
+                else:
+                    cpu.run(10)
+                base = 0o101000
+                self.assertEqual(cpu.m[0o3000:0o3003], [base - 2, 7 << 24 | base - 1, 640])
+                self.assertEqual(cpu.m[base - 2], 0o201 << 18 | base - 2)
+                self.assertEqual(cpu.m[2], 0o400)
+
     def test_monitor_control_blocks_at_memory_boundary(self):
         def sixbit(text):
             value = 0

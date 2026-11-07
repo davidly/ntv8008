@@ -39,8 +39,8 @@ Explicit exclusions:
 * SCELBAL interpreter source and derived assembly/HEX; optional acknowledged
   noncommercial download/build only.
 * Baker Forth kernel source and derivatives; local-input integration only.
-* Intel PL/M compiler images, tape archives and generated images; local-input
-  integration only.
+* Intel PL/M compiler and MAC8 assembler images, tape archives and generated
+  images; local-input integration only.
 * Original-tree executables, object files, logs, listings, archives, caches,
   screenshots and private configuration.
 

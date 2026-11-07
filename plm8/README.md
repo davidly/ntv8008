@@ -17,7 +17,9 @@ python3 setup.py --plm-images /path/to/lawfully-obtained/images
 Alternatively use `--plm-tape /path/to/169278.tape.bz2` to recover images from a
 lawfully obtained matching archive. Pins and provenance are in
 [upstream/NOTICE.txt](upstream/NOTICE.txt). Setup validates inputs and rebuilds
-all five examples locally. Compiler images and generated HEX stay ignored.
+all five examples locally. The tape option also recovers the
+[MAC8 assembler](#mac8-assembler); with `--plm-images`, a pinned `mac8.sav` in
+the same directory is optional. Compiler images and generated HEX stay ignored.
 The following usage assumes setup is complete; it does not assert historical
 software use or redistribution rights.
 
@@ -192,6 +194,77 @@ byte and local-UUO instructions. A one-off run of 2,000 seeds (about 725,000
 instructions) found no differences. Nested XCT/UUO execution is bounded like
 Python's recursion limit.
 
+## MAC8 assembler
+
+The same `(UPL)` directory holds Intel's MAC8 8008 macro cross-assembler,
+`MAC8.SAV`, which identifies itself as `8008 MACRO ASSEMBLER, VER 2.4`. It is
+Fortran code for the same PDP-10 runtime, so the same runner runs it unchanged.
+After setup recovers `upstream/mac8.sav`:
+
+```sh
+python3 plm8/mac8.py plm8/examples/mac8hello.asm
+./ntv8008 plm8/examples/mac8hello.hex
+```
+
+On Windows, use `py -3 plm8\mac8.py plm8\examples\mac8hello.asm` and
+`ntv8008.exe plm8\examples\mac8hello.hex`. Both print `HELLO FROM MAC8!`.
+`-o` selects the HEX path and `--listing` saves the assembler listing. Native
+assembly takes 0.02 seconds for the example and 0.66 seconds for the 4,460-line
+b8008 interpreter; the Python runner takes 4.6 seconds for the translated a08 sieve.
+
+MAC8 source differs from the 1972 mnemonics that a08 accepts:
+
+* It uses the 8080-style 8008 mnemonics: `MOV A,M` for `LAM`, `MVI H,3FH` for
+  `LHI 3FH`, `INR L`, `ANA A`, `CALL`, `CZ`, `RNC`, `IN` and `OUT`. `HLT`
+  assembles as 00; a08 uses FF.
+* Numbers are decimal unless suffixed with `H`, `Q`, `O` or `B`. a08's default
+  radix is octal.
+* There is no `HIGH` or `LOW`; use `ADR SHR 8` and `ADR AND 0FFH`.
+* `MACRO`/`ENDM` take parameters and give each expansion its own labels, as the
+  example's `LOADHL` shows. `DB`, `DW`, `DS`, `EQU` and `ORG` work as usual.
+* Symbols have five significant characters. Names that agree in their first
+  five characters are reported as errors (P), not merged. Mnemonics and
+  directives such as `ADD`, `SUB` and `IF` cannot be labels.
+* `END` takes no start address. Select a non-default entry with ntv8008's
+  `-a:address`, as for PL/M.
+
+The wrapper checks the same hazards as the PL/M wrapper. Code must use MAC8's
+alphabet, space through `Z`: other characters, including lowercase, become
+spaces even inside strings. Comments may contain anything, but the listing
+shows lowercase as spaces. Code must fit in 72 columns, because MAC8 silently
+ignores the rest; a long `DB` list can lose part of its last operand. Comments
+may run past column 72. `END` is appended when missing. Lines starting with `$`
+are rejected, because MAC8 reads control commands from the source and the
+wrapper selects its files. MAC8 flags errors in the listing's first column (for
+example U for an undefined symbol, M for a multiply defined label, V for an
+out-of-range value). The wrapper prints the flagged lines, fails, and leaves any
+existing output file intact.
+
+`tests/mac8.py` assembles every 8008 instruction and checks the 279 bytes
+against the instruction encodings. It also machine-translates the project's
+eight a08 programs (hello, count, echo, sieve, e, ttt, robson and b8008, 6,113
+lines) to MAC8 syntax. Each must assemble to exactly the bytes of the committed
+a08 HEX. The suite also runs the example, compares the Python and native
+runners, and checks the source checks and error reporting.
+
+### Disk buffer rings
+
+MAC8 exposed a runner defect that also affected the PL/M work files. The
+runner's `OUT` pointed the buffer header straight at the data instead of at a
+TOPS-10 buffer ring link word. The Fortran runtime reads the size field of
+that word to decide whether it may assemble each record in a line buffer, which
+ends records with CR LF. Until the first 640-character disk buffer filled, the
+"size" happened to be large enough. After that it read leftover text, chose
+direct output, and ended records with a bare CR. Each output buffer now has a
+link word with a 0o201-word size, pointing to itself. With that link the
+runtime also returns buffer memory with the `CORE` monitor call, which the
+fixed-memory runner accepts.
+
+Every line in MAC8 listings and object files now ends with CR LF. The PL/M
+work files also gained their missing line feeds (TTT's `FOR21.DAT` had 141
+CRs but 125 LFs). The PL/M passes read lines the same either way, so all five
+examples' HEX and listings are byte-identical with both runners.
+
 ## Recovery and provenance
 
 The images came from the `(UPL)` directory of Tymshare tape **169278**, archived
@@ -208,20 +281,23 @@ python3 plm8/recover.py /tmp/169278.tape.bz2 --output /tmp/recovered-plm8
 ```
 
 This downloads roughly 379 MiB. Recovery verifies the compressed tape's SHA-256,
-extracts only the two compiler files, and verifies their SHA-256 before writing.
+extracts only the two compiler files and `MAC8.SAV`, and verifies their SHA-256
+before writing.
 Each extracted 36-bit word is stored in an eight-byte little-endian container;
 the original word values, entry instructions, and trailing tape words remain.
 An off-by-one in the older `tito` extractor drops the final word of a file's
-first tape record. `recover.py` includes that word; both images were verified
-by independent extraction with the corrected utility.
+first tape record. `recover.py` includes that word; both compiler images were
+verified by independent extraction with the corrected utility. The MAC8 image
+reproduces the object file in the tape's own 1974 `MAC8.EXA` session.
 
 The host runner installs the saved Fortran local-UUO vector and provides local
 TTY/DSK I/O. It returns immediately from the old Tymshare RTYACT accounting
 wrapper, which depends on a discontinued service. The wrapper is recognized by
-its instruction sequence, and both complete compiler images are hash-checked.
+its instruction sequence (MAC8's has one more instruction before the return),
+and all three complete images are hash-checked.
 Only that accounting entry is changed in the runner's memory; the files on
 disk and the compiler's parser and code generator remain unchanged.
-The runner deliberately supports these two executables, not general PDP-10
+The runner deliberately supports these three executables, not general PDP-10
 software, floating-point programs, or arbitrary TYMCOM-X services.
 
 Useful references:
@@ -249,6 +325,8 @@ e against Python Decimal and
 TTT against an independent minimax search, exercise multi-buffer intermediate
 files and `DO CASE`, reject invalid source/object records, and check CLI paths
 with spaces and preservation of existing HEX output after a compile error.
+`python3 tests/mac8.py` runs the [MAC8 tests](#mac8-assembler); both main test
+scripts include it.
 
 ### Inlined TTT win dispatch
 

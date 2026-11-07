@@ -1,4 +1,4 @@
-// Native PDP-10 runner for the recovered PL/M-8 3.3 passes.
+// Native PDP-10 runner for the recovered PL/M-8 3.3 passes and MAC8 assembler.
 //
 // A direct translation of pdp10.py's PDP10.execute and its monitor calls; the
 // Python runner remains the reference. pdp10.py validates and loads the
@@ -510,6 +510,11 @@ static void execute( Word ir, uint32_t at )
     }
     else if ( op == 047 && ( e == 0 || e == 016 ) ) // RESET, APRENB
         ;
+    else if ( op == 047 && e == 011 ) // CORE: memory is fixed, so any request succeeds
+    {
+        m[ ac ] = 0400;
+        pc = ( pc + 1 ) & RH;
+    }
     else if ( op == 047 && ( e == 023 || e == 027 || e == 030 || e == 024 ) ) // timing/job queries
         m[ ac ] = 0;
     else if ( op == 047 && e >= 0400000 )
@@ -621,7 +626,10 @@ static void execute( Word ir, uint32_t at )
         c.written = 0;
         c.flushed = 0;
         c.ready = true;
-        m[ h ] = base;
+        // One 128-word buffer in a ring of one: the header points at its
+        // link word, whose size field selects the runtime's CRLF line mode.
+        m[ base - 2 ] = (Word) 0201 << 18 | ( base - 2 );
+        m[ h ] = base - 2;
         m[ h + 1 ] = (Word) 7 << 24 | ( base - 1 );
         m[ h + 2 ] = 640;
     }

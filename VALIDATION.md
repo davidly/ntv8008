@@ -892,3 +892,19 @@ listings with either runner.
 
 `tests/pdp10.py` compares final memory, PC and outcome for 150 seeded random
 programs under both runners; a one-off run of 2,000 seeds found no differences.
+
+## Intel MAC8 assembler — 2026-11-07
+
+`plm8/mac8.py` runs Intel's MAC8 2.4 8008 macro cross-assembler, recovered by
+`plm8/recover.py` from the same Tymshare tape directory as PL/M-8. Its object
+output matches the tape's 1974 `MAC8.EXA` session byte for byte.
+`tests/mac8.py` checks every 8008 instruction encoding (279 bytes). It
+translates the eight a08 programs (6,113 lines, including b8008) to MAC8
+syntax, and each assembles to the committed a08 image byte for byte.
+
+MAC8 exposed a buffer-ring defect in the PDP-10 runner: after the first
+640-character disk buffer, the Fortran runtime ended records with a bare CR. The
+runner now supplies a TOPS-10 link word for each output buffer and accepts the
+`CORE` call that the runtime then makes. All PL/M HEX and listings are
+unchanged under both runners, and PL/M's work files gain their missing LFs.
+

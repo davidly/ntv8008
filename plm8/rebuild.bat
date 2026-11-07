@@ -9,6 +9,10 @@ for %%a in (hello arithmetic sieve e ttt) do (
     %PYTHON% compile.py examples\%%a.plm
     if errorlevel 1 goto failed
 )
+if not exist upstream\mac8.sav goto done
+%PYTHON% mac8.py examples\mac8hello.asm
+if errorlevel 1 goto failed
+:done
 popd
 exit /b 0
 :failed

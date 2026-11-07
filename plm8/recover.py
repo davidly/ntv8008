@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Re-extract the two original compiler images from Tymshare tape 169278."""
+"""Re-extract the original PL/M-8 and MAC8 images from Tymshare tape 169278."""
 import argparse
 import bz2
 import hashlib
@@ -10,6 +10,7 @@ TAPE_SHA256 = 'efc4e6661dc5033f3c95c399a491608bd3aace1ab665ecf9ab2922f620410315'
 IMAGES = {
     'plm1.sav': 'b25f17bbd43130de88a846a76fd439ed4558ad88fe2e19345b8fd1447209dcd4',
     'plm2.sav': 'ba3c4c66470e1331d4f27ce49d1488938678447647c444e3228bf292eadfc39d',
+    'mac8.sav': '4bae9ba8b51d1acdec947cd6fe37bc66c79520d52760fcfa919ab51cdf7e0d17',
 }
 
 
@@ -77,7 +78,7 @@ def recover(tape, destination):
                 # extractor's size-offset expression drops that word.
                 for index in range(offset, len(record) // 5):
                     images[current].extend(struct.pack('<Q', word(record, index)))
-                if len(images) == 2 and all(hashlib.sha256(images[name]).hexdigest() == digest
+                if len(images) == len(IMAGES) and all(hashlib.sha256(images[name]).hexdigest() == digest
                                             for name, digest in IMAGES.items()):
                     break
     for name, expected in IMAGES.items():

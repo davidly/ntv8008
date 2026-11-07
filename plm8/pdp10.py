@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""PDP-10 integer/Fortran runtime subset for the recovered PL/M-8 3.3 passes.
+"""PDP-10 integer/Fortran runtime subset for the recovered PL/M-8 3.3 passes and MAC8.
 
 This is a compiler runner, not a general PDP-10 or TYMCOM-X emulator.
 Instruction encodings and monitor calls: DEC PDP-10 System Reference Manual
@@ -43,8 +43,9 @@ class PDP10:
         self.output = io.StringIO()
         raw = Path(image).read_bytes()
         if hashlib.sha256(raw).hexdigest() not in (
-                'b25f17bbd43130de88a846a76fd439ed4558ad88fe2e19345b8fd1447209dcd4',
-                'ba3c4c66470e1331d4f27ce49d1488938678447647c444e3228bf292eadfc39d'):
+                'b25f17bbd43130de88a846a76fd439ed4558ad88fe2e19345b8fd1447209dcd4',  # PLM1
+                'ba3c4c66470e1331d4f27ce49d1488938678447647c444e3228bf292eadfc39d',  # PLM2
+                '4bae9ba8b51d1acdec947cd6fe37bc66c79520d52760fcfa919ab51cdf7e0d17'):  # MAC8
             raise ValueError('compiler image checksum mismatch')
         if len(raw) % 8:
             raise ValueError('truncated compiler image')
@@ -72,11 +73,12 @@ class PDP10:
         # The original wrapper logs usage to the discontinued Tymshare RTYACT
         # service. Return from that wrapper only; compiler code is unchanged.
         # Verify the surrounding instructions so another image cannot be
-        # mistaken for one of the two recovered 3.3 executables.
-        matches = [a for a in range(len(self.m) - 10)
+        # mistaken for one of the recovered executables. MAC8's wrapper has
+        # one more instruction (MOVNI 2,1) before its return.
+        matches = [a for a in range(len(self.m) - 11)
                    if self.m[a + 3] == 0o200076000000
                    and self.m[a + 4] == 0o200136000001
-                   and self.m[a + 9] == 0o267716000002]
+                   and 0o267716000002 in (self.m[a + 9], self.m[a + 10])]
         if len(matches) != 1:
             raise ValueError('unrecognized Tymshare accounting wrapper')
         self.m[matches[0]] = 0o267716000002  # JRA 16,2(16)
@@ -368,6 +370,9 @@ class PDP10:
             self.execute(m[0o41], 0o41)
         elif op == 0o47 and e in (0, 0o16):  # RESET, APRENB
             pass
+        elif op == 0o47 and e == 0o11:  # CORE: memory is fixed, so any request succeeds
+            m[ac] = 0o400
+            self.pc += 1
         elif op == 0o47 and e in (0o23, 0o27, 0o30, 0o24):  # timing/job queries
             m[ac] = 0
         elif op == 0o47 and e >= 0o400000:
@@ -439,7 +444,10 @@ class PDP10:
             c['written'] = 0
             c['flushed'] = 0
             c['ready'] = True
-            m[h] = base
+            # One 128-word buffer in a ring of one: the header points at its
+            # link word, whose size field selects the runtime's CRLF line mode.
+            m[base - 2] = 0o201 << 18 | base - 2
+            m[h] = base - 2
             m[h + 1] = 7 << 24 | base - 1
             m[h + 2] = 640
         elif op in (0o56, 0o66):  # IN, INPUT

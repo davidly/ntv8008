@@ -88,6 +88,7 @@ uncached dependencies. A08 is fetched from its official site, not bundled.
 | SCELBAL floating-point BASIC | Integration and examples; optional noncommercial download | [SCELBAL setup](scelbal/README.md) |
 | Baker 8008-Forth | Integration, native additions and examples; kernel not included | [Local-source setup](forth/README.md) |
 | Intel PL/M-8 | Runner, recovery tool and example sources; compiler/output images not included | [Local-image setup](plm8/README.md) |
+| Intel MAC8 assembler | Same runner and recovery tool, example source; assembler image not included | [MAC8 guide](plm8/README.md#mac8-assembler) |
 
 `./setup.sh --all` or `setup.bat --all` builds the default tools, SmallC and all
 five ACK frontends, then rebuilds their examples. Native Windows ACK setup uses
