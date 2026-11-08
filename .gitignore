@@ -45,3 +45,6 @@ __pycache__/
 /starters/*/build/
 /work/
 /examples/*/build/
+
+# Local backup of downloaded third-party inputs; never published.
+/local-downloads/
