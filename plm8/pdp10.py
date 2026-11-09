@@ -35,6 +35,10 @@ class Finished(Exception):
 
 
 KI10_MAC8E = '38482a33d6541e3342b5079c019ab6b1a981c469f45893700c75918046198481'
+# Disk buffers, one 0o1000-word area per channel, sit above every image's
+# code and data.
+OUT_BUFFERS = 0o700000
+IN_BUFFERS = 0o740000
 
 
 class PDP10:
@@ -159,7 +163,7 @@ class PDP10:
         c = self.channels.get(ac, {})
         if c.get('ready'):
             h = c['out']
-            base = 0o100000 + ac * 0o1000
+            base = OUT_BUFFERS + ac * 0o1000
             n = c.get('written', 0)
             text = ''.join((chr(self.m[base + i // 5] >> 29 - 7 * (i % 5) & 127) for i in range(c.get('flushed', 0), min(640, n))))
             if 'file' in c:
@@ -379,7 +383,7 @@ class PDP10:
                     m[a] = m[a] & ~(mask << pos) | (av & mask) << pos
                     if sz == 7:
                         for (ch, c) in self.channels.items():
-                            base = 0o100000 + ch * 0o1000
+                            base = OUT_BUFFERS + ch * 0o1000
                             if c.get('ready') and base <= a < base + 128:
                                 c['written'] = max(c.get('written', 0), (a - base) * 5 + (29 - pos) // 7 + 1)
         elif op < 0o40:  # Fortran local UUOs, dispatched through the saved vector
@@ -399,9 +403,9 @@ class PDP10:
             self.pc += 1
         elif op == 0o47 and e >= 0o400000:
             pass
-        elif op == 0o51:  # TTCALL: clear input, write string, write character
-            if ac == 11:
-                pass
+        elif op == 0o51:  # TTCALL
+            if ac in (0o11, 0o12, 0o13):
+                pass  # CLRBFI, CLRBFO; SKPINC doesn't skip: nothing has been typed
             elif ac == 3:
                 a = e
                 while True:
@@ -461,7 +465,7 @@ class PDP10:
         elif op in (0o57, 0o67):  # OUT, OUTPUT
             c = self.channels[ac]
             h = c['out']
-            base = 0o100000 + ac * 0o1000
+            base = OUT_BUFFERS + ac * 0o1000
             self.flush_channel(ac)
             c['written'] = 0
             c['flushed'] = 0
@@ -475,7 +479,7 @@ class PDP10:
         elif op in (0o56, 0o66):  # IN, INPUT
             c = self.channels[ac]
             h = c['in']
-            base = 0o140000 + ac * 0o1000
+            base = IN_BUFFERS + ac * 0o1000
             if 'lines' in c:
                 line = next(c['lines'], None)
                 if line is None:

@@ -29,6 +29,10 @@ static std::string output;
 static std::string input;
 static size_t inputAt = 0;
 static std::string directory;
+// Disk buffers, one 01000-word area per channel, sit above every image's
+// code and data.
+static const uint32_t OUT_BUFFERS = 0700000;
+static const uint32_t IN_BUFFERS = 0740000;
 static bool ki10 = false;
 
 // Add delta to both halves: carrying across them on a KA10, not on a KI10.
@@ -131,7 +135,7 @@ static void flush_channel( int ac )
     Channel * c = find( ac );
     if ( !c || !c->ready )
         return;
-    uint32_t base = 0100000 + ac * 01000;
+    uint32_t base = OUT_BUFFERS + ac * 01000;
     long long n = c->written;
     std::string text;
     for ( long long i = c->flushed; i < ( n < 640 ? n : 640 ); i++ )
@@ -502,7 +506,7 @@ static void execute( Word ir, uint32_t at )
                     for ( int ch : channelOrder )
                     {
                         Channel & c = channels[ ch ];
-                        uint32_t base = 0100000 + ch * 01000;
+                        uint32_t base = OUT_BUFFERS + ch * 01000;
                         if ( c.ready && base <= a && a < base + 128 )
                         {
                             long long count = (long long) ( a - base ) * 5 + floordiv( 29 - (long long) pos, 7 ) + 1;
@@ -536,10 +540,10 @@ static void execute( Word ir, uint32_t at )
     }
     else if ( op == 047 && e >= 0400000 )
         ;
-    else if ( op == 051 ) // TTCALL: clear input, write string, write character
+    else if ( op == 051 ) // TTCALL
     {
-        if ( ac == 11 )
-            ;
+        if ( ac == 011 || ac == 012 || ac == 013 )
+            ; // CLRBFI, CLRBFO; SKPINC doesn't skip: nothing has been typed
         else if ( ac == 3 )
         {
             for ( uint32_t a = e;; a++ )
@@ -638,7 +642,7 @@ static void execute( Word ir, uint32_t at )
         Channel & c = require( ac );
         uint32_t h = c.out;
         check_memory( h, 3 );
-        uint32_t base = 0100000 + ac * 01000;
+        uint32_t base = OUT_BUFFERS + ac * 01000;
         flush_channel( ac );
         c.written = 0;
         c.flushed = 0;
@@ -655,7 +659,7 @@ static void execute( Word ir, uint32_t at )
         Channel & c = require( ac );
         uint32_t h = c.in;
         check_memory( h, 3 );
-        uint32_t base = 0140000 + ac * 01000;
+        uint32_t base = IN_BUFFERS + ac * 01000;
         std::string line;
         if ( c.hasLines )
         {

@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'plm8'))
 import random
 import tempfile
-from pdp10 import NATIVE, PDP10, MASK, RH, SIGN, pred
+from pdp10 import IN_BUFFERS, NATIVE, OUT_BUFFERS, PDP10, MASK, RH, SIGN, pred
 
 
 def instruction(op, ac=0, address=0, index=0, indirect=False):
@@ -279,7 +279,7 @@ class Native(unittest.TestCase):
                     cpu.run_native(10, state=True)
                 else:
                     cpu.run(10)
-                base = 0o101000
+                base = OUT_BUFFERS + 0o1000  # channel 1 output buffer
                 self.assertEqual(cpu.m[0o3000:0o3003], [base - 2, 7 << 24 | base - 1, 640])
                 self.assertEqual(cpu.m[base - 2], 0o201 << 18 | base - 2)
                 self.assertEqual(cpu.m[2], 0o400)
@@ -340,7 +340,7 @@ class Native(unittest.TestCase):
                 cpu = self.machine(random.Random(0))
                 cpu.m[:] = [0]*len(cpu.m)
                 cpu.pc = 64
-                base = 0o140000 + 0o1000  # channel 1 input buffer
+                base = IN_BUFFERS + 0o1000  # channel 1 input buffer
                 cpu.input = io.StringIO('X'*((len(cpu.m)-base)*5)+'\n')
                 cpu.m[0o2002] = 0o3000
                 program = [instruction(0o50, 1, 0o2000), instruction(0o255),
