@@ -284,6 +284,26 @@ class Native(unittest.TestCase):
                 self.assertEqual(cpu.m[base - 2], 0o201 << 18 | base - 2)
                 self.assertEqual(cpu.m[2], 0o400)
 
+    def test_blt_into_its_own_accumulator(self):
+        # MOVSI 17,SAVE / BLT 17,17 restores every AC: the last word moved, not
+        # the final pointer, is left in AC 17. A BLT elsewhere leaves the pointer.
+        for native in (False, True):
+            with self.subTest(native=native):
+                cpu = self.machine(random.Random(0))
+                cpu.m[:] = [0]*len(cpu.m)
+                cpu.pc = 64
+                cpu.m[0o2000:0o2020] = range(100, 116)
+                cpu.m[0o2001] = 0o2000 << 18 | 0o3000  # restored to AC 1, then BLT 1,3003
+                cpu.m[64:68] = [instruction(0o205, 15, 0o2000), instruction(0o251, 15, 15),
+                                instruction(0o251, 1, 0o3003), instruction(0o47, address=0o12)]
+                if native:
+                    cpu.run_native(10, state=True)
+                else:
+                    cpu.run(10)
+                self.assertEqual(cpu.m[15], 115)
+                self.assertEqual(cpu.m[1], 0o2004 << 18 | 0o3004)
+                self.assertEqual(cpu.m[0o3000:0o3004], [100, 0o2000 << 18 | 0o3000, 102, 103])
+
     def test_monitor_control_blocks_at_memory_boundary(self):
         def sixbit(text):
             value = 0
