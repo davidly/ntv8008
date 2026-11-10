@@ -293,11 +293,15 @@ Shorter stack-pop helpers benefit SmallC and all five ACK frontends. SmallC siev
 and e now take **251.806988** and **248.524724 seconds**, respectively. See the
 [SmallC](smallc/README.md) and [ACK](ack/README.md) notes for individual measurements.
 
-The assembly benchmarks were reworked for the 8008's instruction timings:
-sieve falls from 78.14 to **50.86 seconds** (34.9% fewer clocks), e from 36.53
-to **19.05** (47.9%), and TTT from 28.91 to **15.44** per iteration (46.6%).
-Outputs and workloads, including TTT's 6493-node search, are unchanged; see
-[the a08 notes](a08/README.md) for details.
+The assembly benchmarks were reworked for the 8008's instruction timings.
+A further pass adapts ideas from the 4004 assembly: unrolled small-quotient
+division with constant multiplication tails for e, an unrolled sieve marking
+loop, and page-end board alignment plus a known-piece win checker for TTT.
+Against the previous 8008 assembly versions, clocks fall another **14.5% for e**,
+**1.2% for sieve**, and **1.7% for TTT**. Current 500 kHz times are **16.28**,
+**50.25**, and **15.18 seconds**, respectively. Outputs and workloads, including
+TTT's 6493-node search, are unchanged; see [the a08 notes](a08/README.md) for
+details.
 
 A further code-generation pass applies the same ideas to SmallC and the shared
 ACK backend. It adds constant-address frames for `main`, a faster divide loop, rotated marking

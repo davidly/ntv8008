@@ -1,26 +1,28 @@
 ; Native 8008 port of https://github.com/davidly/cpm_compilers/blob/main/asm/TTT.ASM.
 ; Same ascending-move alpha-beta minimax, first moves 0, 1, 4.
 ; Every root must score 5 (tie); one iteration visits 6493 nodes.
-; Recursion is replaced by nine explicit 16-byte RAM frames. The 8008's
-; hardware address stack is used only for short, nonrecursive helpers.
-; B = frame offset (00H..80H), C = returned score, D = node count low byte.
+; Nine explicit 16-byte RAM frames at offsets 10H..90H replace recursion.
+; The hardware address stack is used only for short, nonrecursive helpers.
+; B = frame offset (10H..90H), C = returned score, D = node count low byte.
 ; E holds the move's board address until WINNER.
-; Offset bit 4 is depth parity; offsets 40H/80H are depths 4/8.
+; Depth is (B-10H)/10H; offsets 50H/90H are depths 4/8.
 ; Even depths minimize (O to move); odd depths maximize (X to move).
 ; Separate MIN and MAX copies of the search know the parity statically.
 ; Frame fields: last tried board address, value, alpha, beta.
 ; A MIN frame's alpha and a MAX frame's beta cannot change during its
 ; life, so it reads them from the parent's frame instead of copying them.
-; The root's parent is offset 0F0H, holding the minimum score as alpha.
+; The root's virtual parent is offset 00H, holding minimum score as alpha.
+; Its unused first byte is the zero sentinel after board addresses F7H..FFH.
+; ORL detects this wrap directly because A stays zero through the move scan.
 ; The board, its zero sentinel and the node counter share the frames page,
 ; so H stays at FRAMES throughout the search except inside WINNER.
 ; A parent's last tried move is the move its child must undo.
 ; No CP/M command tail: change LOOPS to configure benchmark iterations.
 LOOPS   EQU 1
 FRAMES  EQU 1000H
-BOARD   EQU FRAMES+0A0H        ; nine cells, then a zero sentinel
+BOARD   EQU FRAMES+0F7H        ; nine cells; sentinel wraps to offset 00H
 COUNTHI EQU FRAMES+0E0H        ; moves high byte; D holds the low byte
-ROOTUP  EQU FRAMES+0F0H        ; the root's virtual MAX parent
+ROOTUP  EQU FRAMES             ; the root's virtual MAX parent
 VARS    EQU 1200H              ; first move, iterations low/high
 WINPROCS EQU 1300H             ; line checks; entry points within one page
 WINPAGE EQU 1400H              ; WINNER and its LOW entry table
@@ -53,8 +55,8 @@ ROOT:   LHI HIGH VARS
         LHI HIGH FRAMES
         LLE
         LMI 1
-        LBI 0
-        LLI 3
+        LBI 10H
+        LLI 13H
         LMI 9D                 ; beta = maximum score
         JMP ENTERMIN           ; O minimizes after X's first move
 
@@ -63,13 +65,13 @@ ENTERMIN:
         IND                    ; count every minimax invocation
         CTZ COUNTUP
         LAB
-        CPI 40H
+        CPI 50H
         JTC INITMIN
+        LCI 1                  ; X was just placed
         CAL WINNER
-        LCI 6                  ; X just moved and won
-        JTZ RETMIN
+        JTZ WONMIN
         LAB
-        CPI 80H
+        CPI 90H
         LCI 5
         JTZ RETMIN
 INITMIN:
@@ -85,8 +87,7 @@ SCANMIN:
         INL
         CPM
         JFZ SCANMIN
-        LAL
-        CPI LOW BOARD+9D
+        ORL
         JTZ EXHMIN             ; reached the sentinel
         LMI 2                  ; O moves
         LEL
@@ -106,11 +107,11 @@ ENTERMAX:
         IND
         CTZ COUNTUP
         LAB
-        CPI 40H
+        CPI 50H
         JTC INITMAX
+        LCI 2                  ; O was just placed
         CAL WINNER
-        LCI 4                  ; O just moved and won
-        JTZ RETMAX
+        JTZ WONMAX
 INITMAX:
         LLB
         LMI LOW BOARD-1
@@ -124,8 +125,7 @@ SCANMAX:
         INL
         CPM
         JFZ SCANMAX
-        LAL
-        CPI LOW BOARD+9D
+        ORL
         JTZ EXHMAX
         LMI 1                  ; X moves
         LEL
@@ -143,13 +143,17 @@ SCANMAX:
         LBA
         JMP ENTERMIN
 
+WONMIN: LCI 6
+        JMP RETMIN
+WONMAX: LCI 4
+        JMP RETMAX
 EXHMIN: LLB
         INL
         LCM                    ; no more moves: return the accumulated value
 ; RETMIN returns C from a MIN frame to its MAX parent (or to the root).
 RETMIN: LAB
         SUI 10H
-        JTC ROOTDONE
+        JTZ ROOTDONE
         LBA                    ; resume the parent
         LLA
         LLM                    ; the parent's move led to this child
@@ -343,8 +347,9 @@ PSHOW:  LAH
         RET
 
 ; WINNER checks only lines through the last move, as in the 8080 source.
-; E supplies the last move's board address and is preserved, as are B, C, D.
-; Returns Z when the piece on that cell completes a line (A = piece), else NZ.
+; E supplies the last move's board address, C the already-known piece (1/2).
+; E, B, C, D are preserved. Returns Z for a completed line (A = piece), else NZ.
+; Callers load the winning score only on a win, keeping other entries short.
 ; The 8008 has no indirect jump. All entry points share one page, so only
 ; the LOW byte of a RAM trampoline is patched; its RET uses WINNER's
 ; existing hardware return slot.
@@ -509,8 +514,7 @@ WINNER: LHI HIGH WINLOW
         LLI LOW WJUMP+1
         LMA
         LHI HIGH BOARD
-        LLE
-        LAM                    ; piece placed by that move (always nonzero)
+        LAC                    ; caller supplies the known piece in C
 WJUMP:  JMP W0P0               ; LOW byte patched above; full RAM is available
         ORG WINPAGE+LOW BOARD
 WINLOW: DATA LOW W0P0, LOW W1P0, LOW W2P0, LOW W3P0, LOW W4P0

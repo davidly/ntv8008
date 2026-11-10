@@ -45,30 +45,50 @@ those distinct historical works. `echo.asm` is an original keyboard demo;
 `hello`, `count`, `sieve`, `e` and `ttt` are project examples; `robson` is an MIT
 interpreter derivative. Rebuild these with `./a08/rebuild.sh` or `rebuild.bat`.
 
-The assembly TTT benchmark uses nine explicit 16-byte frames in one page,
-with B encoding the frame offset and depth parity. The board, a zero sentinel
-and the node count's high byte share that page, so H stays fixed during the
-search; D holds the count's low byte. Separate MIN and MAX copies of the search
-know the side to move statically. A frame stores its last tried board address,
+The assembly TTT benchmark uses nine explicit 16-byte frames at offsets
+10H through 90H, with B encoding the depth. Separate MIN and MAX copies know
+the side to move statically. A frame stores its last tried board address,
 which also tells a returning child which move to undo. A MIN frame's alpha and
-a MAX frame's beta are read from the parent instead of copied. WINNER takes the
-last move's board address in E, patches only the low byte of a trampoline (all
-line checks start in one page), and returns Z for a win.
+a MAX frame's beta are read from the parent instead of copied. The root's
+virtual parent starts at offset 00H; its first byte stays zero. Board addresses
+F7H through FFH wrap into that zero sentinel, so `ORL` detects exhaustion
+without loading and comparing the board address against a constant. The board,
+frames and node counter share a page; D caches the count's low byte.
 
-Sieve scans the flags with HL and an 8x unrolled `CPM`/`CFZ PRIME` loop, and
-marks multiples of steps below 256 in a short loop that only adjusts H on a
-low-byte carry. E keeps the dividend's low byte in A, so each subtraction of
-the repeated-subtraction division is `INC`/`SUB`/`JFC`.
+WINNER takes the last move's board address in E and the known piece in C,
+patches only the low byte of a trampoline (all line checks start in one page),
+and returns Z for a win. The winning score is loaded only when the check wins.
+The source and tests preserve ascending moves, all three drawn openings, and
+6493 search nodes per iteration.
 
-| Benchmark | Before (clocks) | After (clocks) | Seconds at 500 kHz |
-| --- | ---: | ---: | ---: |
-| sieve (10 passes) | 39,067,880 | 25,430,180 | 50.86 |
-| e | 18,262,668 | 9,523,146 | 19.05 |
-| ttt (1 iteration) | 14,457,102 | 7,722,478 | 15.44 |
+Sieve uses an 8× unrolled `CPM`/`CFZ PRIME` scan and a short marking loop for
+steps below 256. Eight copies of that marking loop fall through on the common
+no-carry path; a low-byte carry updates H and resumes the correct next copy.
+The byte flags already allow direct loads and clears, so the 4004's packed-bit
+scan and RAM-bank optimizations do not transfer directly.
 
-Algorithms, outputs, ascending moves, the three drawn openings and 6493 nodes
-are unchanged. The integration suite checks repeated iterations and the winner
-against every reachable board/last move.
+E unrolls division into quotient cases 0 through 9. On failure, each case stores
+the remainder and falls into its own lookup-multiply tail, adding the known
+quotient with an immediate instruction. Quotient zero omits the addition and
+carry check. A generic fallback handles the initial division-by-one result of
+27; the algorithm and both multiply lookup pages remain unchanged. Thus the
+4004's small-quotient specialization and inlining ideas transfer, while its
+nibble arithmetic and RAM-bank scheduling do not.
+
+| Benchmark | Previous 8008 clocks | Current clocks | Reduction | Seconds at 500 kHz |
+| --- | ---: | ---: | ---: | ---: |
+| sieve (10 passes) | 25,430,180 | 25,124,060 | 1.2% | 50.25 |
+| e | 9,523,146 | 8,139,284 | 14.5% | 16.28 |
+| ttt (1 iteration) | 7,722,478 | 7,589,800 | 1.7% | 15.18 |
+
+Before either optimization pass these took 39,067,880, 18,262,668, and
+14,457,102 clocks, respectively. The current changes trade more repeated code
+for fewer executed instructions; the fixed array/frame allocations are unchanged.
+The integration suite checks exact output, alternative e sizes, repeated sieve
+and TTT runs, every reachable board/last move, more than 5000 quotient/remainder
+cases, and every sieve flag against independently generated primes. Intel MAC8
+also checks that the project sources produce the same bytes as A08 when the
+historical image is available.
 
 The original b8008 integer BASIC image is included as `b8008.asm` and
 `b8008.hex`. Its source macros, examples, memory layout, and regeneration

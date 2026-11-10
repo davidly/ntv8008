@@ -175,6 +175,9 @@ TLOAD:  CAL TREAD
         JTZ TDONE
         ADI LOW BOARD
         LEA
+        LHI HIGH BOARD
+        LLE
+        LCM                    ; known last piece, now passed to WINNER in C
         CAL WINNER
         JTZ TWON
         XRA                    ; NZ: no winner
@@ -269,6 +272,167 @@ TDATA:
                 result = run('-n:200000000', output)
                 self.assertEqual(result.returncode, 0, result.stderr)
                 self.assertEqual(result.stdout, expected)
+
+    def test_e_small_quotient_division(self):
+        # Isolate division by making a[n-1] zero, then inspect the quotient
+        # and stored remainder before the spigot advances to the next divisor.
+        source = (ROOT/'a08/e.asm').read_text().rsplit('        END',1)[0]
+        begin, end = source.index('INNER:'), source.index('DIGIT:')
+        inner = source[begin:end].replace('        DCB\n        JFZ INNER','        JMP ECHECK')
+        source = source[:begin]+inner+source[end:]
+        cases = {(n,q*n+r) for n in range(2,256) for q in range(10) for r in (0,n-1)}
+        cases.update((1,x) for x in (0,1,9,10,27,255))
+        cases = sorted(cases)
+        harness = """
+        ORG 0040H
+        JMP ETEST
+        ORG 1800H
+ETEST:  LHI HIGH HIGHVAL
+        LLI 8D
+        LMI LOW EDATA
+        INL
+        LMI HIGH EDATA
+ECASE:  CAL EREAD
+        NDA
+        JTZ EGOOD
+        LBA
+        LHI HIGH ARRAY
+        LLB
+        DCL
+        LMI 0
+        CAL EREAD
+        LCA
+        CAL EREAD
+        LEA
+        LDC
+        LHI HIGH ARRAY
+        LAE
+        JMP INNER
+ECHECK: LCA
+        LAD
+        NDA
+        JFZ EBAD
+        CAL EREAD
+        CPC
+        JFZ EBAD
+        CAL EREAD
+        LEA
+        LHI HIGH ARRAY
+        LLB
+        LAM
+        CPE
+        JFZ EBAD
+        JMP ECASE
+EGOOD:  LAI 'K'
+        OUT 12
+        HLT
+EBAD:   LAI 'F'
+        OUT 12
+        HLT
+EREAD:  LHI HIGH HIGHVAL
+        LLI 8D
+        LEM
+        INL
+        LHM
+        LLE
+        LDM
+        INL
+        JFZ EPOINT
+        INH
+EPOINT: LAH
+        LEL
+        LHI HIGH HIGHVAL
+        LLI 8D
+        LME
+        INL
+        LMA
+        LAD
+        RET
+        ORG 2000H
+EDATA:
+"""
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory,'divide.asm')
+            image = path.with_suffix('.hex')
+            for start in range(0,len(cases),500):
+                data = ''
+                for n,x in cases[start:start+500]:
+                    q,r = divmod(x,n)
+                    data += '        DB '+','.join(f'{v}D' for v in (n,x>>8,x&255,q,r))+'\n'
+                path.write_text(source+harness+data+'        DB 0\n        END\n')
+                result = subprocess.run([str(ASSEMBLER),str(path),'-o'+str(image)],
+                                        capture_output=True,timeout=10)
+                self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+                result = run('-n:10000000',image)
+                self.assertEqual((result.returncode,result.stdout),(0,b'K'),f'cases starting at {start}')
+
+    def test_sieve_flag_contents(self):
+        # Check all 8192 bytes against independently generated packed prime
+        # bits, including the padding byte, not just the aggregate count.
+        flags = bytearray([1])*16384
+        flags[:2] = b'\0\0'
+        for n in range(2,128):
+            if flags[n]:
+                for multiple in range(n*n,len(flags),n): flags[multiple] = 0
+        expected = list(flags[3::2])+[0]
+        self.assertEqual((len(expected),sum(expected)),(8192,1899))
+        packed = [sum(expected[8*i+b]<<b for b in range(8)) for i in range(1024)]
+        source = (ROOT/'a08/sieve.asm').read_text().rsplit('        END',1)[0]
+        source = source.replace('LOOPS   EQU 10D','LOOPS   EQU 1')
+        source = source.replace('        JFZ ITERAGAIN\n','        JFZ ITERAGAIN\n        JMP FCHECK\n',1)
+        harness = """
+        ORG 0800H
+FCHECK: LBI HIGH FDATA
+        LCI LOW FDATA
+        LDI HIGH FLAGS
+        LEI LOW FLAGS
+FPACK:  LHB
+        LLC
+        LAM
+        INC
+        JFZ FREADY
+        INB
+FREADY:
+"""
+        for bit in range(8):
+            harness += f"""        RRC
+        LHD
+        LLE
+        LLM
+        DCL
+        JTC FONE{bit}
+        INL
+        JFZ FBAD
+        JMP FNEXT{bit}
+FONE{bit}:  JFZ FBAD
+FNEXT{bit}: INE
+"""
+        harness += """        JFZ FHIGH
+        IND
+FHIGH:  LAB
+        CPI HIGH FEND
+        JFZ FPACK
+        LAI 'K'
+        OUT 12
+        HLT
+FBAD:   LAI 'F'
+        OUT 12
+        HLT
+        ORG 0900H
+FDATA:
+"""
+        for start in range(0,len(packed),16):
+            harness += '        DB '+','.join(f'{v}D' for v in packed[start:start+16])+'\n'
+        harness += 'FEND:\n        END\n'
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory,'flags.asm')
+            image = path.with_suffix('.hex')
+            path.write_text(source+harness)
+            result = subprocess.run([str(ASSEMBLER),str(path),'-o'+str(image)],
+                                    capture_output=True,timeout=10)
+            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+            result = run('-n:10000000',image)
+            self.assertEqual((result.returncode,result.stdout),(0,b'K'))
 
     def test_assembler_return_sign(self):
         # A08 formerly encoded RTS as RFS (0x13), breaking SCELBAL's FP math.

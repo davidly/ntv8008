@@ -127,18 +127,89 @@ STEPDONE:
         NDA
         JFZ KBIG
 ; D is zero: only a low-byte carry changes H, and LMD clears a flag.
-; A tracks L between marks.
+; A tracks L between marks. Eight copies fall through on the common
+; no-carry path; each carry handler resumes the correct next copy.
         LAL
-        JMP KSMALL
-KSMARK: LMD
-KSMALL: ADE
+        JMP KS7
+KM0:    LMD
+KS0:    ADE
         LLA
-        JFC KSMARK
-        INH
+        JTC KC0
+KM1:    LMD
+KS1:    ADE
+        LLA
+        JTC KC1
+KM2:    LMD
+KS2:    ADE
+        LLA
+        JTC KC2
+KM3:    LMD
+KS3:    ADE
+        LLA
+        JTC KC3
+KM4:    LMD
+KS4:    ADE
+        LLA
+        JTC KC4
+KM5:    LMD
+KS5:    ADE
+        LLA
+        JTC KC5
+KM6:    LMD
+KS6:    ADE
+        LLA
+        JTC KC6
+KM7:    LMD
+KS7:    ADE
+        LLA
+        JFC KM0
+KC7:    INH
         LAH
         CPI 038H
         LAL
-        JTC KSMARK
+        JTC KM0
+        JMP COUNT
+KC0:    INH
+        LAH
+        CPI 038H
+        LAL
+        JTC KM1
+        JMP COUNT
+KC1:    INH
+        LAH
+        CPI 038H
+        LAL
+        JTC KM2
+        JMP COUNT
+KC2:    INH
+        LAH
+        CPI 038H
+        LAL
+        JTC KM3
+        JMP COUNT
+KC3:    INH
+        LAH
+        CPI 038H
+        LAL
+        JTC KM4
+        JMP COUNT
+KC4:    INH
+        LAH
+        CPI 038H
+        LAL
+        JTC KM5
+        JMP COUNT
+KC5:    INH
+        LAH
+        CPI 038H
+        LAL
+        JTC KM6
+        JMP COUNT
+KC6:    INH
+        LAH
+        CPI 038H
+        LAL
+        JTC KM7
         JMP COUNT
 KBMARK: LMI 0
 KBIG:   LAL

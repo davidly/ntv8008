@@ -1,6 +1,6 @@
 ; Native 8008 port of https://github.com/davidly/cpm_compilers/blob/main/asm/E.ASM.
 ; Same factorial-series decimal spigot, DIGITS=200. No keyboard or CP/M.
-; B = n, C = quotient, DA = x. Each array element fits in a byte.
+; B = n, DA = x. Quotients 0..9 have constant tails; C serves the fallback.
 ; The outer-loop limit deliberately matches the 8080 source.
 DIGITS  EQU 200D
 ARRAY   EQU 1200H              ; page after MUL10HI; DIGITS must be 10..255
@@ -28,28 +28,217 @@ OUTER:  LHI HIGH HIGHVAL
         LHI HIGH ARRAY
         LDI 0
         XRA                    ; x = DA = 0
-; Unsigned DA / B: quotient C, remainder A. The low byte stays in A;
-; a low-byte borrow decrements D, and D going negative ends the division.
-INNER:  LCI 0FFH
-UDIV:   INC
+; Unsigned DA / B. For n >= 2, x < 10*n: unroll quotient cases 0..9.
+; A low-byte borrow decrements D; a negative D means this subtraction failed.
+; Each constant tail restores/stores the remainder and adds its known quotient
+; directly to 10*a[n-1]. Quotient zero needs neither addition nor a carry test.
+; The generic fallback handles the initial n=1 result, 27, without a per-node
+; special-case branch. Multiplication remains the same two-page lookup.
+INNER: SUB
+        JTC UB0
+UQ1:   SUB
+        JTC UB1
+UQ2:   SUB
+        JTC UB2
+UQ3:   SUB
+        JTC UB3
+UQ4:   SUB
+        JTC UB4
+UQ5:   SUB
+        JTC UB5
+UQ6:   SUB
+        JTC UB6
+UQ7:   SUB
+        JTC UB7
+UQ8:   SUB
+        JTC UB8
+UQ9:   SUB
+        JTC UB9
+UQ10:   LCI 9D
+UREST:  INC
         SUB
-        JTC BORROW
-        INC
-        SUB
-        JFC UDIV
-BORROW: DCD
-        JFS UDIV
-        ADB                    ; undo the failed subtraction; D is dead
+        JFC UREST
+        DCD
+        JFS UREST
+        ADB
         LLB
-        LMA                    ; a[n] = x MOD n
+        LMA
         DCL
-        LLM                    ; index by a[n-1]
+        LLM
         LHI HIGH MUL10LO
         LAM
         INH
-        LDM                    ; DA = 10*a[n-1], preserving n and quotient
-        INH                    ; back to ARRAY for the next n
-        ADC                    ; x = 10*a[n-1] + quotient
+        LDM
+        INH
+        ADC
+        JTC XCARRY
+        DCB
+        JFZ INNER
+        JMP DIGIT
+UB0:    DCD                    ; quotient 0 on failure; otherwise try 1
+        JFS UQ1
+        ADB
+        LLB
+        LMA
+        DCL
+        LLM
+        LHI HIGH MUL10LO
+        LAM
+        INH
+        LDM
+        INH
+        DCB
+        JFZ INNER
+        JMP DIGIT
+UB1:    DCD                    ; quotient 1 on failure; otherwise try 2
+        JFS UQ2
+        ADB
+        LLB
+        LMA
+        DCL
+        LLM
+        LHI HIGH MUL10LO
+        LAM
+        INH
+        LDM
+        INH
+        ADI 1D
+        JTC XCARRY
+        DCB
+        JFZ INNER
+        JMP DIGIT
+UB2:    DCD                    ; quotient 2 on failure; otherwise try 3
+        JFS UQ3
+        ADB
+        LLB
+        LMA
+        DCL
+        LLM
+        LHI HIGH MUL10LO
+        LAM
+        INH
+        LDM
+        INH
+        ADI 2D
+        JTC XCARRY
+        DCB
+        JFZ INNER
+        JMP DIGIT
+UB3:    DCD                    ; quotient 3 on failure; otherwise try 4
+        JFS UQ4
+        ADB
+        LLB
+        LMA
+        DCL
+        LLM
+        LHI HIGH MUL10LO
+        LAM
+        INH
+        LDM
+        INH
+        ADI 3D
+        JTC XCARRY
+        DCB
+        JFZ INNER
+        JMP DIGIT
+UB4:    DCD                    ; quotient 4 on failure; otherwise try 5
+        JFS UQ5
+        ADB
+        LLB
+        LMA
+        DCL
+        LLM
+        LHI HIGH MUL10LO
+        LAM
+        INH
+        LDM
+        INH
+        ADI 4D
+        JTC XCARRY
+        DCB
+        JFZ INNER
+        JMP DIGIT
+UB5:    DCD                    ; quotient 5 on failure; otherwise try 6
+        JFS UQ6
+        ADB
+        LLB
+        LMA
+        DCL
+        LLM
+        LHI HIGH MUL10LO
+        LAM
+        INH
+        LDM
+        INH
+        ADI 5D
+        JTC XCARRY
+        DCB
+        JFZ INNER
+        JMP DIGIT
+UB6:    DCD                    ; quotient 6 on failure; otherwise try 7
+        JFS UQ7
+        ADB
+        LLB
+        LMA
+        DCL
+        LLM
+        LHI HIGH MUL10LO
+        LAM
+        INH
+        LDM
+        INH
+        ADI 6D
+        JTC XCARRY
+        DCB
+        JFZ INNER
+        JMP DIGIT
+UB7:    DCD                    ; quotient 7 on failure; otherwise try 8
+        JFS UQ8
+        ADB
+        LLB
+        LMA
+        DCL
+        LLM
+        LHI HIGH MUL10LO
+        LAM
+        INH
+        LDM
+        INH
+        ADI 7D
+        JTC XCARRY
+        DCB
+        JFZ INNER
+        JMP DIGIT
+UB8:    DCD                    ; quotient 8 on failure; otherwise try 9
+        JFS UQ9
+        ADB
+        LLB
+        LMA
+        DCL
+        LLM
+        LHI HIGH MUL10LO
+        LAM
+        INH
+        LDM
+        INH
+        ADI 8D
+        JTC XCARRY
+        DCB
+        JFZ INNER
+        JMP DIGIT
+UB9:    DCD                    ; quotient 9 on failure; otherwise try 10
+        JFS UQ10
+        ADB
+        LLB
+        LMA
+        DCL
+        LLM
+        LHI HIGH MUL10LO
+        LAM
+        INH
+        LDM
+        INH
+        ADI 9D
         JTC XCARRY
         DCB
         JFZ INNER
