@@ -195,6 +195,43 @@ byte and local-UUO instructions. A one-off run of 2,000 seeds (about 725,000
 instructions) found no differences. Nested XCT/UUO execution is bounded like
 Python's recursion limit.
 
+### KA10 runtime
+
+`--ka10` on `compile.py`, `mac8.py` and `int8.py` reports, on stderr, roughly
+how long the tool itself would have run on a 1967 DEC KA10:
+
+```sh
+python3 plm8/compile.py --ka10 plm8/examples/sieve.plm
+```
+
+prints `approximate DEC KA10 runtime: 12.900077 seconds on a 1967 DEC KA10,
+asynchronous logic, 1.00 us MA10 core memory (excluding 620 monitor calls and
+I/O waits)`. `compile.py` adds its two passes together.
+
+The times are those of the PDP-10 System Reference Manual (May 1968) for user
+mode, with 1.00 µs MA10 core memory, plus the manual's terms for indexing,
+indirection, shift counts, byte sizes, BLT lengths and floating-point
+alignment; [ka10.py](ka10.py) describes the model. Monitor calls ran in the
+operating system, so they are counted but not timed, and I/O waits are left
+out. Both runners total the time in hundredths of a microsecond and report
+exactly the same figure. The KA10's logic is asynchronous, so it has no clock
+rate, and the manual gives its times as ±5%.
+
+| Run | KA10 seconds | Monitor calls |
+| --- | ---: | ---: |
+| PL/M-8, hello | 3.37 | 258 |
+| PL/M-8, arithmetic | 11.47 | 531 |
+| PL/M-8, sieve | 12.90 | 620 |
+| PL/M-8, e | 11.10 | 520 |
+| PL/M-8, ttt | 58.11 | 2,244 |
+| MAC8, mac8hello | 3.42 | 235 |
+| INT8, a08/hello.hex | 1.79 | 144 |
+| INT8, a08/e.hex | 497.28 | 1,050 |
+| INT8, a08/sieve.hex | 1,600.68 | 210 |
+
+`tests/pdp10.py` also requires both runners to report the same time for each
+of its 150 random programs.
+
 ## MAC8 assembler
 
 The same `(UPL)` directory holds Intel's MAC8 8008 macro cross-assembler,

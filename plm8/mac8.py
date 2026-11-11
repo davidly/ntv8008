@@ -8,6 +8,7 @@ import sys
 import tempfile
 
 from compile import CompileError, convert_hex
+import ka10
 from pdp10 import NATIVE, PDP10
 
 UPSTREAM = Path(__file__).resolve().parent / 'upstream'
@@ -82,7 +83,10 @@ def main():
     parser.add_argument('--listing', type=Path, help='save the assembler listing')
     parser.add_argument('--expanded', action='store_true',
                         help='use MAC8E, the expanded 2.3 assembler with about 4,000 symbols instead of 500')
+    parser.add_argument('--ka10', action='store_true', help='report how long MAC8 took on a 1967 DEC KA10')
     args = parser.parse_args()
+    if args.ka10:
+        PDP10.timers = []
     try:
         output, listing = assemble_source(args.source.read_text(encoding='ascii'), args.expanded)
         if args.listing:
@@ -90,6 +94,8 @@ def main():
         destination = args.output or args.source.with_suffix('.hex')
         destination.write_bytes(output.encode('ascii'))
         print(f'{args.source}: assembled to {destination}')
+        if args.ka10:
+            print(ka10.report(PDP10.timers), file=sys.stderr)
     except (OSError, ValueError, CompileError) as error:
         print(f'MAC8: {error}', file=sys.stderr)
         return 1

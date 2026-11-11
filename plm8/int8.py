@@ -8,6 +8,7 @@ import sys
 import tempfile
 
 from compile import CompileError, convert_hex
+import ka10
 from pdp10 import NATIVE, PDP10
 
 UPSTREAM = Path(__file__).resolve().parent / 'upstream'
@@ -121,19 +122,26 @@ def main():
     parser.add_argument('-p', action='store_true', help='report clock periods, as ntv8008 -p does')
     parser.add_argument('--commands', type=Path,
                         help='run this INT8 command session after loading instead of running to HLT')
+    parser.add_argument('--ka10', action='store_true', help='report how long INT8 took on a 1967 DEC KA10')
     args = parser.parse_args()
     try:
         obj, load, memory = load_program(args.program)
+        if args.ka10:
+            PDP10.timers = []
         if args.commands:
             session = args.commands.read_text(encoding='ascii')
             if not re.search(r'^\$E\s*$', session, re.M):
                 session += '\n$E\n'
             print(simulate(obj, f'$F\n{load}\nSET PC = {args.address}.\n{session}', 10 ** 11), end='')
+            if args.ka10:
+                print(ka10.report(PDP10.timers), file=sys.stderr)
             return 0
         output, clocks = run_program(obj, load, memory, args.address, args.cycles)
         sys.stdout.write(output)
         if args.p:
             print(f'{clocks} cycles (INTERP/8 {clocks // 2 + START_STATES} states)')
+        if args.ka10:
+            print(ka10.report(PDP10.timers), file=sys.stderr)
     except (OSError, ValueError, CompileError) as error:
         print(f'INT8: {error}', file=sys.stderr)
         return 1

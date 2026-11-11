@@ -7,6 +7,7 @@ import re
 import sys
 import tempfile
 
+import ka10
 from pdp10 import NATIVE, PDP10
 
 UPSTREAM = Path(__file__).resolve().parent / 'upstream'
@@ -88,7 +89,10 @@ def main():
     parser.add_argument('source', type=Path)
     parser.add_argument('-o', '--output', type=Path, help='HEX path (default: source.hex)')
     parser.add_argument('--listing', type=Path, help='save both compiler passes\' listings')
+    parser.add_argument('--ka10', action='store_true', help='report how long PL/M-8 took on a 1967 DEC KA10')
     args = parser.parse_args()
+    if args.ka10:
+        PDP10.timers = []
     try:
         output, listing = compile_source(args.source.read_text(encoding='ascii'))
         if args.listing:
@@ -96,6 +100,8 @@ def main():
         destination = args.output or args.source.with_suffix('.hex')
         destination.write_bytes(output.encode('ascii'))
         print(f'{args.source}: compiled to {destination}')
+        if args.ka10:
+            print(ka10.report(PDP10.timers), file=sys.stderr)
     except (OSError, ValueError, CompileError) as error:
         print(f'PL/M-8: {error}', file=sys.stderr)
         return 1

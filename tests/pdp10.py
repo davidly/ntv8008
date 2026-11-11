@@ -212,6 +212,8 @@ class Native(unittest.TestCase):
         for seed in range(150):
             with self.subTest(seed=seed):
                 reference, native = self.machine(random.Random(seed)), self.machine(random.Random(seed))
+                reference.time_ka10()
+                native.time_ka10()
                 try:
                     reference.run(400)
                     expected = 'finished'
@@ -226,6 +228,9 @@ class Native(unittest.TestCase):
                 self.assertEqual(native.pc, reference.pc)
                 differences = [a for a in range(RH + 1) if native.m[a] != reference.m[a]]
                 self.assertEqual(differences, [], [(oct(a), reference.m[a], native.m[a]) for a in differences[:5]])
+                # The KA10 estimates agree too.
+                self.assertEqual(*[(t.hundredths, t.instructions, t.monitor_calls, t.ki_only)
+                                   for t in (native.timer, reference.timer)])
 
     def test_monitor_output_and_errors(self):
         for program, output, failure in (
@@ -283,6 +288,21 @@ class Native(unittest.TestCase):
                 self.assertEqual(cpu.m[0o3000:0o3003], [base - 2, 7 << 24 | base - 1, 640])
                 self.assertEqual(cpu.m[base - 2], 0o201 << 18 | base - 2)
                 self.assertEqual(cpu.m[2], 0o400)
+
+    def test_ash_keeps_the_sign(self):
+        # Shifting left loses bits from bit 1; bit 0, the sign, stays.
+        for native in (False, True):
+            with self.subTest(native=native):
+                cpu = self.machine(random.Random(0))
+                cpu.m[:] = [0]*len(cpu.m)
+                cpu.pc = 64
+                cpu.m[1], cpu.m[2] = 0o200000000000, SIGN | 0o100000000000
+                cpu.m[64:67] = [instruction(0o240, 1, 1), instruction(0o240, 2, 1), instruction(0o47, address=0o12)]
+                if native:
+                    cpu.run_native(10, state=True)
+                else:
+                    cpu.run(10)
+                self.assertEqual((cpu.m[1], cpu.m[2]), (0, SIGN | 0o200000000000))
 
     def test_blt_into_its_own_accumulator(self):
         # MOVSI 17,SAVE / BLT 17,17 restores every AC: the last word moved, not
