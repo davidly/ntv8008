@@ -204,7 +204,7 @@ how long the tool itself would have run on a 1967 DEC KA10:
 python3 plm8/compile.py --ka10 plm8/examples/sieve.plm
 ```
 
-prints `approximate DEC KA10 runtime: 12.900077 seconds on a 1967 DEC KA10,
+prints `approximate DEC KA10 runtime: 12.900076 seconds on a 1967 DEC KA10,
 asynchronous logic, 1.00 us MA10 core memory (excluding 620 monitor calls and
 I/O waits)`. `compile.py` adds its two passes together.
 
